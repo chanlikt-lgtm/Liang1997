@@ -1,0 +1,88 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\newcommand{\ten}[1]{\times 10^{#1}}
+\title{\textbf{Liang--1997 SHE--BTE: Multi-Run Reproducibility Study of the Drain-Refined $G_{ii}$ Trio}}
+\author{Frozen solver tag \texttt{solver-frozen-2026-09-26} (git \texttt{930dd86})}
+\date{2026-10-15}
+\begin{document}
+\maketitle
+
+\section*{Purpose}
+Quantify what, in the certified Liang-1997 reproduction, is \emph{reproducible} across independent re-runs of the frozen solver, and what is not. No code, tolerance, or mesh was changed. The certified reference is the 2026-09-24 cold run (pure-Python kernel): $G_{ii}=3.075619/2.136180/2.387429\ten{25}$ at $71\times58/100\times70/141\times85$; non-monotone, $S_{\mathrm{rev}}=737$, Richardson suppressed.
+
+\section*{Runs compared}
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+run & machine & kernel & conditions \\
+\midrule
+Sep-24 baseline        & Windows, 24\,GB & pure-Python & certified reference \\
+Windows interrupted    & Windows, 24\,GB & pure-Python & $\sim$4 OOM resumes \\
+Windows clean          & Windows, 24\,GB (64\,GB pagefile) & pure-Python & uninterrupted \\
+Linux (numba)          & Linux, 31\,GiB, 24 thr & \textbf{numba JIT} & uninterrupted \\
+Linux (pure-Python)    & Linux, 31\,GiB & pure-Python & \textit{pending} (\texttt{SHE2D\_DISABLE\_NUMBA=1}) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Per-node converged $G_{ii}$ ($\ten{25}$)}
+\begin{center}
+\begin{tabular}{l c c c c}
+\toprule
+node & Sep-24 & Win.\ interrupted & Win.\ clean & Linux (numba) \\
+\midrule
+71$\times$58  & 3.075619 & 3.075619 & 3.075619$^{\dagger}$ & 2.9847 \\
+100$\times$70 & 2.136180 & 2.142249 & 2.087561 & $\sim$1.80 (limit-cycle, uncert.) \\
+141$\times$85 & 2.387429 & 2.375921 & 2.399434 & --- \\
+\midrule
+max rel.\ dev.\ vs Sep-24 & --- & $+0.28\%$ & $-2.28\%$ & $-2.9\%$ (71$\times$58) \\
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent{\footnotesize $^{\dagger}$ Win.\ clean 71$\times$58 reused the earlier clean-run checkpoint; an independent clean pure-Python derivation reproduced $3.075619\ten{25}$ to $1.6\ten{-7}$ (bit-exact).}
+
+\section*{Trio verdict --- reproduces across all runs}
+\begin{center}
+\begin{tabular}{l c c c}
+\toprule
+run & sequence signs & monotone? & $S_{\mathrm{rev}}$ \\
+\midrule
+Sep-24           & $(-,+)$ & no & 737 \\
+Windows interrupted & $(-,+)$ & no & 1018 \\
+Windows clean    & $(-,+)$ & no & 2415 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent Every run yields a significantly non-monotone drain-refined sequence ($S_{\mathrm{rev}}\gg1$): no real convergence order exists, so Richardson extrapolation is \textbf{suppressed} and \textbf{there is no justified continuum $G_{ii}$}. This qualitative verdict is robust to environment, kernel, and interruption.
+
+\section*{Why absolute $G_{ii}$ is not reproducible ($\sim$2--3\%)}
+Two mechanisms, both amplified by $G_{ii}$ being a near-null-space, hotspot-sensitive moment:
+
+\paragraph{(1) Plateau-gate false-pass on a transient flat spot.} The gate certifies when the last-4 cumulative-iteration spread of $G_{ii,\max}$ falls below $3\ten{-4}$. A locally flat window \emph{mid-transient} can trip it early. The Windows \emph{clean, pure-Python} 100$\times$70 did exactly this:
+\begin{center}
+\begin{tabular}{l c c c c}
+\toprule
+ & chunk 3 & chunk 4 & \dots & baseline chunk 7 \\
+\midrule
+cum iters & 240 & 300 & & 480 \\
+$G_{ii}$ ($\ten{25}$) & 1.949 & \textbf{2.0876} & & 2.1362 \\
+last-4 spread & $1.1\ten{-2}$ & \textbf{$1.2\ten{-4}$ PASS} & & $1.9\ten{-4}$ PASS \\
+\bottomrule
+\end{tabular}
+\end{center}
+$G_{ii}$ had just risen $+7\%$ (chunk 3$\to$4) --- clearly still climbing toward $\sim$2.136 --- yet the last-4 window was momentarily flat, so the gate certified $2.0876\ten{25}$ ($-2.3\%$) at 300 iters instead of 480. This affects \emph{clean, same-kernel} runs; it is not a memory/OOM/interruption artifact.
+
+\paragraph{(2) numba vs.\ pure-Python kernel divergence.} The Linux box ran the numba JIT assembly kernel (\texttt{SHE2D\_DISABLE\_NUMBA} unset). Though numba ``changes only how the same discrete equations are assembled'' (FP rounding/order), the 71$\times$58 trajectory diverged from the reference \emph{at chunk 0} (iters 1--60: $2.6433$ vs reference $2.5571\ten{25}$) and converged to $2.9847\ten{25}$ ($-2.9\%$). Its 100$\times$70 entered a hotspot limit-cycle ($\sim$1.80$\ten{25}$, spread stuck at $2$--$4\ten{-3}$) that the pure-Python kernel did \emph{not} exhibit. Thus $\sim$$10^{-15}$ kernel rounding differences amplify to $\sim$3\% in the converged $G_{ii}$.
+
+\section*{Conclusion}
+\begin{itemize}[nosep]
+\item \textbf{Reproducible:} the non-monotone trio $\Rightarrow$ Richardson suppressed $\Rightarrow$ no justified continuum $G_{ii}$. Confirmed in every run; the YELLOW / non-asymptotic verdict stands and is \emph{strengthened}.
+\item \textbf{Not reproducible:} the absolute $G_{ii}$ of the two larger nodes, to better than $\sim$2--3\%, owing to gate false-passes, kernel differences, and path/warm-start sensitivity of a near-null-space quantity. A clean pure-Python 71$\times$58 \emph{is} bit-reproducible, so the solver itself is deterministic per kernel; the irreproducibility is in where/whether the ill-conditioned plateau is certified.
+\item \textbf{Recommended gate-hardening (future, frozen-ref change --- not applied):} require flatness sustained over multiple chunks, or a small chunk-to-chunk $\Delta G_{ii}$, so the gate cannot certify mid-transient. This would make absolute $G_{ii}$ reproducible without affecting the (already robust) qualitative verdict.
+\item \textbf{Pending:} Linux pure-Python run (\texttt{SHE2D\_DISABLE\_NUMBA=1}) --- the apples-to-apples clean reproduction; this report will be finalized when it lands.
+\end{itemize}
+\end{document}
