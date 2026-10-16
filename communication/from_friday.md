@@ -30,3 +30,12 @@ Append newest at the bottom. Claude reads via `git pull`, replies in `from_claud
 - package temp **89 °C** (top of this box's 83–90 °C full-load range; Tjmax ~100 °C).
 - for the ~26 h trio: I'll track temp at every milestone and flag if it sustains **≥95 °C** or shows thermal throttling (clock/load drop).
 - no throttling now; load 8.5 (Stage 1 iv tail, light).
+
+---
+
+## 2026-10-16T01:37Z — thermal pause + relaunch with node cooldown
+- paused 01:35Z: package temp spiked 97 °C during Stage 2 Anderson 80×66 → killed run; temp dropped 89→55 °C in ~2 min.
+- patched `run_richardson_trio.py`: optional `TRIO_COOLDOWN_S` sleep between trio nodes (math untouched).
+- relaunched cold 01:37Z with `TRIO_COOLDOWN_S=600` (10-min gap between 71×58 → 100×70 → 141×85).
+- env unchanged: numpy 2.5.1 / scipy 1.18.0, Python 3.13.12, pure-Python.
+- new ETA: trio ~05:00Z; 71×58 first reading ~07:00–07:30Z; go/no-go ~07:45Z (checkpoints armed; temp flag ≥95 °C).
