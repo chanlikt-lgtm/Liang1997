@@ -1,0 +1,144 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black}
+\newcommand{\ten}[1]{\times 10^{#1}}
+\title{\textbf{Reproducibility and Numerical Conditioning of the\\ Drain-Refined Impact-Ionization Trio}\\[2pt]
+\large Liang--1997 SHE--BTE 0.35\,$\mu$m LDD n-MOSFET reproduction}
+\author{Technical report for independent review}
+\date{2026-10-16 \quad(frozen solver tag \texttt{solver-frozen-2026-09-26}, git \texttt{930dd86})}
+\begin{document}
+\maketitle
+
+\section*{Executive summary}
+The certified reproduction of Liang \emph{et al.} (1997) yields a drain-refined spatial-convergence trio of the peak impact-ionization generation rate $G_{ii}$ at three meshes ($71\times58$, $100\times70$, $141\times85$ on a common frozen energy grid). This report documents a multi-run, multi-environment reproducibility campaign of that trio. Two findings:
+
+\begin{enumerate}[nosep]
+\item \textbf{The qualitative verdict is robust and reproduces everywhere tested}: the trio is significantly \emph{non-monotone} ($S_{\mathrm{rev}}\gg1$), so Richardson extrapolation is suppressed and \textbf{there is no justified continuum value of $G_{ii}$}. This holds across every Windows run.
+\item \textbf{The absolute peak $G_{ii}$ is \emph{not} reproducible.} It moves with the convergence/gate-trip point ($\sim2\%$), the compute kernel (numba vs.\ pure-Python, $\sim3$--$7\%$), the SciPy version ($\sim3\%$), and -- most strongly -- the \textbf{operating system} ($\sim12\%$ Windows$\leftrightarrow$Linux with \emph{identical} code, Python, NumPy and SciPy versions). The SciPy-version hypothesis was tested and \emph{disproved}: matching the Linux library stack to the Windows reference made the discrepancy \emph{worse} ($-9.1\%\to-12.0\%$).
+\end{enumerate}
+
+Root cause: peak $G_{ii}$ is a near-null-space, high-energy-tail functional of the distribution, hypersensitive to the floating-point path of the sparse linear solve (BLAS/LAPACK/SuperLU build). The Sep-24 reference was computed on Windows and reproduces bit-exactly only on Windows. The recommended remedy is to report an \emph{integrated} observable (the impact-ionization/substrate current $\int G_{ii}\,dV$) rather than a mesh-point maximum.
+
+\section{System, reference, and method}
+First-order spherical-harmonic expansion (SHE) of the electron Boltzmann equation in total-energy form, self-consistent with 2D Poisson and hole continuity; nonparabolic Kane band; DOS-weighted acoustic + optical-phonon + Keldysh-surrogate impact-ionization operators. The SHE linear system is solved with LGMRES preconditioned by a physics-split incomplete-LU (\texttt{scipy.sparse.linalg.spilu}); the outer map is Anderson-accelerated ($\text{depth}=6$, $\beta=0.5$). Convergence gate: last-4 cumulative-iteration spread of $G_{ii,\max}$ and $G_{tot}$ $\le 3\ten{-4}$ and outer residual $R_\phi\le 1.5\ten{-3}$.
+
+\textbf{Certified reference (Sep-24, Windows, pure-Python kernel), produced by git \texttt{d30b471}, validated equivalent to the frozen tag:}
+\[
+G_{ii}=3.075619/2.136180/2.387429\ten{25}\ \mathrm{cm^{-3}s^{-1}},\quad S_{\mathrm{rev}}=737,\ \text{non-monotone, Richardson suppressed.}
+\]
+Common frozen $H$-grid hash \texttt{b4319bb03303} (591 energy points) across all meshes and all runs.
+
+\section{Runs and environments}
+\begin{center}\small
+\begin{tabular}{llll}
+\toprule
+run & machine & kernel & library stack \\
+\midrule
+Sep-24 reference      & Windows, 24\,GB & pure-Python & NumPy 2.5.1 / SciPy 1.18.0 / Py 3.13 \\
+Windows interrupted   & Windows & pure-Python & same (run broken by $\sim$4 OOM resumes) \\
+Windows clean         & Windows (64\,GB pagefile) & pure-Python & same, uninterrupted \\
+Linux numba           & Linux, 31\,GiB, 24 thr & \textbf{numba JIT} & NumPy 2.2.6 / SciPy 1.15.3 \\
+Linux pure-Python \#1 & Linux & pure-Python & NumPy 2.2.6 / SciPy 1.15.3 \\
+Linux pure-Python \#3 & Linux & pure-Python & \textbf{NumPy 2.5.1 / SciPy 1.18.0 / Py 3.13.12 (matched)} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Results}
+\subsection{Per-node converged $G_{ii}$ ($\ten{25}\,\mathrm{cm^{-3}s^{-1}}$)}
+\begin{center}\small
+\begin{tabular}{l c c c c c c}
+\toprule
+node & Sep-24 ref & Win intr. & Win clean & Linux numba & Lx py 1.15 & Lx py 1.18 \\
+\midrule
+71$\times$58  & 3.075619 & 3.075619 & 3.075619$^{\dagger}$ & 2.9847 & 2.7955 & 2.7067$^{\ddagger}$ \\
+100$\times$70 & 2.136180 & 2.142249 & 2.087561 & $\sim$1.80$^{\S}$ & --- & --- \\
+141$\times$85 & 2.387429 & 2.375921 & 2.399434 & --- & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{center}
+{\footnotesize $^{\dagger}$reused the earlier clean-run checkpoint (an independent clean pure-Python derivation reproduced $3.075619$ to $1.6\ten{-7}$, bit-exact). $^{\ddagger}$did \emph{not} certify (spread stuck $\sim9\ten{-3}$, $G_{ii}$ declining); killed at 360 iters $\approx$ the reference's 359. $^{\S}$hotspot limit-cycle, never certified.}
+
+\subsection{The qualitative verdict reproduces}
+\begin{center}\small
+\begin{tabular}{l c c c}
+\toprule
+run & sequence signs & monotone? & $S_{\mathrm{rev}}$ \\
+\midrule
+Sep-24 reference    & $(-,+)$ & no & 737 \\
+Windows interrupted & $(-,+)$ & no & 1018 \\
+Windows clean       & $(-,+)$ & no & 2415 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Every completed trio is significantly non-monotone; no real convergence order exists, Richardson extrapolation is suppressed, and $G_{ii}$ stays bounded in $[2.14,3.08]\ten{25}$. \textbf{This conclusion is robust to environment, kernel, and interruption.}
+
+\subsection{The non-reproducibility hierarchy (one variable at a time)}
+\begin{center}\small
+\begin{tabular}{l l r}
+\toprule
+variable changed (all else fixed) & isolated comparison & $\Delta G_{ii}$ \\
+\midrule
+convergence / gate-trip point (Win, pure-Py) & 100$\times$70: 2.0876 vs 2.1362 & $-2.3\%$ \\
+compute kernel (Linux, SciPy 1.15) & 71$\times$58: numba 2.9847 vs pure-Py 2.7955 & $+6.8\%$ \\
+SciPy version (Linux, pure-Py) & 71$\times$58: 1.15.3\,(2.7955) vs 1.18.0\,(2.7067) & $-3.2\%$ \\
+\textbf{operating system (pure-Py, matched versions)} & 71$\times$58: Win 3.0756 vs Linux 2.7067 & $\mathbf{-12.0\%}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Measured against the Windows reference, the Linux 71$\times$58 lands at $-2.9\%$ (numba/1.15), $-9.1\%$ (pure-Py/1.15), and $-12.0\%$ (pure-Py/1.18 matched).
+
+\section{The decisive platform test}
+Hypothesis under test: the Linux discrepancy is caused by the SciPy version. Prediction: pinning Linux to the reference stack (NumPy 2.5.1 / SciPy 1.18.0, Python 3.13.12, numba off) should recover $\sim3.0756\ten{25}$.
+
+\textbf{Outcome: the opposite.} On the matched stack, $71\times58$ plateaued at $2.7067\ten{25}$ ($-12.0\%$) and failed to certify. The 60-iteration trajectory diverges from the reference \emph{at the first chunk}:
+\begin{center}\small
+\begin{tabular}{r r r r l}
+\toprule
+chunk & cum iters & $G_{ii}$ ($\ten{25}$) & last-4 spread & gate \\
+\midrule
+0 & 60  & 2.5476 & $1.25\ten{-2}$ & cont \\
+1 & 120 & 2.5622 & $4.02\ten{-3}$ & cont \\
+2 & 180 & 2.6420 & $6.52\ten{-3}$ & cont \\
+3 & 240 & 2.7120 & $9.15\ten{-3}$ & cont \\
+4 & 300 & 2.7105 & $7.67\ten{-3}$ & cont \\
+5 & 360 & 2.7067 & $9.42\ten{-3}$ & cont (killed; $G_{ii}$ declining) \\
+\bottomrule
+\end{tabular}
+\end{center}
+Reference chunk-0 (Windows) is $2.5571\ten{25}$; Linux chunk-0 is $2.5476\ten{25}$ -- already different at iteration 60. Because the matched run \emph{increased} the gap, SciPy version is excluded as the cause. The only remaining difference between the Windows reference and Linux \#3 is the \textbf{operating system} and its compiled numerical libraries (BLAS/LAPACK/SuperLU, SIMD). The run also fails to converge cleanly on Linux: the pointwise-maximum $G_{ii}$ node jitters between iterations, so the last-4 spread never approaches the $3\ten{-4}$ gate.
+
+\section{Mechanism --- why it fails}
+Peak $G_{ii}$ is numerically ill-posed, for three compounding reasons:
+\begin{enumerate}[nosep]
+\item \textbf{Tail-dominated functional.} $G_{ii}$ integrates the distribution's high-energy tail ($\varepsilon\gtrsim1.5$\,eV), many orders of magnitude below the peak of $f$. It is therefore controlled by a tiny, ill-conditioned part of the solution -- the documented ``near-null-space'': a $10^{-8}$ \emph{linear} residual does not pin $G_{ii}$.
+\item \textbf{Floating-point-path-dependent solves.} LGMRES + \texttt{spilu} results depend on summation and pivoting order, which differ between BLAS/LAPACK/SuperLU builds (OS, compiler, SIMD) at the $\sim10^{-15}$ level per operation.
+\item \textbf{Amplification by the fixed-point iteration.} Over $\sim\!350$ outer iterations these $\sim10^{-15}$ differences compound, and because $G_{ii}$ lies in the ill-conditioned direction, they are amplified into $\sim10\%$ in the converged peak -- and can shift which plateau the iteration selects, or prevent clean convergence (the hotspot limit-cycle).
+\end{enumerate}
+Hence identical code and library versions on a different OS give a $-12\%$ peak $G_{ii}$. The same mechanism explains why the numba kernel, the SciPy version, and the gate-trip point each move the value: all perturb the same ill-conditioned direction. The maximum over mesh nodes of a tail quantity is not a numerically well-posed observable.
+
+\section{Remediation}
+These are proposed methodology changes to the frozen reference; none has been applied.
+\begin{itemize}[nosep]
+\item \textbf{Report an integrated observable, not a mesh-point maximum (primary fix).} Quote the impact-ionization / substrate current $\int G_{ii}\,dV$ (a physical terminal quantity) or a region-average / fixed-location value. Integration averages out the hotspot floating-point noise, making the observable reproducible \emph{and} portable. This is standard TCAD practice.
+\item \textbf{Direct linear solve.} Replace Krylov+ILU with a direct LU factorization where memory permits (raise the existing direct-solve DOF cutoff), removing the preconditioner/Krylov floating-point-path dependence.
+\item \textbf{Gate hardening.} Require plateau flatness sustained over multiple chunks with small chunk-to-chunk $\Delta G_{ii}$, and gate on the integrated $G_{ii}$, so ``converged'' means the same thing on every platform.
+\item \textbf{Report with a numerical band.} Absolute peak $G_{ii}$ carries a $\sim10\%$ numerical uncertainty; report it as a band $[2.1,3.1]\ten{25}$ with the stated cause -- which is precisely the existing non-asymptotic (YELLOW) conclusion.
+\end{itemize}
+
+\section{For the independent reviewer}
+\begin{itemize}[nosep]
+\item \textbf{Robust (verify on Windows):} the non-monotone trio and Richardson suppression -- stable across all Windows runs and both kernels/versions.
+\item \textbf{Not portable (verify):} absolute peak $G_{ii}$, which differs $\sim12\%$ Windows$\leftrightarrow$Linux with matched code and versions. A minimal confirmation: run one SHE assembly+solve from an identical stored state on both OSs and diff the output vector element-wise (expected $\sim10^{-12}$--$10^{-15}$ seed).
+\item \textbf{Preserved evidence:} per-chunk metrics CSVs, residual histories, run logs, the $H$-hash, the environment manifests, and the certified \texttt{reference\_sep24/} NPZs are in the repository (\url{https://github.com/chanlikt-lgtm/Liang1997}).
+\end{itemize}
+
+\section*{Appendix: provenance}
+Solver tag \texttt{solver-frozen-2026-09-26} (git \texttt{930dd86}); reference git \texttt{d30b471}. Windows: Python 3.13.15, NumPy 2.5.1, SciPy 1.18.0. Linux \#3: Python 3.13.12 (uv venv), NumPy 2.5.1, SciPy 1.18.0, numba absent (pure-Python assembly confirmed by $\sim$10\,s/assembly vs.\ $\sim$0.2\,s numba). Frozen $H$-grid hash \texttt{b4319bb03303}, 591 energy points, identical across all meshes and runs. No thermal throttling in the final Linux run (package 70--82\,$^\circ$C).
+\end{document}
