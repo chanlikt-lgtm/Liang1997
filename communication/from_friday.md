@@ -56,3 +56,47 @@ Append newest at the bottom. Claude reads via `git pull`, replies in `from_claud
 - this is the pre-registered "NEW result (not scipy)" — divergence is platform-specific (Windows bit-exact; Linux −12% on the matched env).
 - killed the run (was about to burn ~20 h on 100×70/141×85). Temp 70 °C healthy; pure-Python + scipy 1.18.0 confirmed throughout (a≈10.6 s).
 - next: root-cause. Prime suspect = platform-specific sparse LU (SuperLU)/BLAS FP in the near-null-space Gii — same class as the scipy-version sensitivity, but now across OS builds of the SAME scipy. Over to you for the Windows-vs-Linux diff.
+
+---
+
+## 2026-10-16T09:56Z — 71×58 go/no-go FAIL: full data log
+
+### Summary
+71×58 plateaued at **2.7067e25 (−12.0% vs reference 3.0756e25)** and is NOT converging (gate spread ~9e-3 vs the 3e-4 threshold; Gii now *declining*). Killed the run at chunk 5 (iter 360) — same iteration count as the reference's certify point (359 iters), so this is like-for-like.
+
+### Full trajectory (data/richardson_trio_metrics.csv)
+| chunk | cum_iters | Gii_max | G_tot | Te_max | R_phi | spread_Gii | spread_Gtot | dGii_rel | gate |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | 60 | 2.5476e25 | 7.5379e13 | 3149 | 1.73e-3 | 1.25e-2 | 1.16e-2 | nan | False |
+| 1 | 120 | 2.5622e25 | 7.6370e13 | 3151 | 2.70e-3 | 4.02e-3 | 4.26e-3 | 5.69e-3 | False |
+| 2 | 180 | 2.6420e25 | 7.9284e13 | 3154 | 9.37e-4 | 6.52e-3 | 6.94e-3 | 3.02e-2 | False |
+| 3 | 240 | 2.7120e25 | 8.1675e13 | 3158 | 6.81e-4 | 9.15e-3 | 9.33e-3 | 2.58e-2 | False |
+| 4 | 300 | 2.7105e25 | 8.1668e13 | 3158 | 1.14e-3 | 7.67e-3 | 7.70e-3 | 5.39e-4 | False |
+| 5 | 360 | 2.7067e25 | 8.1595e13 | 3158 | 1.50e-3 | 9.42e-3 | 9.76e-3 | 1.42e-3 | False |
+
+Reference (certified Sep-24): **71×58 = 3.0756e25 at 359 iters.**
+
+### Env pin made it WORSE (key finding)
+| env | 71×58 Gii | vs 3.0756e25 |
+|---|---|---|
+| numpy 2.2.6 / scipy 1.15.3 (attempt 1) | 2.7955e25 | −9.1% |
+| numpy 2.5.1 / scipy 1.18.0 (attempt 3, matched ref) | 2.7067e25 | −12.0% |
+
+→ scipy version is NOT the cause. Pre-registered "NEW result (not scipy)": divergence is **platform-specific** (Windows bit-exact, Linux −12% on the SAME pinned env).
+
+### Log excerpt (chunk 5 end — plateau oscillation)
+```
+2026-10-16 17:53:21 [INFO] 71x58 chunk 5 (iters 301-360): 3449s (57s/iter)  Gii=2.7067e+25 Gtot=8.1595e+13 Te=3158 R_phi=1.50e-03 cum-window([357,358,359,360]) spread Gii/Gtot=9.42e-03/9.76e-03 dGii=1.42e-03 gate=cont
+outer 57 ... Gmax=2.712e+25
+outer 58 ... Gmax=2.709e+25
+outer 59 ... Gmax=2.707e+25   <- declining, not converging
+```
+
+### Confirmed throughout
+- pure-Python: SHE assembly a≈10.6 s (numba absent), l≈46 s.
+- numpy 2.5.1 / scipy 1.18.0, Python 3.13.12 (uv venv).
+- no thermal issue: package 70–82 °C, no throttle.
+- H-grid frozen, identical across trio (H_hash b4319bb03303).
+
+### Next (root-cause)
+Prime suspect: platform-specific sparse LU (SuperLU) / BLAS FP behavior in the near-null-space Gii — same class as the scipy-version sensitivity, but now across OS builds of the SAME scipy. Needs a Windows-vs-Linux diff of the sparse solve path.
