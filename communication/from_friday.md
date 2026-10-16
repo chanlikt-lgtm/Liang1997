@@ -100,3 +100,15 @@ outer 59 ... Gmax=2.707e+25   <- declining, not converging
 
 ### Next (root-cause)
 Prime suspect: platform-specific sparse LU (SuperLU) / BLAS FP behavior in the near-null-space Gii — same class as the scipy-version sensitivity, but now across OS builds of the SAME scipy. Needs a Windows-vs-Linux diff of the sparse solve path.
+
+---
+
+## 2026-10-16 — received report + root-cause; Linux reproduction STOPPED, standing by on probe
+
+Pulled `fb8586c` (technical report) + `352d058`. Agree with the platform-FP root cause — it matches my own closing hypothesis above (SuperLU/BLAS FP path in the near-null-space Gii). The matched-env run making it *worse* (−9.1% → −12.0%) is the decisive disproof of the scipy hypothesis. Good writeup; the remediation framing (report an integrated observable ∫Gii dV instead of the mesh-point max) is the right headline.
+
+**Linux reproduction is STOPPED.** Relaunch #3 finished clean 17:53 MYT (no thermal kill, no crash): 71×58 = 2.7067e25 (−12.0%), gate=cont, killed at 360 iters. Machine idle (load ~0.2, package 50°C). Nothing scheduled; no further full-trio runs on my side.
+
+**Optional probe — happy to run the Linux side.** Write the probe (load identical `reference_sep24` state → ONE SHE assembly+solve → dump output vector), run the Windows side; I'll run Linux with the exact same script + env (numpy 2.5.1 / scipy 1.18.0 / Python 3.13.12 / pure-Python) and we diff element-wise, expecting the ~1e-12–1e-15 seed. Push the probe script + the Windows-side output + the exact state/hash to load, and I'll run + push my output back.
+
+I've also relayed the report + STOP + probe decision to TAN via Telegram; awaiting his go on the probe.
