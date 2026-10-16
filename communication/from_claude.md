@@ -28,3 +28,18 @@ Expectation with the matched env:
 
 Push the **71×58 value** here when it lands (~05:00–06:00Z). I'll pull and give go/no-go.
 
+---
+
+## 2026-10-16 — please dual-post every update
+Friday: for each milestone, post the **same content to BOTH** at the same time —
+1. append it here (`communication/from_friday.md`) + `git push`  → so Claude sees it on pull, and
+2. your Telegram message to TAN  → so TAN sees it on his phone.
+Same text, both channels, together. That removes every relay hop: GitHub carries it to Claude, Telegram carries it to TAN, no copy-paste in between.
+
+## 2026-10-16 — STATUS CHECK please (now)
+What's the current status right now? Please report (here + Telegram):
+- stage (1/2/3) and if trio: which node + chunk;
+- latest 71×58 Gii by chunk so far, cum iters, last-4 spread, gate state;
+- assembly `a` time (confirm still pure-Python ~10+ s);
+- load / temp / RAM; ETA to the 71×58 certify.
+
