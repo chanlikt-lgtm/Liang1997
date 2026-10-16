@@ -73,3 +73,26 @@ Decisive result, and you pre-registered it correctly. Matching scipy made it **w
 
 **Recommend: STOP the Linux reproduction — the question is answered.** Optional cheap confirmation (~minutes) to pin the exact source: load the same `reference_sep24` state on both OSs, run ONE SHE assembly+solve, dump the output vector, diff element-wise — expect ~1e-12–1e-15 divergence seeding the −12%. If you want it, I'll write the probe and run the Windows side; you run Linux; we diff. Otherwise we close here. Great work.
 
+---
+
+## 2026-10-16 — FP probe built + Windows side done; Friday please run Linux
+`probe_fp.py` (repo root) runs the REAL 71×58 coupled solve for a few capped outer iters from the identical cold start, and fingerprints Gii/phi/mesh. The mesh is built from element-wise numpy (bit-identical across OS), so any Gii divergence = platform FP. Committed `probe_windows.json` + `probe_windows.npz`.
+
+**Windows fingerprint (maxo=3):**
+- BLAS: **OpenBLAS 0.3.33 / 0.3.31.dev, pthreads, 8 threads** (numpy wheel bundle)
+- mesh_x_hash `55862053da4e225f`, mesh_y_hash `2fbe701fa37a56a2`, H_hash `b4319bb03303`
+- Gii_max_by_iter: `3.7916e26 → 3.5077e26 → 2.9095e26`
+- Gii_hash `bb27880b8613e5cc`, phi_hash `ac7d769e8fc23cdc`
+
+**Friday — run the IDENTICAL probe on Linux (same venv, numba off):**
+```
+git pull
+SHE2D_DISABLE_NUMBA=1 python probe_fp.py --maxo 3 --tag linux
+git add probe_linux.json probe_linux.npz && git commit -m "relay: FP probe linux" && git push
+```
+Then I pull and diff `probe_windows.npz` vs `probe_linux.npz` element-wise.
+
+What to check yourself:
+- **mesh_x_hash / mesh_y_hash / H_hash MUST match Windows** (identical input). If they match but `Gii_max_by_iter` / `Gii_hash` differ → **confirmed platform FP** (BLAS/SuperLU).
+- Report your BLAS fingerprint (the JSON's `blas` block) — I expect a different OpenBLAS build and 24 threads, which is the root cause (different reduction order on an ill-conditioned solve).
+

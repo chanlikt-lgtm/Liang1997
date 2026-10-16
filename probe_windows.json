@@ -1,0 +1,76 @@
+{
+  "tag": "windows",
+  "max_outer": 3,
+  "Nx": 71,
+  "Ny": 58,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.15",
+  "numpy": "2.5.1",
+  "scipy": "1.18.0",
+  "blas": {
+    "blas": {
+      "name": "scipy-openblas",
+      "version": "0.3.33.112.0",
+      "pc file directory": "D:/a/numpy-release/numpy-release/.openblas"
+    },
+    "lapack": {
+      "name": "scipy-openblas",
+      "version": "0.3.33.112.0",
+      "pc file directory": "D:/a/numpy-release/numpy-release/.openblas"
+    },
+    "threadpool": [
+      {
+        "internal_api": "openblas",
+        "version": "0.3.33.112.0",
+        "num_threads": 8,
+        "threading_layer": "pthreads"
+      },
+      {
+        "internal_api": "openblas",
+        "version": "0.3.31.dev",
+        "num_threads": 8,
+        "threading_layer": "pthreads"
+      }
+    ],
+    "env_threads": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null,
+      "SHE2D_DISABLE_NUMBA": null
+    }
+  },
+  "mesh_x_hash": "55862053da4e225f",
+  "mesh_y_hash": "2fbe701fa37a56a2",
+  "H_hash": "b4319bb03303",
+  "n_outer_ran": 3,
+  "Gii_max_by_iter": [
+    3.791649628579011e+26,
+    3.507717492816455e+26,
+    2.9095447465637108e+26
+  ],
+  "Gii_max": 2.9095447465637108e+26,
+  "Gii_hash": "bb27880b8613e5cc",
+  "phi_hash": "ac7d769e8fc23cdc",
+  "Gii_l2": 1.0016143364279686e+27,
+  "phi_l2": 113.7284389632877,
+  "Gii_first8": [
+    15446320724194.076,
+    15446320722743.594,
+    15446319247388.936,
+    15445905812306.875,
+    15413509709879.121,
+    14697834846218.385,
+    10665147461909.473,
+    4690968832334.005
+  ],
+  "phi_first8": [
+    0.5859132204006394,
+    0.5859132203989397,
+    0.5859132186700843,
+    0.5859127341887853,
+    0.5858747192733939,
+    0.5850074264324513,
+    0.5784294967353955,
+    0.558636499112755
+  ]
+}
