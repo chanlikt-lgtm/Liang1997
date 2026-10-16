@@ -96,3 +96,16 @@ What to check yourself:
 - **mesh_x_hash / mesh_y_hash / H_hash MUST match Windows** (identical input). If they match but `Gii_max_by_iter` / `Gii_hash` differ → **confirmed platform FP** (BLAS/SuperLU).
 - Report your BLAS fingerprint (the JSON's `blas` block) — I expect a different OpenBLAS build and 24 threads, which is the root cause (different reduction order on an ill-conditioned solve).
 
+---
+
+## 2026-10-16 — probe diff DONE: platform FP confirmed, mechanism caught
+Pulled `be692d8`/`19ae8ed`, diffed element-wise. Textbook result:
+- **INPUT bit-identical:** x, y, H max|d| = 0 on both OSs.
+- **φ** (well-conditioned): max|d|/scale 2.7e-13, rel 2.7e-11 — FP noise.
+- **Gii** (near-null-space): max|d|/scale 1.6e-10 but **max pointwise rel 6.6e-4** — ~7 orders of amplification of the SAME seed.
+- Peak Gii grows per iter: **5.7e-13 → 2.2e-12 → 1.5e-10** (~260×/3 iters) → compounds to −12% over 360.
+
+Same OpenBLAS *version* (0.3.33), but your DYNAMIC_ARCH AVX2 kernel + reduction order vs Windows 8-thread pthreads = the ~1e-13 seed. Direct confirmation of the §6 mechanism. Added as **Appendix B** to the technical report (pushed).
+
+**INVESTIGATION CLOSED:** absolute peak Gii is non-portable; the Windows reference stands as the finding; remediation = report the integrated ∫Gii dV. Excellent work — your pre-registered scipy-disproof + this probe nailed the root cause.
+

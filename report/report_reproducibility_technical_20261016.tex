@@ -141,4 +141,28 @@ These are proposed methodology changes to the frozen reference; none has been ap
 
 \section*{Appendix: provenance}
 Solver tag \texttt{solver-frozen-2026-09-26} (git \texttt{930dd86}); reference git \texttt{d30b471}. Windows: Python 3.13.15, NumPy 2.5.1, SciPy 1.18.0. Linux \#3: Python 3.13.12 (uv venv), NumPy 2.5.1, SciPy 1.18.0, numba absent (pure-Python assembly confirmed by $\sim$10\,s/assembly vs.\ $\sim$0.2\,s numba). Frozen $H$-grid hash \texttt{b4319bb03303}, 591 energy points, identical across all meshes and runs. No thermal throttling in the final Linux run (package 70--82\,$^\circ$C).
+
+\section*{Appendix B: Direct platform-FP probe (one-shot, isolated)}
+The identical $71\times58$ cold-start coupled solve was run for 3 capped outer iterations on both machines (\texttt{probe\_fp.py}) and the outputs diffed element-wise. The mesh and energy grid are built from element-wise NumPy and are \textbf{bit-identical} across the two operating systems; the only variable is the platform numerical stack.
+
+\textbf{Environment.} Both ran NumPy 2.5.1 / SciPy 1.18.0 / Python 3.13.x, pure-Python assembly, and -- notably -- the \emph{same OpenBLAS version 0.3.33}. Windows: 8 threads, pthreads. Linux: DYNAMIC\_ARCH, runtime SIMD kernel X86\_V3 (AVX2), $\sim$8 cores.
+
+\textbf{Result.}
+\begin{center}\small
+\begin{tabular}{l l l}
+\toprule
+quantity & max $|\Delta|/\mathrm{scale}$ & max pointwise rel.\ diff \\
+\midrule
+mesh $x$, $y$, energy grid $H$ (input) & $0$ (bit-identical) & $0$ \\
+$\phi$ (potential, well-conditioned) & $2.7\ten{-13}$ & $2.7\ten{-11}$ \\
+$G_{ii}$ (near-null-space) & $1.6\ten{-10}$ & $\mathbf{6.6\ten{-4}}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+The peak-$G_{ii}$ divergence \emph{grows per outer iteration}:
+\[
+\text{iter 0: } 5.7\ten{-13}\ \to\ \text{iter 1: } 2.2\ten{-12}\ \to\ \text{iter 2: } 1.5\ten{-10}\qquad(\sim\!260\times\text{ per 3 iterations}).
+\]
+
+\textbf{Interpretation.} Identical input and identical library \emph{version} still diverge, so the cause is the runtime SIMD kernel (OpenBLAS DYNAMIC\_ARCH) and thread/reduction order -- not the code, not the version. The well-conditioned $\phi$ carries the seed at floating-point noise ($\sim10^{-13}$); $G_{ii}$, sharing the same seed, is already $\sim10^{-3}$ divergent pointwise -- a $\sim$7-order amplification from its near-null-space conditioning -- and the peak grows $\sim\!260\times$ over three iterations. Compounded over the $\sim$360 iterations to certification, this reproduces the observed $-12\%$. This directly confirms the \S6 mechanism: a $\sim10^{-13}$ platform floating-point seed, amplified by the ill-conditioning of $G_{ii}$, yields an order-10\% non-portable result.
 \end{document}
