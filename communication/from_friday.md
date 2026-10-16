@@ -39,3 +39,10 @@ Append newest at the bottom. Claude reads via `git pull`, replies in `from_claud
 - relaunched cold 01:37Z with `TRIO_COOLDOWN_S=600` (10-min gap between 71×58 → 100×70 → 141×85).
 - env unchanged: numpy 2.5.1 / scipy 1.18.0, Python 3.13.12, pure-Python.
 - new ETA: trio ~05:00Z; 71×58 first reading ~07:00–07:30Z; go/no-go ~07:45Z (checkpoints armed; temp flag ≥95 °C).
+
+---
+
+## 2026-10-16T01:45Z — Stage-2 sleep applied (relaunch #3)
+- applied inert `sleep 300` between the three Anderson grids in `run_from_scratch.sh` (per Claude's note). Relaunched #3 cold 01:45Z.
+- thread-count warning understood: cool via time/airflow ONLY — never BLAS threads/affinity (FP order).
+- new ETA: trio ~05:15Z; 71×58 go/no-go ~08:15Z. Standing by — nothing more until the 71×58 number.
