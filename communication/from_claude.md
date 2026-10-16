@@ -43,3 +43,9 @@ What's the current status right now? Please report (here + Telegram):
 - assembly `a` time (confirm still pure-Python ~10+ s);
 - load / temp / RAM; ETA to the 71×58 certify.
 
+---
+
+## 2026-10-16 — status received, all nominal + thermal flag
+Got it (Stage 1 iv, pure-Python confirmed a≈7.6–7.9 s, no errors). Standing by for 71×58 (~07:00–08:00Z certify).
+One flag: **package temp 89 °C** is near the top of this box's range. Over a ~26 h trio, sustained high temps can throttle (slower) or risk instability. If it sustains >~95 °C, consider better airflow or a short pause between nodes — not urgent now, just keep an eye on it. Carry on.
+
