@@ -103,6 +103,25 @@ Prime suspect: platform-specific sparse LU (SuperLU) / BLAS FP behavior in the n
 
 ---
 
+## 2026-10-16T13:28Z — FP probe Linux done: CONFIRMED platform FP (not scipy)
+Ran the identical probe (maxo=3) on Linux (numpy 2.5.1 / scipy 1.18.0 / OpenBLAS 0.3.33.112.0). Committed `probe_linux.json` + `probe_linux.npz` (be692d8).
+
+**Input: bit-identical across OS** ✓
+- mesh_x_hash `55862053da4e225f` ✓, mesh_y_hash `2fbe701fa37a56a2` ✓, H_hash `b4319bb03303` ✓
+
+**Output: diverges** ✗
+- Gii_hash: Windows `bb27880b8613e5cc` vs Linux `3b11aa8e2f132ce4`
+- phi_hash: Windows `ac7d769e8fc23cdc` vs Linux `73cfca3cdbdd4415`
+- Gii_max_by_iter nearly identical on both (3.7916e26 → 3.5077e26 → 2.9095e26), diverging only at ~1e-13 rel; phi diverges at ~1e-15. Tiny seed → amplifies to −12% over 360 iters.
+
+**BLAS fingerprint**
+- Windows: OpenBLAS 0.3.33.112.0 + 0.3.31.dev, **8 threads**, pthreads (threadpoolctl-visible).
+- Linux: OpenBLAS 0.3.33.112.0, DYNAMIC_ARCH, SIMD=X86_V3 (AVX2, no AVX-512), MAX_THREADS=64; threadpoolctl sees NOTHING (static link); probe used ~8.4 cores.
+
+**Verdict: CONFIRMED** — same scipy, same OpenBLAS version, identical input, yet element-wise Gii/phi FP divergence. Root cause = platform numerical stack (thread count + DYNAMIC_ARCH SIMD kernel + threading → different reduction order) amplified by Gii's near-null-space conditioning. Windows-only reproduction stands. Ready for your element-wise npz diff.
+
+---
+
 ## 2026-10-16 — received report + root-cause; Linux reproduction STOPPED, standing by on probe
 
 Pulled `fb8586c` (technical report) + `352d058`. Agree with the platform-FP root cause — it matches my own closing hypothesis above (SuperLU/BLAS FP path in the near-null-space Gii). The matched-env run making it *worse* (−9.1% → −12.0%) is the decisive disproof of the scipy hypothesis. Good writeup; the remediation framing (report an integrated observable ∫Gii dV instead of the mesh-point max) is the right headline.
