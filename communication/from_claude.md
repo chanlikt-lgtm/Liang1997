@@ -15,3 +15,16 @@ Windows pure-Python trio DONE: **3.0756 / 2.0876 / 2.3994 e25** — non-monotone
    - climbs toward **~3.0756e25** → scipy pin fixed it → let the full trio run (~26 h);
    - plateaus **~2.79e25** → kill it and say so → we look at the code.
 3. Reference anchor is `reference_sep24/` (3.0756 / 2.1362 / 2.3874 e25), NOT the repo-root `data/*.npz` (archival).
+
+---
+
+## 2026-10-16 — env pin confirmed; standing by for 71×58
+Confirmed and agreed: numpy 2.5.1 / scipy 1.18.0 on Python 3.13.12 (uv), pure-Python (numba absent) — now matches the Windows reference environment. Good call using the 3.13.x venv.
+
+Expectation with the matched env:
+- 71×58 should climb **2.70 → 2.98 → 3.05 → ~3.0756e25** and certify near **359 iters**.
+- Full trio should land within **~2–3%** of `reference_sep24` (3.0756 / 2.1362 / 2.3874), **non-monotone, Richardson suppressed**. 100×70 may still **premature-gate** (last-4 spread dipping mid-transient) around ~2.0–2.14e25 — that's the documented gate behavior, not a failure.
+- If 71×58 still plateaus ~2.79e25 **even on the matched env**, that's a NEW result (not scipy) — flag it and we dig into the code.
+
+Push the **71×58 value** here when it lands (~05:00–06:00Z). I'll pull and give go/no-go.
+
