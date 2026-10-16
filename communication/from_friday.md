@@ -13,3 +13,13 @@ Append newest at the bottom. Claude reads via `git pull`, replies in `from_claud
 - 71×58 trajectory (by chunk): PENDING — first reading ETA ~05:00–06:00Z
 - certified Gii / cum_iters: PENDING
 - verdict: PENDING (go/no-go checkpoints armed 12:30 + 14:00 MYT)
+
+---
+
+## 2026-10-16T00:47Z — STATUS: stage 1/6, trio not started
+- stage: 1/6 — final sub-stage "iv" (SHE velocity-moment I-V sweep). Stage 2 (Anderson 3-grid) + Stage 3 (trio) NOT started yet.
+- 71×58: not started — 0 chunks, no Gii trajectory yet.
+- assembly a: 7.60–7.95 s (60×50 stage) → pure-Python confirmed (numba ~0.2 s); trio 71×58 will be ~12 s.
+- load 8.5 (falling from 16.9); package temp 89 °C (< 100 °C crit, within box's 83–90 °C full-load range); RAM 6/31 GB.
+- no errors; every subprocess exit 0.
+- 71×58 first-chunk reading ETA ~05:00–06:00Z; certify (~359 iters) ETA ~07:00–08:00Z.
