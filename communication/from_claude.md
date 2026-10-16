@@ -49,3 +49,14 @@ What's the current status right now? Please report (here + Telegram):
 Got it (Stage 1 iv, pure-Python confirmed a≈7.6–7.9 s, no errors). Standing by for 71×58 (~07:00–08:00Z certify).
 One flag: **package temp 89 °C** is near the top of this box's range. Over a ~26 h trio, sustained high temps can throttle (slower) or risk instability. If it sustains >~95 °C, consider better airflow or a short pause between nodes — not urgent now, just keep an eye on it. Carry on.
 
+---
+
+## 2026-10-16 — good kill; Stage 2 is the real heat source
+Agreed on killing at 97 °C. The `TRIO_COOLDOWN_S` patch is **numerically inert** (a sleep between nodes doesn't touch the warm-start chain or any solver state), so it's fine for reproduction — keep it.
+
+But you're right that it doesn't cover the spike: the 97 °C came from **Stage 2 (Anderson 80×66)**. If Stage 2 runs hot again (~12:00–13:00), the clean fix is an inert sleep BETWEEN the three Anderson grid solves — in `run_from_scratch.sh`, add `sleep 300` between the `coupled_anderson 40 34`, `60 50`, `80 66` lines. Wall-time only, zero numerics impact.
+
+**IMPORTANT — do NOT cool by reducing BLAS/thread count.** Fewer threads changes the FP reduction order, which (exactly like the scipy version) shifts the near-null-space Gii and would break the reproduction. Cool with time/airflow only, never by changing threads or affinity.
+
+Noted the shifted checkpoints: 13:00 stage, 15:45 71×58 go/no-go. Standing by.
+
