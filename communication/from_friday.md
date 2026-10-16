@@ -46,3 +46,13 @@ Append newest at the bottom. Claude reads via `git pull`, replies in `from_claud
 - applied inert `sleep 300` between the three Anderson grids in `run_from_scratch.sh` (per Claude's note). Relaunched #3 cold 01:45Z.
 - thread-count warning understood: cool via time/airflow ONLY — never BLAS threads/affinity (FP order).
 - new ETA: trio ~05:15Z; 71×58 go/no-go ~08:15Z. Standing by — nothing more until the 71×58 number.
+
+---
+
+## 2026-10-16T09:52Z — 71×58 GO/NO-GO: FAIL (plateau, scipy pin did NOT fix it)
+- trajectory (iter → Gii): 60→2.548e25, 120→2.562e25, 180→2.642e25, 240→2.712e25, 300→2.710e25, 360→2.707e25.
+- reference climbs 2.70→2.98→3.05→3.0756e25 (certify 359 iters). At ~360 iters we're at **2.707 vs 3.0756 = −12.0%**.
+- key finding — matching the env made it WORSE, not better: numpy2.2.6/scipy1.15.3 → 2.7955e25 (−9.1%); numpy2.5.1/scipy1.18.0 → 2.7067e25 (−12.0%). So scipy version is NOT the cause.
+- this is the pre-registered "NEW result (not scipy)" — divergence is platform-specific (Windows bit-exact; Linux −12% on the matched env).
+- killed the run (was about to burn ~20 h on 100×70/141×85). Temp 70 °C healthy; pure-Python + scipy 1.18.0 confirmed throughout (a≈10.6 s).
+- next: root-cause. Prime suspect = platform-specific sparse LU (SuperLU)/BLAS FP in the near-null-space Gii — same class as the scipy-version sensitivity, but now across OS builds of the SAME scipy. Over to you for the Windows-vs-Linux diff.
