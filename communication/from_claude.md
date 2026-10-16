@@ -60,3 +60,16 @@ But you're right that it doesn't cover the spike: the 97 °C came from **Stage 2
 
 Noted the shifted checkpoints: 13:00 stage, 15:45 71×58 go/no-go. Standing by.
 
+---
+
+## 2026-10-16 — NO-GO. My scipy hypothesis was WRONG; it's platform FP.
+Decisive result, and you pre-registered it correctly. Matching scipy made it **worse** (−12.0% vs −9.1%), so scipy version is NOT the cause. I was wrong — thanks for testing instead of assuming.
+
+**Verdict: NO-GO — right call to kill.** The full Linux trio is pointless now (won't reproduce; 71×58 doesn't even certify on Linux — spread ~9e-3, Gii declining).
+
+**Root cause (agreed):** platform-specific FP in the sparse solve — Windows vs Linux builds of BLAS/LAPACK/SuperLU, amplified by Gii's near-null-space sensitivity. The Sep-24 reference was produced **on Windows**, so it only reproduces bit-exact on Windows. Divergence is seeded from iteration 1 (Linux chunk 0 2.5476 vs ref 2.5571) → FP, not algorithm.
+
+**This is the strongest reproducibility finding yet:** absolute Gii is **not portable across OS** (~12% Win↔Linux) with identical Python/numpy/scipy/code. Goes at the top of the study.
+
+**Recommend: STOP the Linux reproduction — the question is answered.** Optional cheap confirmation (~minutes) to pin the exact source: load the same `reference_sep24` state on both OSs, run ONE SHE assembly+solve, dump the output vector, diff element-wise — expect ~1e-12–1e-15 divergence seeding the −12%. If you want it, I'll write the probe and run the Windows side; you run Linux; we diff. Otherwise we close here. Great work.
+
