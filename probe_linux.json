@@ -1,0 +1,63 @@
+{
+  "tag": "linux",
+  "max_outer": 3,
+  "Nx": 71,
+  "Ny": 58,
+  "platform": "Linux-6.8.0-124-generic-x86_64-with-glibc2.35",
+  "python": "3.13.12",
+  "numpy": "2.5.1",
+  "scipy": "1.18.0",
+  "blas": {
+    "blas": {
+      "name": "scipy-openblas",
+      "version": "0.3.33.112.0",
+      "pc file directory": "/project/.openblas"
+    },
+    "lapack": {
+      "name": "scipy-openblas",
+      "version": "0.3.33.112.0",
+      "pc file directory": "/project/.openblas"
+    },
+    "threadpool": "threadpoolctl not installed",
+    "env_threads": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null,
+      "SHE2D_DISABLE_NUMBA": "1"
+    }
+  },
+  "mesh_x_hash": "55862053da4e225f",
+  "mesh_y_hash": "2fbe701fa37a56a2",
+  "H_hash": "b4319bb03303",
+  "n_outer_ran": 3,
+  "Gii_max_by_iter": [
+    3.791649628576842e+26,
+    3.507717492824064e+26,
+    2.9095447469986027e+26
+  ],
+  "Gii_max": 2.9095447469986027e+26,
+  "Gii_hash": "3b11aa8e2f132ce4",
+  "phi_hash": "73cfca3cdbdd4415",
+  "Gii_l2": 1.0016143365605418e+27,
+  "phi_l2": 113.72843896328536,
+  "Gii_first8": [
+    15446320724194.357,
+    15446320722743.88,
+    15446319247389.227,
+    15445905812307.162,
+    15413509709879.404,
+    14697834846218.678,
+    10665147461909.672,
+    4690968804235.957
+  ],
+  "phi_first8": [
+    0.5859132204006393,
+    0.5859132203989396,
+    0.5859132186700843,
+    0.5859127341887853,
+    0.5858747192733939,
+    0.5850074264324513,
+    0.5784294967353953,
+    0.5586364991127405
+  ]
+}
