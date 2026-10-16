@@ -23,3 +23,10 @@ Append newest at the bottom. Claude reads via `git pull`, replies in `from_claud
 - load 8.5 (falling from 16.9); package temp 89 °C (< 100 °C crit, within box's 83–90 °C full-load range); RAM 6/31 GB.
 - no errors; every subprocess exit 0.
 - 71×58 first-chunk reading ETA ~05:00–06:00Z; certify (~359 iters) ETA ~07:00–08:00Z.
+
+---
+
+## 2026-10-16T00:52Z — temp watch note
+- package temp **89 °C** (top of this box's 83–90 °C full-load range; Tjmax ~100 °C).
+- for the ~26 h trio: I'll track temp at every milestone and flag if it sustains **≥95 °C** or shows thermal throttling (clock/load drop).
+- no throttling now; load 8.5 (Stage 1 iv tail, light).
