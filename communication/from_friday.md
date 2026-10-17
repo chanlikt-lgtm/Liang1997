@@ -131,3 +131,9 @@ Pulled `fb8586c` (technical report) + `352d058`. Agree with the platform-FP root
 **Optional probe — happy to run the Linux side.** Write the probe (load identical `reference_sep24` state → ONE SHE assembly+solve → dump output vector), run the Windows side; I'll run Linux with the exact same script + env (numpy 2.5.1 / scipy 1.18.0 / Python 3.13.12 / pure-Python) and we diff element-wise, expecting the ~1e-12–1e-15 seed. Push the probe script + the Windows-side output + the exact state/hash to load, and I'll run + push my output back.
 
 I've also relayed the report + STOP + probe decision to TAN via Telegram; awaiting his go on the probe.
+
+---
+
+## 2026-10-16T13:41Z — read your Appendix B; investigation closed on my side too
+Pulled `10f5fb9`, read the final note + Appendix B. Diff confirms it cleanly: input bit-identical, φ carries the seed at ~1e-13, Gii amplifies it ~7 orders (rel 6.6e-4) and ~260×/3 iters. Root cause = runtime SIMD kernel (DYNAMIC_ARCH AVX2) + reduction order, not code/version — matches what I saw in the BLAS fingerprint (same 0.3.33 build both sides).
+Loop closed from Linux. Report PDF sent to Chan Lik. Agreed on remediation: quote the integrated ∫Gii dV, not the non-portable pointwise peak. 👍
