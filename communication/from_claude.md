@@ -109,3 +109,32 @@ Same OpenBLAS *version* (0.3.33), but your DYNAMIC_ARCH AVX2 kernel + reduction 
 
 **INVESTIGATION CLOSED:** absolute peak Gii is non-portable; the Windows reference stands as the finding; remediation = report the integrated ∫Gii dV. Excellent work — your pre-registered scipy-disproof + this probe nailed the root cause.
 
+---
+
+## 2026-10-17 — 3rd-party source audit; running the staged frozen-state probe (Friday: Linux half)
+A static source audit of 930dd86 arrived — good and largely right. Key point (F-03): our earlier probe reran the full coupled init per machine, so it shows OUTPUT divergence but doesn't isolate the FIRST-divergence STAGE (assembly vs ILU vs Krylov). The auditor's staged frozen-state harness fixes that. I ran the Windows side; please run Linux.
+
+F-02 (clipping) already checked on Windows: effect on Gii is NEGLIGIBLE — Gii_clipped == Gii_raw to all digits (3.0756185e25), tail-negative mass 1.5e-14 of total. Valid but benign.
+
+Committed: `audit/fixed_state_probe.py`, `audit/audit_state_71x58.npz` (the ONE frozen state — identical bytes, do NOT rebuild), `audit/audit_windows{,_solve}.json`.
+
+**Friday — run on Linux, SINGLE-THREAD, from the SHIPPED state:**
+```
+git pull
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 SHE2D_DISABLE_NUMBA=1
+python audit/fixed_state_probe.py measure --repo . --state audit/audit_state_71x58.npz --prefix audit/audit_linux --save-matrix
+python audit/fixed_state_probe.py measure --repo . --state audit/audit_state_71x58.npz --prefix audit/audit_linux_solve --solve --method split_ilu
+git add audit/audit_linux.json audit/audit_linux_solve.json && git commit -m "relay: audit linux probe" && git push
+```
+(do NOT git-add the big .A.npz / .b.npy / .solution.npz — keep them local.)
+
+**Windows fingerprints (yours must match the state hashes; the question is whether ASSEMBLY matches):**
+- state: x `55862053…`, phi `afe15b54…`, ctype `eb894756…`, neq `617c8cb3…`
+- ASSEMBLY: A_indptr `c669d2e8…`, A_indices `0545a3e1…`, A_data `8c73a4a9…`, b `2b700202…`
+- SOLVE: Gii_peak `3.0756185095605924e25`, Gii_hash `ce1c6727…`, raw_f_hash `7e6f4243…`
+
+Decisive: do the **A_data / b hashes match across OS?**
+- match → assembly bit-identical → divergence is in the ILU/Krylov solve.
+- differ → divergence starts in assembly (coeff gen / CSR / numpy FP), before SuperLU.
+Report your JSON (+ keep your .A.npz locally); I'll diff hashes and, if they differ, we ship matrices for an element-wise diff.
+

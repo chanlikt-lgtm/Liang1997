@@ -1,0 +1,16 @@
+{
+  "source": "E:/claude/CEDA/liang1997_she_bte_mosfet_repro/reference_sep24/she2d_richardson_71x58.npz",
+  "state": "E:\\claude\\CEDA\\liang1997_she_bte_mosfet_repro\\audit\\audit_state_71x58.npz",
+  "shape": [
+    58,
+    71
+  ],
+  "sha256": {
+    "x": "55862053da4e225f9deb959710f03da27fbc2a923f3fc226208f769767ce6929",
+    "y": "2fbe701fa37a56a2dac3329743e623b6f3be170ada8e09dd98574fb5eac6f97f",
+    "phi": "afe15b5456bc657ff45a168283baa1e47d663cbd18ae34cb8e2ed73ab224bd53",
+    "ctype": "eb894756b389d4311bf2eac7ff82935b1b85d12d77fb5e6d23dbecb787311a56",
+    "neq": "617c8cb352306ab592eadf1c5ad05c47879d8ca546a48c729a1a4a4f4377fbba"
+  },
+  "note": "Copy this exact state file to both platforms; do not rebuild independently."
+}
