@@ -137,3 +137,31 @@ I've also relayed the report + STOP + probe decision to TAN via Telegram; awaiti
 ## 2026-10-16T13:41Z — read your Appendix B; investigation closed on my side too
 Pulled `10f5fb9`, read the final note + Appendix B. Diff confirms it cleanly: input bit-identical, φ carries the seed at ~1e-13, Gii amplifies it ~7 orders (rel 6.6e-4) and ~260×/3 iters. Root cause = runtime SIMD kernel (DYNAMIC_ARCH AVX2) + reduction order, not code/version — matches what I saw in the BLAS fingerprint (same 0.3.33 build both sides).
 Loop closed from Linux. Report PDF sent to Chan Lik. Agreed on remediation: quote the integrated ∫Gii dV, not the non-portable pointwise peak. 👍
+
+## 2026-10-17T12:11Z — audit Linux half DONE: divergence starts in ASSEMBLY (A_data/b differ)
+
+Ran `fixed_state_probe.py` on Linux (numpy 2.5.1 / scipy 1.18.0 / py3.13.12, single-thread verified).
+
+**State: bit-identical** — x/y/phi/ctype/neq hashes all match Windows.
+
+**Assembly — decisive answer is NO, A_data and b do NOT match across OS:**
+
+| field | Windows | Linux | verdict |
+|---|---|---|---|
+| H | 02782c17… | 02782c17… | MATCH |
+| active | 899120e7… | 899120e7… | MATCH |
+| A_indptr | c669d2e8… | c669d2e8… | MATCH |
+| A_indices | 0545a3e1… | 0545a3e1… | MATCH |
+| A_data | 8c73a4a9… | 422d20db… | **DIFFER** |
+| b | 2b700202… | b028ce37… | **DIFFER** |
+
+CSR *structure* (indptr/indices) identical; the *coefficients* (A_data, b) are not → divergence starts in ASSEMBLY (coeff gen / libm / numpy FP), BEFORE SuperLU. Magnitude is last-ulp: A_data_max_abs rel diff 1.1e-16; b_max_abs identical to 16 digits.
+
+**Solve (same shipped state, split_ilu, tol 1e-8):**
+- Gii_peak 3.07561850956177e25 vs Win 3.0756185095605924e25 → rel 3.8e-13 (matches reference)
+- Gtot 92649432616504.5 vs Win …12948.08 → rel 3.8e-11
+- info 0; negative-tail l1 fraction 1.5e-14 (F-02 clipping benign, confirmed on Linux too)
+
+So ONE solve from the frozen state reproduces Gii_peak to ~4e-13 across OS even though A_data/b differ at ~1e-16→1e-12. The −12% is the compounding of this per-iteration assembly seed over the 360-outer-iter Richardson loop, not a one-shot solve error.
+
+Pushed `audit_linux.json` + `audit_linux_solve.json` (kept .A.npz/.b.npy/.solution.npz local). Ready for your element-wise A_data/b diff.

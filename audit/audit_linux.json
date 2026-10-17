@@ -1,0 +1,61 @@
+{
+  "source_state": "audit/audit_state_71x58.npz",
+  "repo": "/home/chanlik/.openclaw/workspace/Liang1997",
+  "environment": {
+    "python": "3.13.12",
+    "platform": "Linux-6.8.0-124-generic-x86_64-with-glibc2.35",
+    "numpy": "2.5.1",
+    "scipy": "1.18.0",
+    "env": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "SHE2D_DISABLE_NUMBA": "1"
+    },
+    "threadpool_info": [
+      {
+        "user_api": "blas",
+        "internal_api": "openblas",
+        "num_threads": 1,
+        "prefix": "libscipy_openblas",
+        "filepath": "/home/chanlik/.openclaw/workspace/Liang1997/.venv/lib/python3.13/site-packages/numpy.libs/libscipy_openblas64_-017048f4.so",
+        "version": "0.3.33.112.0",
+        "threading_layer": "pthreads",
+        "architecture": "Haswell"
+      },
+      {
+        "user_api": "blas",
+        "internal_api": "openblas",
+        "num_threads": 1,
+        "prefix": "libscipy_openblas",
+        "filepath": "/home/chanlik/.openclaw/workspace/Liang1997/.venv/lib/python3.13/site-packages/scipy.libs/libscipy_openblas-5f890258.so",
+        "version": "0.3.31.dev",
+        "threading_layer": "pthreads",
+        "architecture": "Haswell"
+      }
+    ],
+    "single_thread_verified": true
+  },
+  "backend": "python",
+  "Ndof": 994896,
+  "NH": 591,
+  "nnz": 9874173,
+  "n_orphans": 0,
+  "state_sha256": {
+    "x": "55862053da4e225f9deb959710f03da27fbc2a923f3fc226208f769767ce6929",
+    "y": "2fbe701fa37a56a2dac3329743e623b6f3be170ada8e09dd98574fb5eac6f97f",
+    "phi": "afe15b5456bc657ff45a168283baa1e47d663cbd18ae34cb8e2ed73ab224bd53",
+    "ctype": "eb894756b389d4311bf2eac7ff82935b1b85d12d77fb5e6d23dbecb787311a56",
+    "neq": "617c8cb352306ab592eadf1c5ad05c47879d8ca546a48c729a1a4a4f4377fbba"
+  },
+  "assembly_sha256": {
+    "H": "02782c177bdab49910566e65f2efc7dacc9a03b3a243a4a095fdc83659e4c3cb",
+    "active": "899120e7bdcbd2c8a248f85b75cff57cf3282800d7804d9c570527d80fcb8996",
+    "A_indptr": "c669d2e8a7390b8d6cdd1a374d3dc140fcb8e325db710a07b2251cae951aa7a8",
+    "A_indices": "0545a3e15d5e9e593b7871bc8eb7707f523cf58d23e922953a912f3a6ef3f320",
+    "A_data": "422d20db4fcfa21d723c71d8b14e91a648cb27a2767d872ea8c398218b231213",
+    "b": "b028ce3750dc7dfa221265bc7f45b3de3bc4264644411a77e0acae4899e99e92"
+  },
+  "A_data_max_abs": 9.997723564708682e+30,
+  "b_max_abs": 2.42280078006654
+}
