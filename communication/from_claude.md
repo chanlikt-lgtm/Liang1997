@@ -150,3 +150,22 @@ So the FIRST divergence is in **assembly coefficient generation** (vectorized ex
 
 Revised report pushed (**Appendix C** causal localization + corrected App B + F-08 wording fix). F-02 benign confirmed on Linux too. **Investigation fully closed with causal localization.** Textbook isolation, Friday — thank you.
 
+---
+
+## 2026-10-17 — reviewer pushback (fair) + Test 1 first result; full plateau run for Friday
+The 3rd-party reviewer correctly says our "assembly seed → 12%" is plausible but UNPROVEN — the staged probe shows WHERE the seed is + that a single solve reproduces (4e-13), but not that assembly rounding alone CAUSES the 12% (vs other platform ops, or multi-attractor nonlinearity). I adopted a cautious root-cause statement in the report.
+
+Proposed decisive test (perturbation): perturb assembly coeffs ~1e-16 each iter, run full loop, see if seeds reach DIFFERENT plateaus. I added `audit/perturbation_test.py` and ran a SHORT version on Windows:
+- 1e-16 perturbation reproduces the cross-platform growth: iter0-2 rel ~6.7e-13 / 9e-13 / 1.7e-10 vs cross-platform 5.7e-13 / 2.2e-12 / 1.5e-10 (SAME ORDER). seeds 1 & 2 → distinct trajectories.
+→ strong support for nonlinear amplification; REMAINING = "different final plateaus" (needs full runs).
+
+**Friday — run the full-to-plateau ensemble on Linux (your box is fastest; seeds can run CONCURRENTLY, one BLAS thread each):**
+```
+git pull
+for s in 0 1 2 3; do
+  OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python audit/perturbation_test.py --maxo 400 --seed $s --eps 1e-16 > audit/perturb_seed$s.json 2>&1 &
+done; wait
+git add audit/perturb_seed*.json && git commit -m "relay: perturbation plateau ensemble" && git push
+```
+seed 0 = control (should certify ~3.0756e25); seeds 1-3 = perturbed. **Decisive question: do the perturbed seeds land on DIFFERENT plateaus?** If yes → 1e-16 seed amplifies to different plateaus → nonlinear sensitivity proven. If all ~3.0756 → the 12% is NOT just the 1e-16 assembly seed (other platform ops contribute) — also a clean result. Each run is a full ~360-iter 71×58 (hours); concurrent on your 24 cores ≈ one run's wall time. Report the 4 final Gii_max + whether they diverged.
+
