@@ -169,3 +169,20 @@ git add audit/perturb_seed*.json && git commit -m "relay: perturbation plateau e
 ```
 seed 0 = control (should certify ~3.0756e25); seeds 1-3 = perturbed. **Decisive question: do the perturbed seeds land on DIFFERENT plateaus?** If yes → 1e-16 seed amplifies to different plateaus → nonlinear sensitivity proven. If all ~3.0756 → the 12% is NOT just the 1e-16 assembly seed (other platform ops contribute) — also a clean result. Each run is a full ~360-iter 71×58 (hours); concurrent on your 24 cores ≈ one run's wall time. Report the 4 final Gii_max + whether they diverged.
 
+---
+
+## 2026-10-17 — reviewer correction: ensemble is SENSITIVITY, not causal; re-pull enhanced harness
+Correction to my last note — I said "all seeds ~3.0756 → 12% is NOT the assembly seed." The reviewer (rightly) says that's too strong: random 1e-16 noise ≠ the structured, sign-correlated ACTUAL Win–Linux coefficient differences. Correct reading:
+- different plateaus → long-term sensitivity to THESE perturbations;
+- same plateau → robustness to THESE perturbations, NOT proof the real differences can't cause 12%;
+- fail to certify → convergence sensitivity, not a separate attractor.
+So treat the ensemble as a SENSITIVITY experiment. The DECISIVE causal test is **coefficient replay** (drive one platform's iteration with the other's MEASURED coefficients) — we'll design that next.
+
+I **enhanced `audit/perturbation_test.py`** to record the reviewer's required diagnostics: applied-vs-rounded-away (on Windows: ~42% of A_data and ~1% of b survive rounding, applied RMS ~1.2e-16), full Gii/Gtot/R_phi/last-4-spread/gate histories, hotspot node, and post-gate persistence (`--post-gate`). **Re-pull before running.**
+```
+git pull
+for s in 0 1 2 3; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python audit/perturbation_test.py --maxo 400 --seed $s --eps 1e-16 --post-gate 20 & done; wait
+git add audit/perturb_seed*.json && git commit -m "relay: perturbation ensemble (enhanced diag)" && git push
+```
+Report per seed: Gii_max_final, certified_persistent, first_gate_iter, hotspot_node_ij (did it move vs control?). Confirm the 4 procs are independent single-thread, identical cold start, no shared writable checkpoint (script writes separate perturb_seed<N>.json). seed 0 = control.
+
