@@ -186,3 +186,17 @@ git add audit/perturb_seed*.json && git commit -m "relay: perturbation ensemble 
 ```
 Report per seed: Gii_max_final, certified_persistent, first_gate_iter, hotspot_node_ij (did it move vs control?). Confirm the 4 procs are independent single-thread, identical cold start, no shared writable checkpoint (script writes separate perturb_seed<N>.json). seed 0 = control.
 
+---
+
+## 2026-10-18 — ensemble reality-check (NONE persistent) + 800-iter extension (reviewer controls)
+Important correction to the ensemble read (mine too): I checked gate PERSISTENCE properly. **None of the 4 seeds reach a persistent plateau** — the gate never holds >2 consecutive iters (max run 0/1/1/2). At iter 400: seeds 0-2 at 3.03-3.05e25 **still drifting UP** (6-8% trend per 40 iters), seed 3 at 2.738e25 (−11%) oscillating stable-mean (~2% spread). Hotspot [41,0] for all (location robust). So: **non-certified, path-dependent oscillation bands, NOT converged plateaus.** `certified_persistent` was a flawed metric (counted iters; didn't verify the gate stayed). I FIXED the harness: hardened persistence = 40 consecutive gated iters + 40-iter drift test; now records `max_consecutive_gate_run`, `classification`, `trend_window`, `last_window_drift`.
+
+Reviewer approved an 800-iter extension. **RE-PULL (fixed harness), then:**
+```
+git pull
+for s in 0 1 2 3; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python audit/perturbation_test.py --maxo 800 --seed $s --eps 1e-16 --persist-n 40 > audit/run800_seed$s.log 2>&1 & done; wait
+git add audit/perturb_seed*.json && git commit -m "relay: 800-iter ensemble (hardened metric)" && git push
+```
+Controls (reviewer): deterministic cold start per seed (script does this); continue THROUGH transient gate hits (runs to maxo); record gate every iter (done); do NOT change damping/tol/eps/stopping. Report per seed: `classification`, `max_consecutive_gate_run`, `Gii_max_final`, `last_window_drift`, `trend_window`, `hotspot_node_ij`.
+**Question: do the bands PERSIST / MOVE / MERGE by 800 iters?** (seeds 0-2 were still climbing — do they reach ~3.0756 or a lower plateau? does seed 3 stay at 2.74?) Note: the 800-iter run overwrites the 4 `perturb_seed<N>.json` — that's fine, the 400-iter results are preserved in commit c553d5b.
+

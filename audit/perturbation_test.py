@@ -64,6 +64,7 @@ def main():
     ap.add_argument("--eps", type=float, default=1e-16)
     ap.add_argument("--post-gate", type=int, default=20, help="min outer iters to continue after first gate PASS (persistence check)")
     ap.add_argument("--threads", type=int, default=1)
+    ap.add_argument("--persist-n", type=int, default=40, help="consecutive gated iters required for HARDENED persistence (reviewer)")
     a = ap.parse_args()
     for k in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"):
         os.environ.setdefault(k, str(a.threads))
@@ -104,7 +105,30 @@ def main():
         spread[i] = (w.max() - w.min()) / w.mean()
         gate[i] = bool(spread[i] <= GATE and Rp[i] <= 1.5e-3)
     first_gate = next((i for i, g in enumerate(gate) if g), None)
-    certified = first_gate is not None and (G.size - first_gate) >= a.post_gate
+    # HARDENED persistence (reviewer): longest run of consecutive gated iters; persistent =
+    # a run of >= persist_n consecutive gate-True AND Gii drift over that window <= GATE.
+    N = a.persist_n
+    run = best = best_end = 0
+    for i, g in enumerate(gate):
+        run = run + 1 if g else 0
+        if run > best:
+            best, best_end = run, i
+    hardened = False
+    if best >= N:
+        w = G[best_end - N + 1: best_end + 1]
+        hardened = bool((w.max() - w.min()) / w.mean() <= GATE)
+    lastN = G[-N:] if G.size >= N else G
+    prevN = G[-2 * N:-N] if G.size >= 2 * N else G[:0]
+    last_drift = float((lastN.max() - lastN.min()) / lastN.mean()) if lastN.size else float("nan")
+    trend = float(abs(lastN.mean() - prevN.mean()) / prevN.mean()) if prevN.size else float("nan")
+    if hardened:
+        classification = "persistent_certification"
+    elif not np.isnan(trend) and trend > 3e-3:
+        classification = "continuing_drift"
+    elif last_drift <= 5e-3:
+        classification = "bounded_oscillation"
+    else:
+        classification = "unresolved"
 
     Gii = np.asarray(r["Gii"], float)
     jh, ih = np.unravel_index(int(np.argmax(Gii)), Gii.shape)
@@ -117,8 +141,9 @@ def main():
         "n_outer": len(hist),
         "Gii_max_final": float(Gii.max()), "Gtot_final": float(Gt[-1]) if Gt.size else None,
         "R_phi_final": float(Rp[-1]) if Rp.size else None,
-        "first_gate_iter": first_gate, "post_gate_iters": (G.size - first_gate) if first_gate is not None else 0,
-        "certified_persistent": bool(certified),
+        "first_gate_iter": first_gate, "max_consecutive_gate_run": int(best),
+        "hardened_persistent": bool(hardened), "persist_n": N,
+        "last_window_drift": last_drift, "trend_window": trend, "classification": classification,
         "hotspot_node_ij": [int(ih), int(jh)], "hotspot_xy_um": [float(r["x"][ih]), float(r["y"][jh])],
         "Gii_max_by_iter": [float(v) for v in G],
         "Gtot_by_iter": [float(v) for v in Gt],
@@ -130,8 +155,9 @@ def main():
     with open(os.path.join(here, "perturb_seed%d.json" % a.seed), "w") as f:
         json.dump(out, f, indent=2)
     brief = {k: out[k] for k in ("mode", "seed", "assemble_perturb_calls", "perturbation_applied_first_iter",
-                                 "Gii_max_final", "first_gate_iter", "post_gate_iters", "certified_persistent",
-                                 "hotspot_node_ij", "n_outer")}
+                                 "Gii_max_final", "classification", "hardened_persistent",
+                                 "max_consecutive_gate_run", "first_gate_iter", "last_window_drift",
+                                 "trend_window", "hotspot_node_ij", "n_outer")}
     print(json.dumps(brief, indent=2))
 
 
