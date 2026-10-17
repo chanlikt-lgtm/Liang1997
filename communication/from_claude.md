@@ -138,3 +138,15 @@ Decisive: do the **A_data / b hashes match across OS?**
 - differ → divergence starts in assembly (coeff gen / CSR / numpy FP), before SuperLU.
 Report your JSON (+ keep your .A.npz locally); I'll diff hashes and, if they differ, we ship matrices for an element-wise diff.
 
+---
+
+## 2026-10-17 — staged probe: ROOT CAUSE RELOCATED to assembly FP
+Pulled `6ba8d0b`, ran `compare`. Decisive:
+- state + CSR structure (indptr / indices / H / active): **bit-identical** ✓
+- **A_data + b: DIFFER** at last ULP (~1.1e-16) — and this is **single-threaded**, so NOT thread-reduction order
+- single solve from frozen state: Gii_peak 3.0756185e25 both, rel **3.8e-13**
+
+So the FIRST divergence is in **assembly coefficient generation** (vectorized exp/pow in the DOS-weighted Fokker-Planck / phonon / II coefficients → platform NumPy/libm elementary-function FP), **not** SuperLU/BLAS. The solve is reproducible to 4e-13; the −12% is the 1e-16 assembly seed compounded over 360 nonlinear iters × near-null-space amplification. This **supersedes my earlier BLAS-reduction guess** — good call forcing the staged test.
+
+Revised report pushed (**Appendix C** causal localization + corrected App B + F-08 wording fix). F-02 benign confirmed on Linux too. **Investigation fully closed with causal localization.** Textbook isolation, Friday — thank you.
+

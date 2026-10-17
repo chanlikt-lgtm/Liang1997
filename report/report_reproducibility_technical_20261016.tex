@@ -126,7 +126,7 @@ Hence identical code and library versions on a different OS give a $-12\%$ peak 
 \section{Remediation}
 These are proposed methodology changes to the frozen reference; none has been applied.
 \begin{itemize}[nosep]
-\item \textbf{Report an integrated observable, not a mesh-point maximum (primary fix).} Quote the impact-ionization / substrate current $\int G_{ii}\,dV$ (a physical terminal quantity) or a region-average / fixed-location value. Integration averages out the hotspot floating-point noise, making the observable reproducible \emph{and} portable. This is standard TCAD practice.
+\item \textbf{Report an integrated observable, not a mesh-point maximum (primary fix).} Quote an integrated generation $\int G_{ii}\,dV$ (well-conditioned, averages out the hotspot floating-point noise) and, for a \emph{terminal} figure, the properly-defined substrate hole current -- the hole flux collected at the body contact including recombination (audit finding F-08). Note $\int G_{ii}\,dV$ is the generation \emph{rate} per out-of-plane width, not by itself the collected terminal current; both are far better conditioned than the mesh-point maximum. This is standard TCAD practice.
 \item \textbf{Direct linear solve.} Replace Krylov+ILU with a direct LU factorization where memory permits (raise the existing direct-solve DOF cutoff), removing the preconditioner/Krylov floating-point-path dependence.
 \item \textbf{Gate hardening.} Require plateau flatness sustained over multiple chunks with small chunk-to-chunk $\Delta G_{ii}$, and gate on the integrated $G_{ii}$, so ``converged'' means the same thing on every platform.
 \item \textbf{Report with a numerical band.} Absolute peak $G_{ii}$ carries a $\sim10\%$ numerical uncertainty; report it as a band $[2.1,3.1]\ten{25}$ with the stated cause -- which is precisely the existing non-asymptotic (YELLOW) conclusion.
@@ -164,5 +164,23 @@ The peak-$G_{ii}$ divergence \emph{grows per outer iteration}:
 \text{iter 0: } 5.7\ten{-13}\ \to\ \text{iter 1: } 2.2\ten{-12}\ \to\ \text{iter 2: } 1.5\ten{-10}\qquad(\sim\!260\times\text{ per 3 iterations}).
 \]
 
-\textbf{Interpretation.} Identical input and identical library \emph{version} still diverge, so the cause is the runtime SIMD kernel (OpenBLAS DYNAMIC\_ARCH) and thread/reduction order -- not the code, not the version. The well-conditioned $\phi$ carries the seed at floating-point noise ($\sim10^{-13}$); $G_{ii}$, sharing the same seed, is already $\sim10^{-3}$ divergent pointwise -- a $\sim$7-order amplification from its near-null-space conditioning -- and the peak grows $\sim\!260\times$ over three iterations. Compounded over the $\sim$360 iterations to certification, this reproduces the observed $-12\%$. This directly confirms the \S6 mechanism: a $\sim10^{-13}$ platform floating-point seed, amplified by the ill-conditioning of $G_{ii}$, yields an order-10\% non-portable result.
+\textbf{Interpretation (refined by Appendix C).} Identical input and identical library \emph{version} still diverge. This probe reran the full coupled initialization on each machine, so it establishes the \emph{sensitivity and amplification} but not the first-divergence \emph{stage}; the staged probe of Appendix C localizes the seed to assembly-coefficient floating point (confirmed single-threaded), \emph{upstream} of the sparse solve -- superseding an earlier guess of BLAS reduction order. The mechanism is unchanged: a $\sim10^{-16}$ platform floating-point seed, amplified by the ill-conditioning of $G_{ii}$, yields an order-10\% non-portable result.
+
+\section*{Appendix C: Staged causal localization (frozen-input probe)}
+Prompted by an independent source audit, a fixed-state probe (\texttt{audit/fixed\_state\_probe.py}) froze ONE $71\times58$ state (mesh, $\phi$, contact map, equilibrium density $n_{eq}$) from the Windows reference, copied the \emph{identical bytes} to both operating systems, and -- single-threaded (\texttt{OPENBLAS\_NUM\_THREADS=1}), pure-Python -- assembled the SHE operator and solved it on each.
+\begin{center}\small
+\begin{tabular}{l l}
+\toprule
+quantity & Windows vs.\ Linux \\
+\midrule
+state $x,y,\phi$, contact map, $n_{eq}$ & \textbf{bit-identical} (SHA-256 match) \\
+energy grid $H$, active-state map & \textbf{bit-identical} \\
+CSR structure $A.\mathtt{indptr}$, $A.\mathtt{indices}$ & \textbf{bit-identical} \\
+$A.\mathtt{data}$ (matrix coefficients) & \textbf{DIFFER} (max rel $1.1\ten{-16}$, last ULP) \\
+$b$ (right-hand side) & \textbf{DIFFER} (agree to 16 digits) \\
+single solve from frozen state: $G_{ii}^{\mathrm{peak}}$ & $3.0756185\ten{25}$ both (rel diff $3.8\ten{-13}$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+\textbf{Localization.} The first divergence is in the \emph{assembly coefficient generation}, not the sparse solve: structure, energy grid and active map are bit-identical, but the matrix \emph{values} differ at the last ULP ($\sim10^{-16}$), and this holds \emph{single-threaded} -- so it is not BLAS thread-reduction order. The source is the platform's vectorized elementary functions (\texttt{exp}/\texttt{pow} in the DOS-weighted Fokker--Planck, phonon and impact-ionization coefficients) differing between OS/compiler builds of NumPy/libm. A single linear solve from the frozen converged state reproduces across OS to $3.8\ten{-13}$, so SuperLU/LGMRES is \emph{not} the primary seed. The $-12\%$ is this $\sim10^{-16}$ per-iteration assembly seed compounded over the $\sim360$-iteration nonlinear loop and amplified by $G_{ii}$'s near-null-space conditioning. The positivity clipping (audit finding F-02) is benign on both OSs: clipped and raw $G_{ii}$ peaks are identical and the tail-negative $\ell_1$ mass is $1.5\ten{-14}$ of the total.
 \end{document}
