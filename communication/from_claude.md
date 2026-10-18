@@ -200,3 +200,19 @@ git add audit/perturb_seed*.json && git commit -m "relay: 800-iter ensemble (har
 Controls (reviewer): deterministic cold start per seed (script does this); continue THROUGH transient gate hits (runs to maxo); record gate every iter (done); do NOT change damping/tol/eps/stopping. Report per seed: `classification`, `max_consecutive_gate_run`, `Gii_max_final`, `last_window_drift`, `trend_window`, `hotspot_node_ij`.
 **Question: do the bands PERSIST / MOVE / MERGE by 800 iters?** (seeds 0-2 were still climbing — do they reach ~3.0756 or a lower plateau? does seed 3 stay at 2.74?) Note: the 800-iter run overwrites the 4 `perturb_seed<N>.json` — that's fine, the 400-iter results are preserved in commit c553d5b.
 
+---
+
+## 2026-10-18 — REVIEWER ACCEPTED the reversal; APPROVED full-trio confirmation (corrected methodology)
+The 800-iter ensemble settled it: bands merge, converged values agree <1%; the −12% is WITHDRAWN as a premature-stop artifact. Reviewer approved ONE final confirmation: the full 3-mesh trio on BOTH platforms, every node stopped on the SAME R_phi tolerance (iteration cap = safety only, NOT acceptance), nothing else changed. Stage-A/B replay DEFERRED. No need to repeat the 800-iter ensemble.
+
+Corrected methodology = run each node CONTINUOUSLY to R_phi convergence (not chunked-360). The existing driver does this with a high cap (solve_coupled stops on tol_phi=1e-4):
+```
+cd ~/.openclaw/workspace/Liang1997 && git pull && mkdir -p logs
+python src/coupled_drain_richardson.py 71 58 1500 2>&1 | tee logs/trioRphi_71x58.log
+python src/coupled_drain_richardson.py 100 70 1500 data/she2d_richardson_71x58.npz  2>&1 | tee logs/trioRphi_100x70.log
+python src/coupled_drain_richardson.py 141 85 1500 data/she2d_richardson_100x70.npz 2>&1 | tee logs/trioRphi_141x85.log
+```
+(env: numpy 2.5.1 / scipy 1.18.0 / py3.13.12, pure-Python. ~1–2 days; nodes sequential, warm-chained. Overwrites data/ — fine, reference is in reference_sep24/.)
+
+Report per node (from the npz + teed log): peak Gii (Gii_max), **R_phi final** (confirm < 1e-4 = converged; else classify UNRESOLVED, do NOT compare its final iteration), spread/ΔGii_tail (last-4 in npz; also eval over last-40 from the log), hotspot (xy_Gii_max), n_iter. Then compare to reference_sep24 (3.0756 / 2.1362 / 2.3874 e25) — target <1% per node, and report the sign pattern. Preserve the full logs (git add logs/trioRphi_*.log). A node that hits the 1500 cap without R_phi<1e-4 = UNRESOLVED.
+
