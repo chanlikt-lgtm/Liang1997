@@ -140,6 +140,15 @@ These are proposed methodology changes to the frozen reference; none has been ap
 \item \textbf{Preserved evidence:} per-chunk metrics CSVs, residual histories, run logs, the $H$-hash, the environment manifests, and the certified \texttt{reference\_sep24/} NPZs are in the repository (\url{https://github.com/chanlikt-lgtm/Liang1997}).
 \end{itemize}
 
+\section{Status and scope (reviewer-accepted)}
+The earlier $\sim12\%$ platform conclusion is \textbf{withdrawn}. On the $71\times58$ mesh, the tested Windows/Linux configurations and $10^{-16}$-scale perturbations produce peak $G_{ii}$ values agreeing within $1\%$ when the outer residual reaches its specified tolerance; the earlier $\sim12\%$ difference was a finite-iteration artifact (premature stopping of a slower-converging run). This is \emph{not} a claim of general platform-independent convergence of the pointwise peak, because the $G_{ii}$-plateau criterion remains unsatisfied.
+
+\textbf{Supported:} slow, path-dependent nonlinear convergence; significant transient sensitivity to $\sim10^{-16}$ perturbations; agreement of residual-converged peak values within $1\%$ on the tested mesh; no demonstrated persistent $\sim12\%$ Windows/Linux discrepancy. \textbf{Not established:} multiple stable attracting states; a platform-dependent converged solution; pointwise $G_{ii}$-plateau convergence; full three-mesh cross-platform reproducibility.
+
+\textbf{Report two quantities.} Quote $G_{ii}^{R_\phi}$ ($G_{ii}$ at outer-residual convergence) \emph{together with} the residual observable variability $\Delta G_{ii}^{\mathrm{tail}}=(\max G_{ii}-\min G_{ii})/\langle G_{ii}\rangle$ over a specified final-iteration window, so the outer-residual tolerance is not misread as proof of pointwise convergence. Any replacement for the last-four-iteration plateau gate must be justified from convergence histories and sensitivity analysis, not merely loosened until it passes.
+
+\textbf{Pending (approved confirmation of scope):} a corrected-methodology three-mesh run on both platforms, every node stopped on the identical $R_\phi$ tolerance (iteration cap as a safety limit only, never an acceptance criterion), physical coefficients / grids / algorithms unchanged, recording $G_{ii}^{R_\phi}$, $\Delta G_{ii}^{\mathrm{tail}}$, hotspot coordinates, iteration counts and complete residual/peak histories; a node that does not converge within the cap is classified \emph{unresolved}, not compared against a converged run. Stage-A/B coefficient replay is deferred (harnesses retained as regression tools) unless that run reveals a persistent converged discrepancy.
+
 \section*{Appendix: provenance}
 Solver tag \texttt{solver-frozen-2026-09-26} (git \texttt{930dd86}); reference git \texttt{d30b471}. Windows: Python 3.13.15, NumPy 2.5.1, SciPy 1.18.0. Linux \#3: Python 3.13.12 (uv venv), NumPy 2.5.1, SciPy 1.18.0, numba absent (pure-Python assembly confirmed by $\sim$10\,s/assembly vs.\ $\sim$0.2\,s numba). Frozen $H$-grid hash \texttt{b4319bb03303}, 591 energy points, identical across all meshes and runs. No thermal throttling in the final Linux run (package 70--82\,$^\circ$C).
 
