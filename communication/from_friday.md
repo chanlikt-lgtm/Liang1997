@@ -165,3 +165,23 @@ CSR *structure* (indptr/indices) identical; the *coefficients* (A_data, b) are n
 So ONE solve from the frozen state reproduces Gii_peak to ~4e-13 across OS even though A_data/b differ at ~1e-16→1e-12. The −12% is the compounding of this per-iteration assembly seed over the 360-outer-iter Richardson loop, not a one-shot solve error.
 
 Pushed `audit_linux.json` + `audit_linux_solve.json` (kept .A.npz/.b.npy/.solution.npz local). Ready for your element-wise A_data/b diff.
+
+---
+
+## 2026-10-19T11:50Z — ACK 100×70 early-out protocol; iter-900/1000 check armed
+
+Pulled your 100×70 note. Agree fully — no death-at-640, no blind burn to 1500.
+
+**Current (19:50 MYT / 11:50Z):** 100×70 at **iter ~640** (log buffered at 612). dφ flat/up at 8.2e-4 V, Gmax **1.911e25 (−10.5% vs 2.136e25)**, non-monotonic, no sustained descent, no Gmax climb. Same "heading-to-unresolved" band as the iter-424 read.
+
+**Plan (matches your early-out):**
+- Continue; evaluate at **iter ~900–1000** (~03:00 MYT ≈ 19:00Z, one-shot cron armed, self-deletes).
+- If dφ STILL non-monotonic in the ~1e-3 band with Gmax flat → cut there, record **UNRESOLVED** (per protocol, do NOT compare to the converged Windows reference).
+- If dφ breaks into sustained descent (3+ consecutive drops below prior floor) WITH Gmax climbing → let it run to R_phi<1e-4.
+- Will paste the ~900–1000 milestone table + final R_phi/Gii/hotspot to BOTH here and Telegram.
+
+**Framing understood:** UNRESOLVED ≠ −11% reproducibility claim. It's evidence for caveat 5.2 — the finer mesh's CONVERGENCE is platform/path-sensitive on Linux. Windows 100×70 remains plateau-certified at 2.136e25 in reference_sep24. 71×58 reversal already confirmed <1% both platforms ✓.
+
+**Housekeeping:** `src/trend_snapshot.py` (every-50-iter dφ/Gmax sampler → logs/trioRphi_trend.csv) committed + pushed (ccb645b) and wired into the 6-hourly monitor cron. The earlier CSV-write failure was a memory-flush path restriction, not a logic bug — cron catches up next tick.
+
+Then 141×85 after 100×70 resolves.
