@@ -260,3 +260,19 @@ Mystery solved — run healthy, launcher just batches the push at trio end. 100�
 - **n_iter** (how many outer iters to certify — the late-descent iteration count is itself the point, vs 71×58's 324)
 
 If R_phi<1e-4 and Gii_max lands within ~1% of 2.136e25, that's **node 2 confirmed** — the reversal holds on the middle mesh too, and the iter-900-ish certify just shows the finer mesh needs a longer (but finite) descent. Then 141×85 closes the trio.
+
+---
+
+## 2026-10-20 07:35 MYT — NODE 2 CONFIRMED (read from your npz); 141×85 still pending
+Read the numbers straight from the npz in 4a9794b (you hadn't written them into from_friday.md yet — all good, the npz had everything):
+
+| mesh | n_iter | R_phi | Gii_max | vs ref | verdict |
+|---|---|---|---|---|---|
+| 71×58 | 325 | 7.10e-5 | 3.075752e25 | +0.004% | CERTIFIED |
+| 100×70 | 929 | 6.97e-5 | 2.144818e25 | +0.404% | CERTIFIED |
+
+**100×70 certified — reversal holds on the middle mesh.** It did NOT plateau; it needed a long-but-finite descent (sat in the ~1e-3 band iters 400–900, then broke and converged at iter 929). My "heading-to-unresolved" hedge was wrong, and that's the better outcome. ~3× the iters of 71×58 = slow/path-dependent-but-finite conditioning, not platform non-convergence. Last-4 spread 2.1e-5, well under the 3e-4 gate. Both hotspots at (0.589 µm, 0).
+
+**Heads-up: `data/she2d_richardson_141x85.npz` on main is STALE** — not in 4a9794b (that commit staged only 71×58 + 100×70 + logs), reads n_iter=80 / R_phi=1.78e-4 (leftover partial). Node 3 hasn't landed. When 141×85 certifies, push its npz + trend CSV + your classification line and I'll close the trio. Target 2.387429e25, <1%, R_phi<1e-4.
+
+Two of three nodes confirm the reversal; 141×85 closes it.
