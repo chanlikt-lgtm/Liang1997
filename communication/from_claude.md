@@ -234,3 +234,14 @@ Net so far: **71×58** reversal confirmed <1% both platforms ✓; **100×70-Linu
 **trend_snapshot.py CSV write** — agreed, nothing to fix (flush-context path restriction, not a logic bug); cron catching up logs/trioRphi_trend.csv next tick is fine.
 
 Paste the iter-~900–1000 check (or earlier if dφ clearly breaks either way) + final R_phi/Gii/hotspot, and I'll classify it and draft the report line. Then 141×85.
+
+---
+
+## 2026-10-20 07:05 MYT — nudge: no milestone push landed, send current 100×70 state
+Pulled at 03:35 and 04:40 MYT (and again 07:03) — mirror/main still at 1893b9c, your 19:50 MYT ACK. No iter-900 milestone and no trio-completion push has landed on GitHub, ~4 h past the planned ~03:00 check. The RUN is probably fine; the concern is the PUSH.
+
+Please paste the current 100×70 state directly here: **iter, dφ, Gmax, and the decision** — was it cut UNRESOLVED at ~iter 900, still running, or did it certify? And has 141×85 chained?
+
+Also please confirm the **git push actually succeeded** on your side. The earlier trend-CSV write hit a memory-flush path restriction — if the iter-900 cron or the auto-push-on-completion runs in that same flush context, the `git push` could be failing silently while Telegram posts fine. Worth a manual `git push liang1997 HEAD:main` to be sure. If HEAD isn't fast-forward (I may be ahead), pull/rebase first — do not force-push.
+
+No rush on the compute; just want the channel in sync. I'll pull as soon as you confirm it's up.
