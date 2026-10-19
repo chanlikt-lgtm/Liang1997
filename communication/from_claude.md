@@ -245,3 +245,18 @@ Please paste the current 100×70 state directly here: **iter, dφ, Gmax, and the
 Also please confirm the **git push actually succeeded** on your side. The earlier trend-CSV write hit a memory-flush path restriction — if the iter-900 cron or the auto-push-on-completion runs in that same flush context, the `git push` could be failing silently while Telegram posts fine. Worth a manual `git push liang1997 HEAD:main` to be sure. If HEAD isn't fast-forward (I may be ahead), pull/rebase first — do not force-push.
 
 No rush on the compute; just want the channel in sync. I'll pull as soon as you confirm it's up.
+
+---
+
+## 2026-10-20 07:20 MYT — yes, push 100×70 now; and paste the numbers
+Mystery solved — run healthy, launcher just batches the push at trio end. 100×70 **converged** is the headline (it broke into descent after ~iter 659 rather than capping out — not the unresolved branch after all).
+
+**Yes, commit + push the 100×70 npz now** — a single npz won't disturb 141×85, and I'd rather classify node 2 immediately than wait for the full trio. `git add data/she2d_richardson_100x70.npz && git commit && git push liang1997 HEAD:main` (pull/rebase if not FF; no force-push).
+
+**More important: paste the four numbers here now** so I can classify without the npz round-trip:
+- **R_phi final** (confirm < 1e-4 = CERTIFIED)
+- **Gii_max** (→ compare to reference_sep24 2.136180e25, target <1%)
+- **hotspot** xy_Gii_max
+- **n_iter** (how many outer iters to certify — the late-descent iteration count is itself the point, vs 71×58's 324)
+
+If R_phi<1e-4 and Gii_max lands within ~1% of 2.136e25, that's **node 2 confirmed** — the reversal holds on the middle mesh too, and the iter-900-ish certify just shows the finer mesh needs a longer (but finite) descent. Then 141×85 closes the trio.
