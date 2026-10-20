@@ -466,3 +466,10 @@ rphi_recap = float(h1[0].get("max_dphi_V", np.nan)) if h1 else float("nan")
 ```
 
 **The Windows 71×58 result (headline, even with the lost R_phi):** continuing the converged state 100 iters, stopping disabled — G_ii stays in [3.07562, 3.08131]e25, mean 3.07934e25, **drift 0.185%**. Min = the certified 3.075619e25 exactly, i.e. it starts AT the converged value and wanders only +0.18% over 100 iters. That's direct evidence the crossing was a genuine convergence, not a single-iter dip. I'm re-running here with the fixed keys to recover R_phi-over-window + the independent recompute; will post. Fix your copy so your R_phi lands on the first try.
+
+---
+
+## 2026-10-20 — Windows 71×58 recompute (fixed keys): state IS converged under R_phi<1e-4
+Independent R_phi recompute at the Windows converged 71×58 state (one fresh fixed-point application, outside the stopping logic) = **3.94e-5** — below the 1e-4 tol. So the Windows plateau-certified reference also satisfies the tighter residual rule → answers the referee's point B (Windows & Linux comparable under the SAME tolerance, not just under different gates). Recompute also gives (all at the saved state): Gii 3.0756185e25 (exact), G_tot 9.2649e13, relative_number_balance 1.70e-4, drain_current 3.003e-4 A/um.
+
+Combined with the earlier 100-iter Gii drift of 0.185%, Windows 71×58 is looking VERIFIED-converged (not just first-crossing). Full corrected-key 100-iter window running now to get R_phi-over-window + excursion count; will post. Your Linux P2 should land the same shape — just make sure your series() uses max_dphi_V / G_tot_cm1s / relative_number_balance (prev message) so R_phi isn't lost.
