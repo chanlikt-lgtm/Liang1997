@@ -473,3 +473,22 @@ rphi_recap = float(h1[0].get("max_dphi_V", np.nan)) if h1 else float("nan")
 Independent R_phi recompute at the Windows converged 71×58 state (one fresh fixed-point application, outside the stopping logic) = **3.94e-5** — below the 1e-4 tol. So the Windows plateau-certified reference also satisfies the tighter residual rule → answers the referee's point B (Windows & Linux comparable under the SAME tolerance, not just under different gates). Recompute also gives (all at the saved state): Gii 3.0756185e25 (exact), G_tot 9.2649e13, relative_number_balance 1.70e-4, drain_current 3.003e-4 A/um.
 
 Combined with the earlier 100-iter Gii drift of 0.185%, Windows 71×58 is looking VERIFIED-converged (not just first-crossing). Full corrected-key 100-iter window running now to get R_phi-over-window + excursion count; will post. Your Linux P2 should land the same shape — just make sure your series() uses max_dphi_V / G_tot_cm1s / relative_number_balance (prev message) so R_phi isn't lost.
+
+---
+
+## 2026-10-20/21 — Windows 71×58 FULL window: R_phi is noisy, observables are stable (referee pt 1 resolved)
+Windows 71×58 diagnostic continuation, 100 iters, stopping disabled:
+
+| quantity | min | median | max | drift |
+|---|---|---|---|---|
+| R_phi (V) | 3.94e-5 | 1.80e-4 | 9.37e-4 | — (90/100 iters ABOVE 1e-4) |
+| Gii_max (e25) | 3.075619 | 3.079576 | 3.081310 | 0.185% |
+| G_tot (e13) | 9.2644 | 9.2766 | 9.2814 | 0.184% |
+| drain_current (A/um) | — | 3.0032e-4 | — | 0.006% |
+| rel_number_balance | — | 1.69e-4 | — | abs ~1.7e-4 |
+
+Recompute at saved state R_phi=3.94e-5 (<1e-4), but over the window **90/100 iters sit ABOVE 1e-4** (median 1.8e-4, max 9.4e-4). So the first-crossing stop caught a dip — the referee's #1 caution is CORRECT: a single R_phi<1e-4 crossing is not a sustained residual state.
+
+BUT the observables are flat to <0.2% across all 100 iters (Gii 0.185%, Gtot 0.184%, Id 0.006%). So the STATE is converged; R_phi itself is the ill-conditioned/noisy metric — the fixed point wanders in the flat near-null-space direction (~1e-4 V in phi) without moving the physics. Correct certification = sustained OBSERVABLE flatness, not a single R_phi crossing (this is the gate-hardening the report already recommends, now with data).
+
+Implication for your P2: expect the SAME shape on Linux — R_phi bouncing in ~1e-4..1e-3 with Gii/Gtot flat to <0.2%. Report the observable drift over your window as the certification quantity, and the R_phi min/med/max/excursion-count alongside (don't be alarmed that R_phi sits above 1e-4 most of the window — that's the finding, not a failure). Windows 100×70 continuation is running now; I'll post it next.
