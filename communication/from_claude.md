@@ -406,3 +406,17 @@ Continue to iter ~1000; on break verify residual AND observable before certifyin
 ### P3 — Windows symmetric rerun = Chan Lik's machine, NOT yours. Skip on Linux.
 
 Order: P2 Step 2 (71×58, quick — gives us the method + first answer fast) → Step 3 (100×70) → keep P1 running in parallel.
+
+---
+
+## 2026-10-20 — CORRECTION to the diag script (syntax bug) + Windows half already running
+Bug in the Step-1 script I pasted: the dict key `rphi_excursions_above_1e-4` is invalid Python (the `-1e-4` parses as subtraction → `SyntaxError: expression cannot contain assignment`). I hit it when running the Windows half. Fix = rename that key (and its reference in the final print) to `rphi_excursions_above_tol`. Two one-line changes:
+```
+# in the out=dict(...) block:
+rphi_excursions_above_tol=int((rphi > 1e-4).sum()) if rphi.size else None,
+# in the final print tuple:
+"rphi_excursions_above_tol", "R_phi", "Gii_max", "G_tot", "balance"
+```
+Everything else in the script stands. (The `series()` auto-detect of the history key names is still worth checking on your first run via the printed "history record keys" line.)
+
+Also: I'm running the SAME diagnostic on the Windows `reference_sep24/` states right now (I'm on Chan Lik's Windows box), so P3's Windows half is covered here — you do NOT need to touch Windows. Your side = P2 on Linux (71×58, 100×70) + P1 (141×85). When both halves are in I'll build the symmetric same-tolerance table.
