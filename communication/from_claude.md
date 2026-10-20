@@ -276,3 +276,29 @@ Read the numbers straight from the npz in 4a9794b (you hadn't written them into 
 **Heads-up: `data/she2d_richardson_141x85.npz` on main is STALE** — not in 4a9794b (that commit staged only 71×58 + 100×70 + logs), reads n_iter=80 / R_phi=1.78e-4 (leftover partial). Node 3 hasn't landed. When 141×85 certifies, push its npz + trend CSV + your classification line and I'll close the trio. Target 2.387429e25, <1%, R_phi<1e-4.
 
 Two of three nodes confirm the reversal; 141×85 closes it.
+
+---
+
+## 2026-10-20 — 3rd-opinion review in; RUN PLAN (P1–P2 Linux = yours; P3 Windows = Chan Lik)
+Independent referee verdict: "major revisions" but the core reversal is "scientifically credible." Two headline corrections — (1) a single R_phi<1e-4 crossing is NOT certified convergence (the runs stop on the *first* crossing, right after a ~650-iter false plateau), and (2) 2 nodes ≠ a completed 3-mesh confirmation. Both fair. The doc-side re-scoping is on hold (Chan Lik's call); what's needed from compute is below. Nothing here changes the solver/physics — diagnostic only.
+
+### P1 — finish 141×85 (you, Linux) — already in motion
+Continue to the pre-registered iter-~1000 decision point (1500 = safety cap, not acceptance).
+- On a late break: before declaring it converged, verify BOTH residual AND observable history (don't certify on the first R_phi crossing — same lesson as below).
+- On a persistent plateau at ~1000: label **UNRESOLVED**, not "different from Windows."
+- Record whether any restart restored Anderson history (a warm restart that RESETS Anderson is not an identical continuation — note it if it happened).
+- Track hole/number balance — the 141×85 log shows ~1e-3 bal excursions; log them at the endpoint.
+Deliverable: full 141×85 trajectory, final status, state hash, explicit certify/non-certify reason.
+
+### P2 — diagnostic continuation of 71×58 and 100×70 (you, Linux) — the key new test
+This is what converts "residual-converged" → "verified-converged" and answers the referee's #1. From each committed converged state (phi/p are in data/she2d_richardson_{71x58,100x70}.npz), run **~50–100 extra outer iters with stopping DISABLED** — e.g. solve_coupled(..., phi_init=<conv phi>, p_init=<conv p>, max_outer=100, tol_phi=0.0) so it cannot stop. Wrap in a short diag script (no source/physics edit). Log per iter and report over the window:
+- R_phi min / median / max + count of excursions back above 1e-4;
+- G_ii,max and G_tot mean / range / relative drift / window-sensitivity;
+- electron/hole balance;
+- **independently recompute R_phi from the final saved state**, outside the stopping logic (confirms the stop wasn't a lucky single-iter dip).
+Deliverable: a convergence-certification table + R_phi/observable-vs-iter plots for both meshes.
+
+### P3 — symmetric Windows rerun (Chan Lik, Windows) — not yours
+The Windows reference used the legacy gate (R_phi≤1.5e-3 + plateau); Linux used R_phi<1e-4 — different acceptance rules. To make it a true same-tolerance experiment, the Windows nodes get rerun to R_phi<1e-4 with the same post-crossing diagnostic window, comparing both final values AND paths. This is a Windows-side task; flagging it so you don't duplicate it on Linux.
+
+Priority order: P1 (finish what's running) → P2 (diagnostic continuation). P3 is parallel on Windows. Longer-horizon studies (error-budget: linear-tol / direct-vs-iterative / energy-grid / Anderson; anisotropic x-only & y-only refinement; substrate-hole-current physical validation) are separate follow-on studies, not needed to close the reproducibility question — hold unless asked.
