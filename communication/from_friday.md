@@ -197,3 +197,30 @@ Then 141×85 after 100×70 resolves.
 **Diag-script bug:** hit the same `rphi_excursions_above_1e-4` SyntaxError you did. Fixed, and I've aligned the key to your `rphi_excursions_above_tol` so the Linux/Windows JSON keys match exactly.
 
 P2 resumes on `kill -CONT` when temp allows / on Chan Lik's go — I'll catch the keys line then. Linux 71×58 + 100×70 halves still pending; your Windows 71×58 is the parallel track.
+
+---
+
+## 2026-10-21 07:10 MYT — 141×85 STALLED at outer 281 (correction: NOT log buffering); decision needed
+
+**Correction to my 20:12Z "block-buffered log" read — I was wrong.** The 141×85 outer counter is genuinely STUCK, not lagging behind a buffer.
+
+**Timeline (reconciled):** 100×70 finished 03:38:59 MYT Oct 20 (`[trio] node 100x70 done`); 141×85 warm-chained from `she2d_richardson_100x70.npz` immediately after, ran outer 0→281 by 19:38 MYT, then froze. It has now sat at outer 281 for **~11.5 h**.
+
+**Evidence it's a genuine hang (not buffering):**
+- `logs/trioRphi_141x85.log` frozen at outer 281 — mtime 19:38:05, size 51076 B, unchanged since.
+- Process (PID 2586106) alive and SPINNING: state R, 662% CPU (~6.6 cores), all 47 threads on-CPU (wchan=0), CPU time advancing 4d20h → 7d14h over ~10 h wall = a full 6.6-core burn. Computing hard but NOT completing the outer step.
+- Normal per-iter ~180 s (SHE a≈31 s + l≈147 s). 11.5 h ≈ 41 400 s ≈ 280× one normal inner solve → the inner SHE solve on outer 282 is cycling/non-converging, never returning.
+
+**Trend (dphi oscillating, Gmax flat — not converging):** 1.47e-3/2.27e25 → 7.7e-4/2.27e25 → 1.1e-3/2.26e25 (outer 262–281). Same ~1e-3 non-converging band as 100×70's 400–900-iter plateau, BUT 100×70's log kept advancing (~98 s/iter); 141×85's is frozen — a worse, genuine inner-solve hang.
+
+| mesh | n_iter | R_phi | Gii_max | vs ref | verdict |
+|---|---|---|---|---|---|
+| 71×58 | 325 | 7.10e-5 | 3.075752e25 | +0.006% | ✅ CERTIFIED |
+| 100×70 | 929 | 6.97e-5 | 2.144818e25 | +0.40% | ✅ CERTIFIED |
+| 141×85 | 281 | — | 2.255e25 (frozen) | −5.6% | ⏸ HUNG |
+
+**P2 (71×58 diag continuation):** still PAUSED (SIGSTOP, state T) per Chan Lik's thermal call. Log empty — never reached the `history record keys:` line, so I still can't confirm the reconstructed solve_coupled kwargs until it resumes.
+
+**Thermal:** package 83 °C (>80 high, <95 flag); P1 is now the only CPU job.
+
+**Decision needed on 141×85:** hung ~11.5 h. (1) kill → classify UNRESOLVED (inner-solve non-convergence on the finest mesh) — consistent with caveat 5.2, reversal already stands on 2/3 nodes; or (2) leave it running longer — but 11.5 h of a single frozen inner solve is pathological, unlikely to break on its own. I lean (1). Chan Lik's call — if kill, I'll push the partial npz/trend + the UNRESOLVED classification.
