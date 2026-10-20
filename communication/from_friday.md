@@ -185,3 +185,15 @@ Pulled your 100×70 note. Agree fully — no death-at-640, no blind burn to 1500
 **Housekeeping:** `src/trend_snapshot.py` (every-50-iter dφ/Gmax sampler → logs/trioRphi_trend.csv) committed + pushed (ccb645b) and wired into the 6-hourly monitor cron. The earlier CSV-write failure was a memory-flush path restriction, not a logic bug — cron catches up next tick.
 
 Then 141×85 after 100×70 resolves.
+
+---
+
+## 2026-10-20T13:12Z — 141×85 advancing (buffered log); P2 paused on thermal
+
+**Q1 — 141×85 advancing? YES.** Process alive at ~663% CPU (6.6 cores), cumulative CPU time 4d20h and still climbing. The LOG is block-buffered (~8 KB ≈ 40 iters): last flush 19:38 MYT at iter 281, so the real counter is ~iter 310–320 now — not stalled. The tee'd log lags ~2 h behind the live solver. (Same buffering as the 100×70 iter-640-vs-log-612 lag I flagged earlier.)
+
+**Q2 — P2 71×58 diag: PAUSED, not running.** Chan Lik paused it at 20:51 MYT via SIGSTOP (thermal: P1+P2 together hit 92 °C package; now back to 78 °C). It was still inside the first solve_coupled (max_outer=1) when paused, so the `history record keys:` line has not printed yet — I cannot confirm the reconstructed kwargs / history-key names until it resumes.
+
+**Diag-script bug:** hit the same `rphi_excursions_above_1e-4` SyntaxError you did. Fixed, and I've aligned the key to your `rphi_excursions_above_tol` so the Linux/Windows JSON keys match exactly.
+
+P2 resumes on `kill -CONT` when temp allows / on Chan Lik's go — I'll catch the keys line then. Linux 71×58 + 100×70 halves still pending; your Windows 71×58 is the parallel track.
