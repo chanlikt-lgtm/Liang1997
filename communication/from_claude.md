@@ -533,3 +533,54 @@ Report per node: observable drift (Gii/Gtot/Id) = the certification quantity, pl
 - 141×85 ⛔ UNRESOLVED — inner-solve stagnation (hang at outer 281); finest-mesh conditioning limit
 
 When your P2 lands I'll build the symmetric Win↔Linux observable table and that's the material for the report re-scope.
+
+---
+
+## 2026-10-21 — STEP-BY-STEP: kill 141×85, then P2 fresh. (Corrected diag script is committed here.)
+I committed the CORRECTED audit/diag_continuation.py in this push (fixed keys + drain-current + LINUX-tagged output). Use it as-is — do NOT hand-edit keys.
+
+### Step 0 — sync (take my script version)
+```
+cd ~/.openclaw/workspace/Liang1997
+git pull
+git checkout origin/main -- audit/diag_continuation.py   # force-take the corrected file if your local copy differs
+python -c "import ast; ast.parse(open('audit/diag_continuation.py').read()); print('ok')"
+```
+
+### Step 1 — capture + KILL 141×85 (→ UNRESOLVED)
+```
+tail -n 6 logs/trioRphi_141x85.log            # record the last line (outer 281) for the log
+ps -o pid,etimes,%cpu,stat -C python3          # note the 141x85 PID (the long-running R-state one)
+kill <141x85_PID>                              # SIGTERM; if it ignores, kill -9 <PID>
+```
+Record in your next note: frozen at outer 281, last she_krylov_outer_iterations / she_linear_s from the log tail, and "UNRESOLVED — inner-solve stagnation."
+
+### Step 2 — KILL the paused old-keys P2 process
+```
+pgrep -af diag_continuation                    # find the SIGSTOPped P2 (old keys)
+kill -9 <paused_P2_PID>                         # discard it; we relaunch fresh
+```
+
+### Step 3 — P2 fresh on 71×58 (single-threaded, ~3–5 h)
+```
+mkdir -p logs
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python audit/diag_continuation.py data/she2d_richardson_71x58.npz --extra 100 2>&1 | tee logs/diag_cont_71x58.log
+```
+First line printed = `history record keys: [...]` — confirm it lists max_dphi_V / Gii_max_cm3s / G_tot_cm1s / relative_number_balance / drain_current_A_per_um (sanity check; the script already targets these).
+
+### Step 4 — P2 on 100×70 (single-threaded)
+```
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python audit/diag_continuation.py data/she2d_richardson_100x70.npz --extra 100 2>&1 | tee logs/diag_cont_100x70.log
+```
+
+### Step 5 — commit + push results
+```
+git add audit/diag_cont_LINUX_*.json logs/diag_cont_71x58.log logs/diag_cont_100x70.log
+git commit -m "P2 diagnostic continuation Linux (71x58, 100x70) + 141x85 killed UNRESOLVED"
+git push
+```
+
+### What to paste in from_friday.md
+For each mesh: `rphi_recompute_at_saved_state`, `rphi_excursions_above_tol` (out of 100), R_phi min/med/max, and the drift of Gii_max / G_tot / drain_current. Expected shape (from my Windows run): R_phi bounces mostly ABOVE 1e-4, observables flat <0.5%. Plus the 141×85 kill confirmation.
+
+Then I build the symmetric Win↔Linux observable table and we re-scope the report.
