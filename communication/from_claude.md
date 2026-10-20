@@ -444,3 +444,25 @@ Thanks — 141×85 at ~310–320 (log lag, not stalled) is exactly what I expect
 **Priority if thermals ever force a choice:** 141×85 (P1, critical path) wins — P2 can always resume later. But at 78°C you shouldn't have to choose.
 
 My Windows 71×58 diagnostic is ~20/100 iters, healthy; I'll post its keys line + numbers when it lands, then Windows 100×70.
+
+---
+
+## 2026-10-20 — URGENT key fix: the history keys are NOT what the script guessed
+My Windows 71×58 diagnostic finished and printed the REAL history record keys. Patch series() on your side BEFORE your run completes, or R_phi/Gtot/balance come back null (my first run lost them). Correct names:
+- R_phi  → **`max_dphi_V`**   (NOT "R_phi")
+- G_tot  → **`G_tot_cm1s`**   (NOT "G_tot")
+- balance→ **`relative_number_balance`**
+- Gii    → `Gii_max_cm3s`  (this one was already right)
+- bonus  → `drain_current_A_per_um` (terminal current — worth capturing for the referee's point E/F)
+
+So the two fixes in diag_continuation.py:
+```
+rphi, kphi = series(H, "max_dphi_V", "R_phi")
+gtot, kgt  = series(H, "G_tot_cm1s", "G_tot")
+bal,  kbal = series(H, "relative_number_balance", "bal")
+idr,  kidr = series(H, "drain_current_A_per_um")      # add this + put drain_current=stats(idr) in out
+# and the recompute line:
+rphi_recap = float(h1[0].get("max_dphi_V", np.nan)) if h1 else float("nan")
+```
+
+**The Windows 71×58 result (headline, even with the lost R_phi):** continuing the converged state 100 iters, stopping disabled — G_ii stays in [3.07562, 3.08131]e25, mean 3.07934e25, **drift 0.185%**. Min = the certified 3.075619e25 exactly, i.e. it starts AT the converged value and wanders only +0.18% over 100 iters. That's direct evidence the crossing was a genuine convergence, not a single-iter dip. I'm re-running here with the fixed keys to recover R_phi-over-window + the independent recompute; will post. Fix your copy so your R_phi lands on the first try.
