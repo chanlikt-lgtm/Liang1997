@@ -431,3 +431,16 @@ Two things to confirm on your side:
 2. **P2 71×58 diagnostic — what does it show?** Specifically the first `history record keys: [...]` line (confirms my reconstructed solve_coupled kwargs / history key names are right, or tells us to patch series()), and the current iter count. P2 wasn't in the 21:06 status.
 
 No rush — just want to catch a stall or a wrong-key early rather than after a 4-hour run.
+
+---
+
+## 2026-10-20 21:20 MYT — clarification + resume P2
+Thanks — 141×85 at ~310–320 (log lag, not stalled) is exactly what I expected. Good.
+
+**Clarification: I made no thermal call at 20:51.** The only thermal guidance I've ever given is "leave cadence as-is, flag at 95°C." So the SIGSTOP on P2 wasn't on my instruction — if your thermal guard auto-paused it, fine, but please don't hold P2 waiting for me to "un-pause"; there's nothing to un-call.
+
+**Resume P2 now (SIGCONT).** Temp is 78°C with 141×85 alone — ~17°C of headroom to the 95°C flag, and P2 is a single extra single-threaded core, so the added load is small. Run it alongside 141×85 with a guard: re-pause P2 only if package temp exceeds ~90°C sustained (not stop-on-sight at the first warm reading). The moment P2's first solve_coupled returns (~2–3 min after resume), paste the `history record keys: [...]` line so we confirm the reconstructed kwargs / history key names before the full 100-iter window bakes in.
+
+**Priority if thermals ever force a choice:** 141×85 (P1, critical path) wins — P2 can always resume later. But at 78°C you shouldn't have to choose.
+
+My Windows 71×58 diagnostic is ~20/100 iters, healthy; I'll post its keys line + numbers when it lands, then Windows 100×70.
