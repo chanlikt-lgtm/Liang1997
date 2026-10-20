@@ -1,0 +1,32 @@
+seed 0 (control) n_outer=400
+  Gii_max_final=3.0293774798023067e+25
+  Gtot_final=91227845178670.5 R_phi_final=0.0005450707332017579
+  certified_persistent=False first_gate_iter=None post_gate_iters=0
+  hotspot_node_ij=[41, 0] hotspot_xy_um=[0.5893835478389261, 0.0]
+  assemble_perturb_calls=0
+  perturb A_data frac_changed=None max_abs_rel=None rms_rel=None
+  perturb b frac_changed=None max_abs_rel=None rms_rel=None
+seed 1 (perturbed) n_outer=400
+  Gii_max_final=3.0492306028664445e+25
+  Gtot_final=91903648353915.83 R_phi_final=0.0003683053051082297
+  certified_persistent=True first_gate_iter=374 post_gate_iters=26
+  hotspot_node_ij=[41, 0] hotspot_xy_um=[0.5893835478389261, 0.0]
+  assemble_perturb_calls=400
+  perturb A_data frac_changed=0.42257245466772536 max_abs_rel=6.633704785475621e-16 rms_rel=1.237945552461781e-16
+  perturb b frac_changed=0.009629129246859148 max_abs_rel=5.004352051167855e-16 rms_rel=1.874267992491607e-17
+seed 2 (perturbed) n_outer=400
+  Gii_max_final=3.050173399774932e+25
+  Gtot_final=91832138518335.94 R_phi_final=0.0004809451917358043
+  certified_persistent=True first_gate_iter=82 post_gate_iters=318
+  hotspot_node_ij=[41, 0] hotspot_xy_um=[0.5893835478389261, 0.0]
+  assemble_perturb_calls=400
+  perturb A_data frac_changed=0.4227253852635673 max_abs_rel=6.033527462969585e-16 rms_rel=1.237801534477115e-16
+  perturb b frac_changed=0.009542679187851958 max_abs_rel=5.289153367582507e-16 rms_rel=1.8618831972525455e-17
+seed 3 (perturbed) n_outer=400
+  Gii_max_final=2.7380711091956687e+25
+  Gtot_final=82308009217024.6 R_phi_final=0.0015906259490023889
+  certified_persistent=True first_gate_iter=376 post_gate_iters=24
+  hotspot_node_ij=[41, 0] hotspot_xy_um=[0.5893835478389261, 0.0]
+  assemble_perturb_calls=400
+  perturb A_data frac_changed=0.4226004075448461 max_abs_rel=6.5541872739134e-16 rms_rel=1.2377460115045541e-16
+  perturb b frac_changed=0.009610029815218026 max_abs_rel=5.114243188636082e-16 rms_rel=1.8677957948472358e-17

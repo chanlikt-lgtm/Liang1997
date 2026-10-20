@@ -1,0 +1,19 @@
+Kha 2026-10-15 23:05:13  WIPE: backed up existing trio checkpoints -> data/prerun_backup_20261015_230513
+Kha 2026-10-15 23:05:13  WIPE: removed all node NPZ + progress sidecars + Stage-1/2 sentinels (cold)
+Kha 2026-10-15 23:05:13  === RUN START.  Interpreter: python3
+Kha 2026-10-15 23:05:13  STAGE 1/6: foundation -> one-way SHE -> coupled -> Figs 2-8 overlays (~1.5-2 h)
+Kha 2026-10-15 23:49:29  STAGE 2/6: Rev 5 Anderson-accelerated coupled fixed point, 3 grids (~1.5 h)
+Jum 2026-10-16 01:18:52  STAGE 3/6: Rev 6 controlled spatial-convergence trio (~23 h, SEQUENTIAL, continue-until-plateau)
+Jum 2026-10-16 08:04:25  WIPE: backed up existing trio checkpoints -> data/prerun_backup_20261016_080425
+Jum 2026-10-16 08:04:25  WIPE: removed all node NPZ + progress sidecars + Stage-1/2 sentinels (cold)
+Jum 2026-10-16 08:04:25  === RUN START.  Interpreter: /home/chanlik/.openclaw/workspace/Liang1997/.venv/bin/python
+Jum 2026-10-16 08:04:25  STAGE 1/6: foundation -> one-way SHE -> coupled -> Figs 2-8 overlays (~1.5-2 h)
+Jum 2026-10-16 08:48:04  STAGE 2/6: Rev 5 Anderson-accelerated coupled fixed point, 3 grids (~1.5 h)
+Jum 2026-10-16 09:37:38  WIPE: removed all node NPZ + progress sidecars + Stage-1/2 sentinels (cold)
+Jum 2026-10-16 09:37:38  === RUN START.  Interpreter: /home/chanlik/.openclaw/workspace/Liang1997/.venv/bin/python
+Jum 2026-10-16 09:37:38  STAGE 1/6: foundation -> one-way SHE -> coupled -> Figs 2-8 overlays (~1.5-2 h)
+Jum 2026-10-16 09:45:36  WIPE: removed all node NPZ + progress sidecars + Stage-1/2 sentinels (cold)
+Jum 2026-10-16 09:45:36  === RUN START.  Interpreter: /home/chanlik/.openclaw/workspace/Liang1997/.venv/bin/python
+Jum 2026-10-16 09:45:36  STAGE 1/6: foundation -> one-way SHE -> coupled -> Figs 2-8 overlays (~1.5-2 h)
+Jum 2026-10-16 10:28:43  STAGE 2/6: Rev 5 Anderson-accelerated coupled fixed point, 3 grids (~1.5 h)
+Jum 2026-10-16 12:04:16  STAGE 3/6: Rev 6 controlled spatial-convergence trio (~23 h, SEQUENTIAL, continue-until-plateau)

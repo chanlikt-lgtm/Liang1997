@@ -175,7 +175,12 @@ def main():
         w.writerow(CSV_HEADER)
 
     summary = []
-    for Nx, Ny, warm_src in TRIO:
+    for _i, (Nx, Ny, warm_src) in enumerate(TRIO):
+        if _i > 0:
+            _cool = float(os.environ.get("TRIO_COOLDOWN_S", "0") or "0")
+            if _cool > 0:
+                log("COOLDOWN: %.0f s pause before node %dx%d (thermal protection)" % (_cool, Nx, Ny))
+                time.sleep(_cool)
         npz = node_npz(Nx, Ny)
         prov, detail = validate_checkpoint(Nx, Ny)
         prog = load_progress(Nx, Ny)

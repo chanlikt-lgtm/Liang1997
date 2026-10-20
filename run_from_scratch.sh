@@ -42,7 +42,9 @@ stamp "STAGE 1/6: foundation -> one-way SHE -> coupled -> Figs 2-8 overlays (~1.
 
 stamp "STAGE 2/6: Rev 5 Anderson-accelerated coupled fixed point, 3 grids (~1.5 h)"
 "$PY" src/coupled_anderson.py 40 34 6 0.5 40 1
+sleep 300   # thermal cooldown between Anderson grids (inert, wall-time only)
 "$PY" src/coupled_anderson.py 60 50 6 0.5 40 1
+sleep 300   # thermal cooldown between Anderson grids (inert, wall-time only)
 "$PY" src/coupled_anderson.py 80 66 6 0.5 40 1
 "$PY" src/she2d_anderson_fig.py
 

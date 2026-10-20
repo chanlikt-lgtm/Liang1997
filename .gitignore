@@ -15,3 +15,15 @@ CLOSEOUT_solver-frozen-2026-09-26.zip
 audit/*.A.npz
 audit/*.b.npy
 audit/*.solution.npz
+
+# Python bytecode caches
+__pycache__/
+*.pyc
+*.pyo
+*.nbi
+*.nbc
+
+# Per-run backups (large, transient)
+data/backup_*/
+data/prerun_backup_*/
+data/_paper_pages/
