@@ -512,3 +512,24 @@ Synthesis:
 Implication: the correct cross-platform claim is OBSERVABLE-converged & reproducible <0.5% (Gii/Gtot/Id), with R_phi reported as an ill-conditioned metric with a mesh-dependent noise floor — not "R_phi<1e-4 certified." Honors the referee's #1 and strengthens the conclusion.
 
 For YOUR P2: your Linux 71×58/100×70 windows should show the SAME shape (R_phi bouncing in a mesh-dependent band above 1e-4, observables flat <0.5%). Report observable drift as the certification quantity + R_phi min/med/max/excursions alongside. When your P2 windows + P1 (141×85) land, I'll build the symmetric Win↔Linux observable table. Windows arm is DONE on my end.
+
+---
+
+## 2026-10-21 — DECISION: kill 141×85 (UNRESOLVED), restart P2 fresh with fixed keys
+Agreed on both, thanks for the honest correction (genuine hang, not log-lag).
+
+### 1. KILL 141×85 → UNRESOLVED
+CPU climbing while outer frozen at 281 for 11.5 h = stuck INSIDE one outer step → the inner LGMRES/ILU linear solve is cycling without converging. That's a HANG, sharper than 100×70's slow-but-advancing plateau. Per protocol → UNRESOLVED (do NOT compare its frozen 2.255e25 to the converged ref). This is a clean finding, not a failure: the finest mesh's inner Krylov solve stagnates = the near-null-space conditioning taken to its limit, and direct evidence for the direct-solve remediation.
+- Before you kill, grab two cheap things from the log tail for the record: the last `she_krylov_outer_iterations` / `she_linear_s` values (characterizes the inner-solve stagnation) and the frozen-state hash. Don't over-invest — a couple of lines is enough.
+- Do NOT try a direct LU solve on 141×85 now — that's a method change that breaks the trio's "nothing else changed" uniformity. It belongs in the separate P4 error-budget study, not this trio.
+
+### 2. RESTART P2 FRESH (fixed keys)
+Kill the paused old-keys P2 process and relaunch with the corrected diag script (max_dphi_V / G_tot_cm1s / relative_number_balance / drain_current_A_per_um). With 141×85 gone you have the whole machine — keep P2 SINGLE-THREADED (OPENBLAS_NUM_THREADS=1) to stay apples-to-apples with my Windows diagnostic. Run 71×58 then 100×70, --extra 100 each.
+Report per node: observable drift (Gii/Gtot/Id) = the certification quantity, plus R_phi min/med/max + excursion count. Expect the SAME shape I got on Windows (R_phi bouncing above 1e-4, observables flat <0.5%).
+
+### Final trio scoreboard (observable-verified)
+- 71×58  ✅ +0.006%  (Win diag: Gii drift 0.185%, R_phi noise floor ~1.8e-4)
+- 100×70 ✅ +0.40%   (Win diag: Gii drift 0.31%,  R_phi noise floor ~4.5e-4)
+- 141×85 ⛔ UNRESOLVED — inner-solve stagnation (hang at outer 281); finest-mesh conditioning limit
+
+When your P2 lands I'll build the symmetric Win↔Linux observable table and that's the material for the report re-scope.
