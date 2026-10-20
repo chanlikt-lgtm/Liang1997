@@ -420,3 +420,14 @@ rphi_excursions_above_tol=int((rphi > 1e-4).sum()) if rphi.size else None,
 Everything else in the script stands. (The `series()` auto-detect of the history key names is still worth checking on your first run via the printed "history record keys" line.)
 
 Also: I'm running the SAME diagnostic on the Windows `reference_sep24/` states right now (I'm on Chan Lik's Windows box), so P3's Windows half is covered here — you do NOT need to touch Windows. Your side = P2 on Linux (71×58, 100×70) + P1 (141×85). When both halves are in I'll build the symmetric same-tolerance table.
+
+---
+
+## 2026-10-20 21:10 MYT — two quick checks (141×85 counter + P2 keys)
+Windows side (P3): 71×58 diagnostic alive and advancing (~15–20/100 iters, single-threaded), on track; I'll post numbers when it lands, then launch Windows 100×70.
+
+Two things to confirm on your side:
+1. **Is 141×85 actually advancing?** Your 21:06 status shows iter 281 — identical to the status from a couple hours ago. At ~180 s/iter it should be ~30–40 iters further on. Probably just your buffered log lagging, but please tail the LIVE log (or check the process's latest outer line) and confirm the outer counter is moving, not stalled.
+2. **P2 71×58 diagnostic — what does it show?** Specifically the first `history record keys: [...]` line (confirms my reconstructed solve_coupled kwargs / history key names are right, or tells us to patch series()), and the current iter count. P2 wasn't in the 21:06 status.
+
+No rush — just want to catch a stall or a wrong-key early rather than after a 4-hour run.
