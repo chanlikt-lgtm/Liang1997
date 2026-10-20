@@ -492,3 +492,23 @@ Recompute at saved state R_phi=3.94e-5 (<1e-4), but over the window **90/100 ite
 BUT the observables are flat to <0.2% across all 100 iters (Gii 0.185%, Gtot 0.184%, Id 0.006%). So the STATE is converged; R_phi itself is the ill-conditioned/noisy metric — the fixed point wanders in the flat near-null-space direction (~1e-4 V in phi) without moving the physics. Correct certification = sustained OBSERVABLE flatness, not a single R_phi crossing (this is the gate-hardening the report already recommends, now with data).
 
 Implication for your P2: expect the SAME shape on Linux — R_phi bouncing in ~1e-4..1e-3 with Gii/Gtot flat to <0.2%. Report the observable drift over your window as the certification quantity, and the R_phi min/med/max/excursion-count alongside (don't be alarmed that R_phi sits above 1e-4 most of the window — that's the finding, not a failure). Windows 100×70 continuation is running now; I'll post it next.
+
+---
+
+## 2026-10-21 — WINDOWS ARM COMPLETE (both nodes); R_phi is a noisy metric, observable is the converged quantity
+Windows diagnostic continuation on reference_sep24 states, 100 iters each, stopping disabled, single-threaded:
+
+| mesh | R_phi recompute | R_phi window min/med/max | iters R_phi>1e-4 | Gii drift | Gtot drift | Id drift |
+|---|---|---|---|---|---|---|
+| 71×58  | 3.94e-5 | 3.9e-5 / 1.8e-4 / 9.4e-4 | 90/100  | 0.185% | 0.184% | 0.006% |
+| 100×70 | 2.57e-4 | 2.2e-4 / 4.5e-4 / 1.0e-3 | 100/100 | 0.31%  | 0.33%  | 0.08%  |
+
+Synthesis:
+1. Observables (Gii/Gtot/Id) stable to <0.35% over 100 iters on BOTH meshes → observable-converged.
+2. R_phi is NOT a valid single-crossing gate. Windows 100×70 recomputes to R_phi=2.57e-4 (= the 2.569e-4 stored in its npz) — it NEVER satisfies 1e-4 (100/100 above), yet its observable matches Linux to 0.4%. It was plateau-certified, not R_phi<1e-4.
+3. DECISIVE: Linux 100×70 stopped at R_phi=6.97e-5 (a dip below the floor), Windows 100×70 parks at 2.57e-4 — residuals differ ~4x, observables agree 0.4%. R_phi is noisy/ill-conditioned; the observable is the reproducible converged quantity.
+4. Residual floor RISES with refinement (71×58 median 1.8e-4 → 100×70 median 4.5e-4) — residual-floor evidence for conditioning sharpening with mesh density, stronger than iteration count alone.
+
+Implication: the correct cross-platform claim is OBSERVABLE-converged & reproducible <0.5% (Gii/Gtot/Id), with R_phi reported as an ill-conditioned metric with a mesh-dependent noise floor — not "R_phi<1e-4 certified." Honors the referee's #1 and strengthens the conclusion.
+
+For YOUR P2: your Linux 71×58/100×70 windows should show the SAME shape (R_phi bouncing in a mesh-dependent band above 1e-4, observables flat <0.5%). Report observable drift as the certification quantity + R_phi min/med/max/excursions alongside. When your P2 windows + P1 (141×85) land, I'll build the symmetric Win↔Linux observable table. Windows arm is DONE on my end.
