@@ -302,3 +302,107 @@ Deliverable: a convergence-certification table + R_phi/observable-vs-iter plots 
 The Windows reference used the legacy gate (R_phi≤1.5e-3 + plateau); Linux used R_phi<1e-4 — different acceptance rules. To make it a true same-tolerance experiment, the Windows nodes get rerun to R_phi<1e-4 with the same post-crossing diagnostic window, comparing both final values AND paths. This is a Windows-side task; flagging it so you don't duplicate it on Linux.
 
 Priority order: P1 (finish what's running) → P2 (diagnostic continuation). P3 is parallel on Windows. Longer-horizon studies (error-budget: linear-tol / direct-vs-iterative / energy-grid / Anderson; anisotropic x-only & y-only refinement; substrate-hole-current physical validation) are separate follow-on studies, not needed to close the reproducibility question — hold unless asked.
+
+---
+
+## 2026-10-20 — STEP-BY-STEP: P2 diagnostic continuation (71×58, 100×70) + P1 (141×85)
+Mechanical steps. No source/physics edit — a read-only diagnostic harness. P2 is the one that answers the referee ("first R_phi crossing ≠ certified convergence").
+
+### Step 0 — sync
+```
+cd ~/.openclaw/workspace/Liang1997 && git pull
+```
+
+### Step 1 — save this diagnostic script as audit/diag_continuation.py
+```python
+"""audit/diag_continuation.py -- P2 diagnostic continuation (read-only).
+Loads a converged node state, continues N extra outer iters with stopping
+DISABLED (tol_phi=0), reports R_phi / Gii_max / Gtot over the window, and
+independently recomputes R_phi from the saved state (one fresh fixed-point
+application, outside the original stopping logic).
+Usage:  python audit/diag_continuation.py data/she2d_richardson_71x58.npz --extra 100
+"""
+from __future__ import annotations
+import os, sys, json, argparse
+import numpy as np
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
+from coupled_she import solve_coupled
+
+PHI_GATE, AA_DEPTH, AA_BETA, AA_STEP_CAP = -0.74, 6, 0.5, 5.0
+SHE_TOL, DH_EV = 1e-8, 0.0125
+COMMON_PHI_SPAN = (-0.60, 3.65)
+
+def run(x, y, phi0, p0, maxo, tol):
+    return solve_coupled(x_mesh=x, y_mesh=y, Phi_gate=PHI_GATE, accel="anderson",
+        aa_depth=AA_DEPTH, aa_beta=AA_BETA, aa_step_cap=AA_STEP_CAP, freeze_H=True,
+        dH_eV=DH_EV, she_tol=SHE_TOL, max_outer=maxo, tol_phi=tol, verbose=False,
+        phi_init=phi0, p_init=p0, phi_span_H_override=COMMON_PHI_SPAN)
+
+def series(H, *keys):
+    for k in keys:
+        if H and k in H[0]:
+            return np.array([float(h.get(k, np.nan)) for h in H]), k
+    return np.array([]), None
+
+def stats(v):
+    v = v[np.isfinite(v)]
+    if v.size == 0: return None
+    return dict(min=float(v.min()), med=float(np.median(v)), max=float(v.max()),
+                mean=float(v.mean()), drift=float((v.max()-v.min())/v.mean()))
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("npz"); ap.add_argument("--extra", type=int, default=100)
+    a = ap.parse_args()
+    d = np.load(a.npz, allow_pickle=True)
+    x, y, phi0, p0 = d["x"], d["y"], d["phi"], d["p"]
+    tag = os.path.basename(a.npz).replace(".npz", "")
+
+    # (A) independent R_phi recompute at the saved state (one fresh iteration)
+    h1 = run(x, y, phi0, p0, 1, 0.0).get("history", [])
+    print("history record keys:", sorted(h1[0].keys()) if h1 else "(none)")
+    rphi_recap = float(h1[0].get("R_phi", np.nan)) if h1 else float("nan")
+
+    # (B) diagnostic continuation: N extra iters, stopping disabled
+    H = run(x, y, phi0, p0, a.extra, 0.0).get("history", [])
+    rphi, kphi = series(H, "R_phi", "Rphi", "r_phi")
+    gii,  kgii = series(H, "Gii_max_cm3s", "Gii_max")
+    gtot, kgt  = series(H, "G_tot", "Gtot")
+    bal,  kbal = series(H, "bal", "balance")
+    out = dict(tag=tag, extra=a.extra, keys=dict(rphi=kphi, gii=kgii, gtot=kgt, bal=kbal),
+        rphi_recompute_at_saved_state=rphi_recap,
+        rphi_excursions_above_1e-4=int((rphi > 1e-4).sum()) if rphi.size else None,
+        R_phi=stats(rphi), Gii_max=stats(gii), G_tot=stats(gtot), balance=stats(bal),
+        rphi_series=[float(v) for v in rphi], gii_series=[float(v) for v in gii])
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "diag_cont_%s.json" % tag), "w") as f:
+        json.dump(out, f, indent=2)
+    print(json.dumps({k: out[k] for k in ("tag","keys","rphi_recompute_at_saved_state",
+        "rphi_excursions_above_1e-4","R_phi","Gii_max","G_tot","balance")}, indent=2))
+
+if __name__ == "__main__":
+    main()
+```
+NOTE: I reconstructed the solve_coupled kwargs from driver_equiv.py — they should match, but on the first run check the printed "history record keys" line. If R_phi/Gtot/Gii aren't under the names I guessed, fix the series() key lists (one-line change) and rerun. The npz carries x/y/phi/p (confirmed).
+
+### Step 2 — run on 71×58 (fast, ~minutes)
+```
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python audit/diag_continuation.py data/she2d_richardson_71x58.npz --extra 100 2>&1 | tee logs/diag_cont_71x58.log
+```
+
+### Step 3 — run on 100×70 (slower; use ~100 extra, or 50 if time-pressed)
+```
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python audit/diag_continuation.py data/she2d_richardson_100x70.npz --extra 100 2>&1 | tee logs/diag_cont_100x70.log
+```
+
+### Step 4 — what to report (paste here + push the json/logs)
+For each mesh: `rphi_recompute_at_saved_state` (should be ≈ the certified value 7.1e-5 / 7.0e-5 — confirms the stop was genuine, not a single-iter dip), `rphi_excursions_above_1e-4` over the 100-iter window, and the R_phi / Gii_max / G_tot min-med-max-drift. Interpretation: a handful of small excursions with Gii drift ≲1% = verified-converged; many excursions back to ~1e-3 with Gii swinging = the crossing was premature and we re-open it.
+```
+git add audit/diag_continuation.py audit/diag_cont_*.json logs/diag_cont_*.log && git commit -m "P2 diagnostic continuation (71x58, 100x70)" && git push
+```
+
+### P1 — 141×85 (unchanged, keep running)
+Continue to iter ~1000; on break verify residual AND observable before certifying; on persistent plateau → UNRESOLVED; note any Anderson-history reset; log hole balance.
+
+### P3 — Windows symmetric rerun = Chan Lik's machine, NOT yours. Skip on Linux.
+
+Order: P2 Step 2 (71×58, quick — gives us the method + first answer fast) → Step 3 (100×70) → keep P1 running in parallel.
