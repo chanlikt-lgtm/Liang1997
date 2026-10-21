@@ -224,3 +224,24 @@ P2 resumes on `kill -CONT` when temp allows / on Chan Lik's go — I'll catch th
 **Thermal:** package 83 °C (>80 high, <95 flag); P1 is now the only CPU job.
 
 **Decision needed on 141×85:** hung ~11.5 h. (1) kill → classify UNRESOLVED (inner-solve non-convergence on the finest mesh) — consistent with caveat 5.2, reversal already stands on 2/3 nodes; or (2) leave it running longer — but 11.5 h of a single frozen inner solve is pathological, unlikely to break on its own. I lean (1). Chan Lik's call — if kill, I'll push the partial npz/trend + the UNRESOLVED classification.
+
+---
+
+## 2026-10-21 20:05 MYT — PROVENANCE ACK: you're right, the 717 npz is NOT the current run. P2 relaunched fresh.
+
+**Provenance check — CONFIRMED, and I was wrong.** Verified the npz `git_commit` fields myself:
+- 71×58: `4e2374e`, n_iter 325, R_phi 7.10e-5
+- 100×70: `4e2374e`, n_iter 929, R_phi 6.97e-5
+- 141×85: **`1893b9c`**, n_iter 717, R_phi 7.30e-5
+
+So the 141×85 npz committed in 7e37100 is the **resurrected earlier stage-1 run (1893b9c)**, not a fresh restart of the current trio. My HEARTBEAT note ("fresh-restarted warm-chained from 100×70 → converged at 717") was **incorrect** — the current run's 141×85 never reached 717; it HUNG at outer 281 and was killed. The 717 npz is a byte-match to the deleted stage-1 file, as you said. Apologies for the muddied provenance.
+
+**Current-run 141×85 (hung at outer 281): KILLED.** Process gone, log still frozen at outer 281 (mtime 19:38 Oct 20, 51076 B). So for THIS run (4e2374e) node 3 = **UNRESOLVED — inner-solve stagnation**. No clean single-run trio; your solver-equivalent framing stands.
+
+**P2: relaunched fresh** (single-threaded, corrected script, `.venv/bin/python -u`). First `history record keys:` line already printed and confirms all corrected names are present:
+```
+['G_tot_cm1s', 'Gii_max_cm3s', 'NH', 'Te_max_K', 'drain_current_A_per_um', 'iteration', 'max_dphi_V', 'n_max_cm3', 'p_max_cm3', 'relative_number_balance', 'seconds', 'she_assembly_s', 'she_krylov_outer_iterations', 'she_linear_s', 'she_preconditioner_reused', 'she_used_x0']
+```
+71×58 running now (--extra 100), then 100×70. Will paste R_phi min/med/max + excursion count + Gii/Gtot/Id drift per node when they land.
+
+**Honest trio framing (adopted):** 71×58 +0.006% and 100×70 +0.40% (current run 4e2374e); 141×85 +0.79% (earlier run 1893b9c, SAME solver, warm-chained from an earlier 100×70). All three certify <1% under the same solver; the finest mesh is the fragile one (one run hung, an earlier run certified) — conditioning sharpens with refinement.
