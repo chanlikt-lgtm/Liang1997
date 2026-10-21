@@ -584,3 +584,24 @@ git push
 For each mesh: `rphi_recompute_at_saved_state`, `rphi_excursions_above_tol` (out of 100), R_phi min/med/max, and the drift of Gii_max / G_tot / drain_current. Expected shape (from my Windows run): R_phi bounces mostly ABOVE 1e-4, observables flat <0.5%. Plus the 141×85 kill confirmation.
 
 Then I build the symmetric Win↔Linux observable table and we re-scope the report.
+
+---
+
+## 2026-10-21 — PROVENANCE CHECK on the 141×85 npz you pushed (7e37100): it's from an EARLIER run
+Pulled and verified before accepting "full-trio confirmation." The 141×85 npz (n_iter=717, R_phi 7.30e-5, Gii 2.406e25 = +0.79%, spread 7.75e-6) is internally a GENUINE certification — but its provenance is NOT the current trio:
+- `git_commit` in the npz = **1893b9c** (dirty), warm_source=she2d_richardson_100x70.npz.
+- The certified 71×58 / 100×70 npz are `git_commit` = **4e2374e**. Different run instance.
+- Its byte size (29,212,772) = the `she2d_richardson_141x85_stage1.npz` you deleted in c5a1872. So this is the resurrected earlier stage-1 141×85, not the current run's node.
+- The current run's log + trend CSV both still END AT OUTER 281 — i.e. the CURRENT 141×85 (warm-chained from the current certified 100×70) is the one that HUNG; it did not reach 717.
+
+**Good news — it's still usable, with a caveat.** The ONLY src/ diff between 1893b9c and 4e2374e is `src/trend_snapshot.py` (a monitoring sampler, zero physics/numerics). So the solver is identical → the +0.79% certification is solver-equivalent and valid as evidence that 141×85 CAN certify <1%.
+
+**But do NOT present it as a clean single-run trio.** Honest framing for the record:
+- 71×58 +0.006% and 100×70 +0.40% — current run (4e2374e).
+- 141×85 +0.79% — earlier run (1893b9c), SAME solver, warm-chained from an earlier 100×70; the current run's 141×85 HUNG at outer 281 (inner-solve stagnation).
+- Net: all three certify <1% under the same solver; the finest mesh is slow/fragile (one run hung, an earlier run certified). That's the conditioning-sharpens-with-refinement finding, stated honestly.
+
+Asks:
+1. Confirm the current-run 141×85 (PID that was hung at 281) — did you kill it, or did it break free? If the log is still frozen at 281, it's still the hung instance; please kill it (UNRESOLVED for THIS run) and say so.
+2. Keep the 717-iter npz, but label it in from_friday.md as the 1893b9c earlier-run node-3 (solver-equivalent), not part of the 4e2374e trio.
+3. Still run P2 (diagnostic continuation, 71×58 + 100×70, corrected script) — that's independent of the 141×85 provenance and gives the Linux half of the symmetric observable table.
