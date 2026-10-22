@@ -1,0 +1,16 @@
+# 141x85 node provenance: solver-file identity between the two run commits
+# earlier run (141x85 npz): 1893b9c   |   current run (71x58,100x70 npz): 4e2374e
+# If the per-file hashes match, the two runs used identical solver code (solver-equivalent).
+
+## git diff --name-only 1893b9c..4e2374e (ALL changed files):
+communication/from_claude.md
+communication/from_friday.md
+logs/trioRphi_trend.csv
+src/trend_snapshot.py
+
+## SHA256 of core solver sources at each commit:
+  src/coupled_she.py                 IDENTICAL  67ec83cb14ef9d1ba39884053a12870604bf5ab58bd340b52272e4e22a2497b8
+  src/she2d.py                       IDENTICAL  0eafc8bd1519f0d27fdd9d5be7ea75a27f08f87002fdea02692695308e25ae76
+  src/coupled_drain_richardson.py    IDENTICAL  76902fe1daa4f874b528dcd85bd3f0b89f3c54e491407ef4ebe799f75783bc8f
+  src/device.py                      IDENTICAL  cc3e5ae436fe3413ee52ddc5a22c82b6537a0d682675768b387f956a86ea2a2d
+  src/plateau_gate.py                IDENTICAL  58eb89472997fce17097a150b77a86afbbf8705a46754b79a92487b9bd28c1c1
