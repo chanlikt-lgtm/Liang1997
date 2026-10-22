@@ -1,0 +1,285 @@
+{
+  "program": "Liang1997 read-only checkpoint validator",
+  "inspected_utc": "2026-10-22T01:20:28+00:00",
+  "repo": "E:\\claude\\CEDA\\liang1997_she_bte_mosfet_repro",
+  "nodes": [
+    {
+      "node": "71x58",
+      "npz": "data\\she2d_richardson_71x58.npz",
+      "sidecar": "data\\she2d_richardson_71x58.progress.json",
+      "sha256_npz": "33533e2c31921ab6024ccc53b3ebfc1cc059bce87c28f6e7c9c4b8f2a13dc1b3",
+      "sha256_sidecar": "84aeb8e3944e2c5bd4d8e27c738bdbc3ff8a31879f4a2c0b4c52fcc7f2e044cc",
+      "Gii": 3.075618509560635e+25,
+      "Gtot": 92649432615756.12,
+      "Rphi": 3.9426349559334994e-05,
+      "drain_dx": 0.003803151376701064,
+      "H_hash": "b4319bb03303",
+      "signature": {
+        "ratio": 6.0,
+        "W": 0.09,
+        "X_C": 0.6,
+        "dH_eV": 0.0125,
+        "NH": 591.0,
+        "she_tol": 1e-08
+      },
+      "abs_dev_pct": 2.8634953030312653,
+      "surface_dy": 0.00048364121085098916,
+      "git_commit": "930dd86",
+      "plateau_spread_Gii": 4.815379466654366e-05,
+      "plateau_spread_Gtot": 0.00018368544444535533,
+      "uncertainty_half_range": 7.40522425651227e+20,
+      "last_Rphi": 3.9426349559334994e-05,
+      "certified_iters": [
+        356,
+        357,
+        358,
+        359
+      ]
+    },
+    {
+      "node": "100x70",
+      "npz": "data\\she2d_richardson_100x70.npz",
+      "sidecar": "data\\she2d_richardson_100x70.progress.json",
+      "sha256_npz": "ad390eb48bd4b1f584083e76f2fabb2022c236838fffc8f259a65f089ed883b7",
+      "sha256_sidecar": "50c8fc7b3c0accb596837434c39c8712a39113dfff4d088efea30690888d56a3",
+      "Gii": 2.08756145785845e+25,
+      "Gtot": 58949093304433.695,
+      "Rphi": 0.0006215586713598231,
+      "drain_dx": 0.0026889651645903845,
+      "H_hash": "b4319bb03303",
+      "signature": {
+        "ratio": 6.0,
+        "W": 0.09,
+        "X_C": 0.6,
+        "dH_eV": 0.0125,
+        "NH": 591.0,
+        "she_tol": 1e-08
+      },
+      "abs_dev_pct": -2.221945767754097,
+      "surface_dy": 0.0003429017303743266,
+      "git_commit": "f225872",
+      "plateau_spread_Gii": 0.00012329452212153988,
+      "plateau_spread_Gtot": 0.00011892792071120305,
+      "uncertainty_half_range": 1.2869330050641727e+21,
+      "last_Rphi": 0.0006215586713598231,
+      "certified_iters": [
+        297,
+        298,
+        299,
+        300
+      ]
+    },
+    {
+      "node": "141x85",
+      "npz": "data\\she2d_richardson_141x85.npz",
+      "sidecar": "data\\she2d_richardson_141x85.progress.json",
+      "sha256_npz": "59b16b7854ea228a06064586aa0ca98f055a9418c1272d633cd87ad3389d0a1f",
+      "sha256_sidecar": "a35f87a615bbe94ea8c98ad261d6d3a4cf42d5656e5a4ff9051ea48bf240bd49",
+      "Gii": 2.3994342366926235e+25,
+      "Gtot": 65552945815490.234,
+      "Rphi": 0.0001930474588724973,
+      "drain_dx": 0.0019011775602025827,
+      "H_hash": "b4319bb03303",
+      "signature": {
+        "ratio": 6.0,
+        "W": 0.09,
+        "X_C": 0.6,
+        "dH_eV": 0.0125,
+        "NH": 591.0,
+        "she_tol": 1e-08
+      },
+      "abs_dev_pct": -0.5621949153492094,
+      "surface_dy": 0.00024065524150034372,
+      "git_commit": "f225872",
+      "plateau_spread_Gii": 8.895710253776662e-06,
+      "plateau_spread_Gtot": 1.130408030734807e-05,
+      "uncertainty_half_range": 1.0672328061739231e+20,
+      "last_Rphi": 0.0001930474588724973,
+      "certified_iters": [
+        117,
+        118,
+        119,
+        120
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "name": "Git revision discoverable",
+      "passed": true,
+      "detail": "Full Git SHA is recorded"
+    },
+    {
+      "name": "Source tree clean",
+      "passed": false,
+      "detail": "Working tree contains modifications; do not treat this as frozen comparable run"
+    },
+    {
+      "name": "Exists src/plateau_gate.py",
+      "passed": true,
+      "detail": "Found"
+    },
+    {
+      "name": "Exists src/run_richardson_trio.py",
+      "passed": true,
+      "detail": "Found"
+    },
+    {
+      "name": "Exists src/gen_run_report.py",
+      "passed": true,
+      "detail": "Found"
+    },
+    {
+      "name": "Exists src/richardson_fit.py",
+      "passed": true,
+      "detail": "Found"
+    },
+    {
+      "name": "Exists report/report_v6_full.tex",
+      "passed": true,
+      "detail": "Found"
+    },
+    {
+      "name": "71x58 four real consecutive samples",
+      "passed": true,
+      "detail": "abs_iters=[356, 357, 358, 359]"
+    },
+    {
+      "name": "71x58 sidecar matches final NPZ",
+      "passed": true,
+      "detail": "last_Gii=3.07561851e+25, saved_Gii=3.07561851e+25, last_Gtot=9.26494326e+13, saved_Gtot=9.26494326e+13"
+    },
+    {
+      "name": "71x58 sidecar integrity",
+      "passed": true,
+      "detail": "passed=True, cum_iters=359, last_sample=359"
+    },
+    {
+      "name": "71x58 plateau criterion",
+      "passed": true,
+      "detail": "spread_Gii=4.815e-05, spread_Gtot=1.837e-04, last_Rphi=3.943e-05"
+    },
+    {
+      "name": "71x58 NPZ metrics finite",
+      "passed": true,
+      "detail": "Gii=3.075619e+25, Gtot=9.264943e+13, dx=0.00380315, Rphi=3.943e-05"
+    },
+    {
+      "name": "100x70 four real consecutive samples",
+      "passed": true,
+      "detail": "abs_iters=[297, 298, 299, 300]"
+    },
+    {
+      "name": "100x70 sidecar matches final NPZ",
+      "passed": true,
+      "detail": "last_Gii=2.08756146e+25, saved_Gii=2.08756146e+25, last_Gtot=5.89490933e+13, saved_Gtot=5.89490933e+13"
+    },
+    {
+      "name": "100x70 sidecar integrity",
+      "passed": true,
+      "detail": "passed=True, cum_iters=300, last_sample=300"
+    },
+    {
+      "name": "100x70 plateau criterion",
+      "passed": true,
+      "detail": "spread_Gii=1.233e-04, spread_Gtot=1.189e-04, last_Rphi=6.216e-04"
+    },
+    {
+      "name": "100x70 NPZ metrics finite",
+      "passed": true,
+      "detail": "Gii=2.087561e+25, Gtot=5.894909e+13, dx=0.00268897, Rphi=6.216e-04"
+    },
+    {
+      "name": "141x85 four real consecutive samples",
+      "passed": true,
+      "detail": "abs_iters=[117, 118, 119, 120]"
+    },
+    {
+      "name": "141x85 sidecar matches final NPZ",
+      "passed": true,
+      "detail": "last_Gii=2.39943424e+25, saved_Gii=2.39943424e+25, last_Gtot=6.55529458e+13, saved_Gtot=6.55529458e+13"
+    },
+    {
+      "name": "141x85 sidecar integrity",
+      "passed": true,
+      "detail": "passed=True, cum_iters=120, last_sample=120"
+    },
+    {
+      "name": "141x85 plateau criterion",
+      "passed": true,
+      "detail": "spread_Gii=8.896e-06, spread_Gtot=1.130e-05, last_Rphi=1.930e-04"
+    },
+    {
+      "name": "141x85 NPZ metrics finite",
+      "passed": true,
+      "detail": "Gii=2.399434e+25, Gtot=6.555295e+13, dx=0.00190118, Rphi=1.930e-04"
+    },
+    {
+      "name": "All three H grid hashes equal and mandatory",
+      "passed": true,
+      "detail": "['b4319bb03303', 'b4319bb03303', 'b4319bb03303']"
+    },
+    {
+      "name": "All six declared physics/grid parameters comparable",
+      "passed": true,
+      "detail": "[{'ratio': 6.0, 'W': 0.09, 'X_C': 0.6, 'dH_eV': 0.0125, 'NH': 591.0, 'she_tol': 1e-08}, {'ratio': 6.0, 'W': 0.09, 'X_C': 0.6, 'dH_eV': 0.0125, 'NH': 591.0, 'she_tol': 1e-08}, {'ratio': 6.0, 'W': 0.09, 'X_C': 0.6, 'dH_eV': 0.0125, 'NH': 591.0, 'she_tol': 1e-08}]"
+    },
+    {
+      "name": "All nodes contain Phi_gate",
+      "passed": false,
+      "detail": "Optional schema field Phi_gate absent from one or more nodes; freeze from external config digest"
+    },
+    {
+      "name": "All nodes contain eps_max",
+      "passed": false,
+      "detail": "Optional schema field eps_max absent from one or more nodes; freeze from external config digest"
+    },
+    {
+      "name": "Drain mesh refinement ratio",
+      "passed": true,
+      "detail": "ratios=[1.414355019091668, 1.4143682425453508] target=1.414214"
+    },
+    {
+      "name": "Archival \u00b12% numerical parity",
+      "passed": false,
+      "detail": "[('71x58', 2.8635), ('100x70', -2.2219), ('141x85', -0.5622)]"
+    },
+    {
+      "name": "No Richardson for nonmonotone sequence",
+      "passed": true,
+      "detail": "Scientific status computed independently from certified Gii values; no continuum Gii inferred"
+    },
+    {
+      "name": "Report PDF newer than NPZ inputs",
+      "passed": true,
+      "detail": "PDF mtime must postdate all inputs; source hashes still required"
+    }
+  ],
+  "warnings": [
+    "Source tree clean: Working tree contains modifications; do not treat this as frozen comparable run",
+    "All nodes contain Phi_gate: Optional schema field Phi_gate absent from one or more nodes; freeze from external config digest",
+    "All nodes contain eps_max: Optional schema field eps_max absent from one or more nodes; freeze from external config digest",
+    "Archival \u00b12% numerical parity: [('71x58', 2.8635), ('100x70', -2.2219), ('141x85', -0.5622)]"
+  ],
+  "claim": "Data/integrity diagnostics only; NOT paper validation or spatial convergence.",
+  "git": {
+    "head": "fd5360984897db4065ba2ddd18e039b20ea91350",
+    "dirty": true
+  },
+  "refinement_ratios": [
+    1.414355019091668,
+    1.4143682425453508
+  ],
+  "nonmonotone_Gii": true,
+  "richardson_extrapolation_allowed": false,
+  "S_rev_certified_window": 2415.089864286291,
+  "archival_parity": "YELLOW numerically",
+  "scientific_status": "NOT SPATIALLY CONVERGED",
+  "run_report": {
+    "exists": true,
+    "sha256": "4de9b19db5cd06ab6cba1c9d6c00491545db21eca082688f409f0331e2fdf233",
+    "size_bytes": 232841
+  },
+  "errors": [],
+  "overall": "INTERNAL CHECKS PASS \u2014 PAPER VALIDATION NOT CLAIMED"
+}

@@ -1,0 +1,70 @@
+{
+  "gate": "B fault-injection",
+  "repo": "C:\\Users\\User\\AppData\\Local\\Temp\\claude\\liang_gateb_wt",
+  "overall": "PASS",
+  "results": [
+    {
+      "test": "RUN-02 no-sidecar certified archive -> nonzero",
+      "expected": "exit 4",
+      "observed": "exit 4",
+      "passed": true,
+      "detail": "(fail-closed)"
+    },
+    {
+      "test": "RUN-02 --exploratory -> exit 0 + UNCERTIFIED label",
+      "expected": "exit 0 + label",
+      "observed": "exit 0 label=True",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "RUN-05 missing recal NPZ -> RuntimeError",
+      "expected": "RuntimeError",
+      "observed": "raised=True",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "RUN-04 --keep-going with failed stage -> nonzero exit",
+      "expected": "exit 1",
+      "observed": "exit 1",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "NUM-02 hash_ok [all present equal]",
+      "expected": true,
+      "observed": true,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "NUM-02 hash_ok [one missing]",
+      "expected": false,
+      "observed": false,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "NUM-02 hash_ok [all missing]",
+      "expected": false,
+      "observed": false,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "NUM-02 hash_ok [mismatch]",
+      "expected": false,
+      "observed": false,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "RUN-01 failing pdflatex -> nonzero + no false success",
+      "expected": "exit!=0 & no 'compiled'",
+      "observed": "exit 1 false_success=False",
+      "passed": true,
+      "detail": "(Windows note: if the stub is not honored over a real pdflatex on PATH, run on a box where PATH precedence applies, e.g. Linux/TeX Live.)"
+    }
+  ]
+}
