@@ -317,11 +317,17 @@ def main():
     log("-" * 70)
     G = [s[2] for s in summary]
     if len(G) == 3:
-        u = [float((np.load(node_npz(s[0], s[1]))["last4_Gii_max"]).max()
-                   - (np.load(node_npz(s[0], s[1]))["last4_Gii_max"]).min()) / 2 for s in summary]
+        # NUM-01: source the plateau half-range from the SAME authoritative reader used everywhere
+        # else, instead of re-reading last4_* inline (a degenerate terminal chunk then yields NaN
+        # rather than a spuriously small band).
+        u = []
+        for s in summary:
+            w = cw.read_certified_window(node_npz(s[0], s[1]), prog_path(s[0], s[1]))
+            u.append(float(w["u_Gii"]) if (w["valid"] and w["u_Gii"] is not None) else float("nan"))
         d12, d23 = G[0] - G[1], G[1] - G[2]
         monotone = (d12 > 0 and d23 > 0) or (d12 < 0 and d23 < 0)
-        Srev = abs(d23) / (u[1] ** 2 + u[2] ** 2) ** 0.5 if not monotone else float("nan")
+        Srev = (abs(d23) / (u[1] ** 2 + u[2] ** 2) ** 0.5
+                if (not monotone and all(np.isfinite(x) for x in u)) else float("nan"))
         log("TRIO Gii_max: %.4e -> %.4e -> %.4e (D12=%+.3e, D23=%+.3e)" % (G[0], G[1], G[2], d12, d23))
         if monotone:
             log("sequence is MONOTONE -- differs from archival non-monotone result; inspect nodes.", "WARN")

@@ -68,3 +68,11 @@ TEST B: sentinel PRESENT -> expect exit 0 and stages continue
 ### Clean-tree replay (reviewer residual R5) -- see report/closure/CLEANROOM_PROOF_20261022.md
   Gate B on pristine clone @ e4c7587: 11/11 PASS, tree still pristine after the run
   Gate C on pristine clone @ e4c7587: 'Source tree clean = True'
+
+### NUM-01 completeness -- trio final-summary S_rev path also centralized
+The last inline re-read of `last4_Gii_max` (run_richardson_trio's end-of-run S_rev block) now sources
+its half-range from certified_window.read_certified_window too, so there is no remaining code path
+that derives a plateau band outside the reader. Verified on the committed trio:
+  u = 1.0724e21 / 2.2848e20 / 9.3217e19 (identical to richardson_fit and gen_run_report)
+  D12=+9.309e+24  D23=-2.615e+24  monotone=False  S_rev=10598.1
+(a degenerate terminal chunk now yields NaN rather than a spuriously small band.)
