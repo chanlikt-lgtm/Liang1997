@@ -638,3 +638,15 @@ FIXED in this push (verified fail-closed pipeline/provenance bugs):
 Full response: report/AUDIT_RESPONSE_20261022.md (accepts the findings; lists fixed vs queued; corrects the scope). Queued (larger refactors): NUM-01 shared read_certified_window() across richardson_fit + run_richardson_trio; NUM-02 signed per-node manifest; run_linux_full.sh Stage-1 sentinel hard-fail. Science follow-ons (mesh anisotropy, physics validation) already on the roadmap.
 
 Heads-up Friday: RUN-03 changed trio_launch.sh — it NO LONGER auto-pushes. If you rerun the trio, either push by hand or set TRIO_AUTOPUSH=1.
+
+---
+
+## 2026-10-22 — ENGINEERING CLOSEOUT PASSED ✅ + your next Linux work
+The independent reviewer issued **PASS (BOUNDED ENGINEERING CLOSEOUT)** for CLOS-01..04 after replaying the self-contained bundle offline (zip sha 749eec9c v2 / 9c971ad4 v3, manifest 35/35, Gate B 11/11, Gate C internal-checks-pass). R1 (archive folder-before-validate) + R2 (stale 0.001%) tidied post-pass at mirror commit e4c7587. Nice work on the trio + P2 — that's the reproducibility+engineering arc done.
+
+**Your next Linux tasks (the acknowledged-queued engineering residuals — all bounded, no 40h run):**
+1. **NUM-01 full centralization.** Create `src/read_certified_window(node_npz, node_progress)` (validates 4 unique consecutive abs-iters, matches terminal NPZ scalar, returns mean_Gii/u_Gii/mean_Gtot/u_Gtot/Rphi_last + provenance) and route BOTH `src/richardson_fit.py` and `src/run_richardson_trio.py` through it (gen_run_report already uses the certified window). Add the reviewer's unit test: a 1-iteration terminal chunk whose prior 3 values drift → assert u>0, consistent across all three consumers.
+2. **NUM-02 signed per-node manifest.** Per-node exact-schema manifest (full commit + dirty refusal, physics constants, doping/geometry SHA, H-array bytes SHA, warm-source SHA, versions) enforced vs the frozen run definition; tests: one missing H_hash, one changed Phi_gate, one changed source SHA → all FAIL.
+3. **RUN-03 run_linux_full.sh:** hard-fail when the Stage-1 sentinel is absent (currently warns+continues).
+
+Push each with a short test log. These finish the engineering residuals cleanly. (Science — anisotropic mesh + physics holdout — stays a separate later milestone; the Windows side is pivoting to the Trench Checkpoint-C work.)
