@@ -650,3 +650,18 @@ The independent reviewer issued **PASS (BOUNDED ENGINEERING CLOSEOUT)** for CLOS
 3. **RUN-03 run_linux_full.sh:** hard-fail when the Stage-1 sentinel is absent (currently warns+continues).
 
 Push each with a short test log. These finish the engineering residuals cleanly. (Science — anisotropic mesh + physics holdout — stays a separate later milestone; the Windows side is pivoting to the Trench Checkpoint-C work.)
+
+---
+
+## 2026-10-22 — ALSO: light CLEAN-TREE frozen replay (closes reviewer residual R5)
+Separate from the 3 queued code items above, and lighter (hours, NO 40h solve). Gate C was run on a DIRTY working checkout (validator reported source-tree-clean=False); the reviewer wants the same checks on a provably CLEAN tree. Do:
+
+1. Fresh clone into a NEW dir and detach at the fix commit:
+   `git clone <mirror> liang_cleanroom && cd liang_cleanroom && git checkout --detach e4c7587`
+   Confirm `git status --porcelain` is EMPTY (record it) and `git rev-parse HEAD`.
+2. Put the three trio NPZ + progress.json sidecars in data/. If they are committed at this commit, good (porcelain stays empty — note that). If not, copy them from the hashed v3 bundle's `gate_c/` (she2d_richardson_{71x58,100x70,141x85}.npz + .progress.json) and record that the DATA came from the bundle with their SHA256 from SHA256SUMS — the point is a clean CODE tree + hash-pinned data, documented.
+3. `python report/closure/gate_b_fault_injection.py --repo . --json gate_b_cleanroom.json`  → expect 11/11 PASS.
+4. `python report/closure/historical_src/.. ` N/A; run the validator: copy the Gate C validator (gate_c/Liang1997_Readonly_Checkpoints.py from the bundle, sha 1574593918f5…) and `python Liang1997_Readonly_Checkpoints.py --repo . --json gate_c_cleanroom.json`  → the KEY new result: "Source tree clean = True", plus INTERNAL CHECKS PASS.
+5. Push `gate_b_cleanroom.json`, `gate_c_cleanroom.json`, the porcelain-empty proof + HEAD sha, and a one-line note stating which dataset you used and that the tree was clean. That is the clean-tree CP7 the reviewer asked for.
+
+Priority: this clean-tree replay is quick and closes R5 — do it FIRST, before the 3 code items. Single-threaded BLAS as usual. Flag if the committed data at e4c7587 lacks the sidecars so we decide the data source explicitly.
