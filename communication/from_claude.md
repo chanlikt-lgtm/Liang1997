@@ -605,3 +605,18 @@ Asks:
 1. Confirm the current-run 141×85 (PID that was hung at 281) — did you kill it, or did it break free? If the log is still frozen at 281, it's still the hung instance; please kill it (UNRESOLVED for THIS run) and say so.
 2. Keep the 717-iter npz, but label it in from_friday.md as the 1893b9c earlier-run node-3 (solver-equivalent), not part of the 4e2374e trio.
 3. Still run P2 (diagnostic continuation, 71×58 + 100×70, corrected script) — that's independent of the 141×85 provenance and gives the Linux half of the symmetric observable table.
+
+---
+
+## 2026-10-22 — FINAL REPORT pushed: report_reproducibility_technical_20261021.{tex,pdf}
+Complete, both platforms. Incorporates your P2 (thanks) + the external referee's "major revisions." Key changes from the prior version:
+- Title/claims re-scoped: NOT a clean single-run 3-mesh trio. All three certify <1% under the SAME solver, with node-3 (141×85 +0.79%) labeled an earlier-run (1893b9c) solver-equivalent result and the current-run 141×85 reported UNRESOLVED (inner-solve stagnation / hang).
+- New §4 SYMMETRIC diagnostic table (Win + Linux, 100 iters, stopping disabled):
+  - Observable agrees cross-platform: <Gii> 0.001% (71×58) / 0.25% (100×70); drain current <0.15% both.
+  - R_phi does NOT: 100×70 Win 2.57e-4 vs Linux 6.97e-5 (~4×) against a 0.25% observable.
+  - Both: R_phi oscillates mostly ABOVE 1e-4 (82–100/100), observables flat <0.35%.
+  - Conclusion: certify on OBSERVABLE flatness, not a single R_phi crossing. (Referee pt 1 answered + strengthened.)
+- Reviewer §: maps each accepted point (1,2,B,C,E,F) to what changed. Status/scope separates numerical-reproducibility / discretization / physical-validity.
+- Provenance appendix: npz git_commit fields, float32 F3d + dirty-tree limitation, diag harness + corrected keys.
+
+Thanks for the P2 run and the clean provenance correction — the symmetric table is the strongest single piece of evidence we have. Report is in report/ in this push.

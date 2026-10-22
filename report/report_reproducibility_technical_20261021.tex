@@ -1,0 +1,139 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black}
+\newcommand{\ten}[1]{\times 10^{#1}}
+\title{\textbf{Reproducibility and Numerical Conditioning of the\\ Drain-Refined Impact-Ionization Trio}\\[2pt]
+\large Liang--1997 SHE--BTE 0.35\,$\mu$m LDD n-MOSFET reproduction\\[2pt]
+\normalsize Cross-platform convergence study --- observable-based certification (interim)}
+\author{Technical report for independent review}
+\date{2026-10-21 \quad(frozen solver tag \texttt{solver-frozen-2026-09-26}, git \texttt{930dd86})}
+\begin{document}
+\maketitle
+
+\section*{Executive summary}
+The certified reproduction of Liang \emph{et al.} (1997) yields a drain-refined spatial-convergence trio of the peak impact-ionization generation rate $G_{ii}$ at three meshes ($71\times58$, $100\times70$, $141\times85$ on a common frozen energy grid). This report documents the reproducibility campaign and its reviewer-approved corrected-methodology confirmation, and it incorporates an independent referee's ``major revisions'' feedback. Four findings:
+
+\begin{enumerate}[nosep]
+\item \textbf{The qualitative verdict is robust and reproduces everywhere tested}: the trio is significantly \emph{non-monotone} ($S_{\mathrm{rev}}\gg1$, a heuristic sign-reversal diagnostic, not a statistical score), so a conventional one-term Richardson extrapolation is not justified from these three points, and \textbf{there is no established continuum value of $G_{ii}$}.
+\item \textbf{All three meshes certify to $<\!1\%$ under the same solver.} $71\times58$ $+0.006\%$ and $100\times70$ $+0.40\%$ are from the current corrected-methodology run (git \texttt{4e2374e}); $141\times85$ $+0.79\%$ is from an \emph{earlier} run (git \texttt{1893b9c}) whose only source difference is a monitoring script (zero physics/numerics), hence solver-equivalent. The large mid-investigation $\sim\!10$--$12\%$ platform differences were finite-iteration (premature-stop) artifacts, not converged discrepancies.
+\item \textbf{The reproducible quantity is the physical observable, not the outer residual.} A diagnostic continuation (each converged state continued $100$ iterations with stopping \emph{disabled}) shows the observables ($G_{ii}$, $\int G_{ii}\,dV$, drain current) are flat to $<\!0.35\%$, while the outer residual $R_\phi$ is itself ill-conditioned and \emph{does not stay} below the $10^{-4}$ tolerance (it oscillates in a mesh-dependent band mostly \emph{above} tolerance). A single $R_\phi$ crossing is therefore not a sufficient certification; observable flatness is. This confirms the referee's central methodological point and strengthens the reproducibility conclusion.
+\item \textbf{Convergence difficulty sharpens with mesh refinement.} Iterations-to-$R_\phi$ rose $325\to929$ ($71\times58\to100\times70$); the $R_\phi$ noise floor rose correspondingly ($\sim\!1.8\ten{-4}\to\sim\!4.5\ten{-4}$); and on the finest mesh $141\times85$ the current run's \emph{inner} (Krylov/ILU) linear solve stagnated and the outer iteration hung (classified \emph{unresolved} for that run). The finest mesh is the fragile one: one run hung, an earlier run certified at $+0.79\%$.
+\end{enumerate}
+
+Peak $G_{ii}$ is a near-null-space, high-energy-tail functional, hypersensitive to the platform floating-point path. A staged frozen-state probe (Appendix C) localizes the \emph{first} cross-platform divergence to sparse-system assembly ($\sim\!10^{-16}$, single-threaded), upstream of the solve. This rounding-scale seed perturbs the convergence \emph{path, rate, and residual}, but not the converged observable. The recommended methodology is to certify on sustained observable flatness (and report a well-conditioned integrated observable and a properly-defined terminal current), rather than on a single outer-residual crossing or the over-strict pointwise plateau gate.
+
+\section{System, reference, and method}
+First-order spherical-harmonic expansion (SHE) of the electron Boltzmann equation in total-energy form, self-consistent with 2D Poisson and hole continuity; nonparabolic Kane band; DOS-weighted acoustic + optical-phonon + Keldysh-surrogate impact-ionization operators. The SHE linear system is solved with LGMRES preconditioned by a physics-split incomplete-LU (\texttt{scipy.sparse.linalg.spilu}); the outer map is Anderson-accelerated ($\text{depth}=6$, $\beta=0.5$). The outer fixed-point is stopped on the potential residual $R_\phi=\max|G(\phi)-\phi|$ over free DOFs (the raw fixed-point residual, not the damped Anderson step), tolerance $\mathrm{tol}_\phi=10^{-4}$. A legacy acceptance gate (last-4 cumulative-iteration spread of $G_{ii,\max}$ and $G_{tot}\le3\ten{-4}$ with $R_\phi\le1.5\ten{-3}$) is retained as a diagnostic only; \S\ref{sec:diag} shows both $R_\phi$ and that gate are inadequate as sole certification criteria.
+
+\textbf{Certified reference (Sep-24, Windows, pure-Python kernel, git \texttt{d30b471}, equivalent to the frozen tag):}
+\[
+G_{ii}=3.075619/2.136180/2.387429\ten{25}\ \mathrm{cm^{-3}s^{-1}},\quad S_{\mathrm{rev}}=737,\ \text{non-monotone.}
+\]
+Common frozen $H$-grid hash \texttt{b4319bb03303} (591 energy points) across all meshes and runs. This reference was \emph{plateau}-certified under the legacy gate; its per-node outer residual is not uniformly $<10^{-4}$ (see \S\ref{sec:diag}), which is addressed by the observable-based criterion below.
+
+\section{Cross-platform $R_\phi$-convergence confirmation (the approved run)}\label{sec:confirm}
+Each mesh was run continuously to $\mathrm{tol}_\phi=10^{-4}$ on Linux (matched stack: NumPy 2.5.1 / SciPy 1.18.0 / Python 3.13.12, pure-Python), with the $1500$-iteration cap as a safety limit only, nodes warm-chained.
+
+\begin{center}\small
+\begin{tabular}{l r c c c l}
+\toprule
+mesh & $n_{\mathrm{iter}}$ & $R_\phi$ at stop & $G_{ii}$ ($\ten{25}$) & vs Windows ref & provenance \\
+\midrule
+$71\times58$  & 325 & $7.10\ten{-5}$ & $3.075752$ & $+0.006\%$ & current run (\texttt{4e2374e}) \\
+$100\times70$ & 929 & $6.97\ten{-5}$ & $2.144818$ & $+0.40\%$  & current run (\texttt{4e2374e}) \\
+$141\times85$ & 717 & $7.30\ten{-5}$ & $2.406344$ & $+0.79\%$  & earlier run (\texttt{1893b9c})$^{\dagger}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+{\footnotesize $^{\dagger}$Verified via the npz \texttt{git\_commit} field. The $141\times85$ certified state is from an earlier run instance; the \emph{only} source difference between \texttt{1893b9c} and \texttt{4e2374e} is \texttt{src/trend\_snapshot.py} (a monitoring sampler, zero physics/numerics), so it is solver-equivalent and the value is valid. It is \emph{not}, however, the current run's node~3 (see below), so this is \textbf{not} a clean single-run three-mesh trio.}
+
+\textbf{The $100\times70$ node is the decisive in-run demonstration} of the premature-stop mechanism. Its history: a flat plateau near $1.90\ten{25}$ (with $G_{ii}$ drifting slightly \emph{downward}, $1.96\to1.90$) and $R_\phi$ oscillating in the $5\ten{-4}$--$2.4\ten{-3}$ band from iter $\sim\!50$ to $\sim\!650$; then a climb over iters $\sim\!700$--$894$ to the reference, certifying at 929 ($R_\phi\,7.0\ten{-5}$). A fixed-iteration harness stopping at $\sim\!360$ (as the original trio harness did) would have recorded $\sim\!1.90\ten{25}$ ($-11\%$) and mis-read the down-drift as divergence --- precisely the artifact that produced the withdrawn $-12\%$.
+
+\textbf{The current run's own $141\times85$ did not certify.} Warm-chained from the current certified $100\times70$, it advanced to outer iteration 281 and then \textbf{hung}: the process remained compute-bound (6.6 cores, 47 threads) for $\sim\!11.5$\,h on a single outer step while the log stayed frozen --- i.e.\ the \emph{inner} LGMRES/ILU linear solve stagnated (cycling without returning). It was killed and is classified \textbf{unresolved} for the current run. This is a genuine finite-mesh robustness failure, not a plateau: on $100\times70$ the iteration kept advancing; on $141\times85$ it stopped advancing entirely. The earlier-run certification ($+0.79\%$) shows the finest mesh \emph{can} converge under the same solver, but it is slow and fragile --- the near-null-space conditioning taken to its limit.
+
+\section{Diagnostic continuation: $R_\phi$ is noisy, the observable is converged}\label{sec:diag}
+To test whether a single $R_\phi<10^{-4}$ crossing certifies convergence (the referee's principal concern), each converged state was continued $100$ iterations with stopping \emph{disabled} ($\mathrm{tol}_\phi=0$), single-threaded, and the outer residual was independently recomputed at the saved state. Windows (reference states):
+
+\begin{center}\small
+\begin{tabular}{l l c c c c c}
+\toprule
+mesh & OS & $R_\phi$ recompute & $R_\phi$ med (iters $>10^{-4}$) & $\langle G_{ii}\rangle$ ($\ten{25}$) & $G_{ii}$ drift & $I_d$ (A/$\mu$m) \\
+\midrule
+$71\times58$  & Win   & $3.94\ten{-5}$ & $1.8\ten{-4}$ ($90/100$)  & $3.07934$ & $0.185\%$ & $3.0032\ten{-4}$ \\
+$71\times58$  & Linux & $7.10\ten{-5}$ & $1.6\ten{-4}$ ($82/100$)  & $3.07905$ & $0.181\%$ & $3.0032\ten{-4}$ \\
+$100\times70$ & Win   & $2.57\ten{-4}$ & $4.5\ten{-4}$ ($100/100$) & $2.13790$ & $0.31\%$  & $2.955\ten{-4}$ \\
+$100\times70$ & Linux & $6.97\ten{-5}$ & $3.8\ten{-4}$ ($99/100$)  & $2.14324$ & $0.21\%$  & $2.951\ten{-4}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Cross-platform, the \emph{observable} agrees: $\langle G_{ii}\rangle$ to $0.001\%$ ($71\times58$) and $0.25\%$ ($100\times70$), and drain current to $<\!0.15\%$ on both meshes. The \emph{residual} does not: on $100\times70$ the Windows reference parks at $R_\phi=2.57\ten{-4}$ while Linux stopped at $6.97\ten{-5}$ --- a $\sim\!4\times$ difference against a $0.25\%$ observable. Both platforms show $R_\phi$ oscillating mostly \emph{above} $10^{-4}$ ($82$--$100$ of $100$ iters) with the observables flat to $<\!0.35\%$. The two sides are symmetric and corroborate each other.
+
+The Linux-side diagnostic (matched stack) was run identically and is included above; it reproduces the Windows shape on both meshes.
+
+\textbf{Reading.}
+\begin{enumerate}[nosep]
+\item \textbf{A single $R_\phi$ crossing is not sustained convergence (referee confirmed), on both platforms.} On $71\times58$, $90/100$ (Windows) and $82/100$ (Linux) continued iterations sit \emph{above} $10^{-4}$; the stop had caught a transient dip. On $100\times70$, the Windows reference state recomputes to $R_\phi=2.57\ten{-4}$ --- it never satisfies $10^{-4}$ at all ($100/100$ above) --- consistent with its plateau-certification rather than an $R_\phi<10^{-4}$ certification.
+\item \textbf{But the observables are converged.} $G_{ii}$, $G_{tot}$, and drain current are flat to $<\!0.35\%$ across all $100$ iterations on both meshes. The state is parked at the converged solution; only the residual jitters.
+\item \textbf{Decisive cross-platform datum.} Linux $100\times70$ stopped at $R_\phi=6.97\ten{-5}$ (a dip), the Windows reference parks at $R_\phi=2.57\ten{-4}$: the residuals differ by $\sim\!4\times$, yet the observables agree to $0.40\%$. The observable is the reproducible converged quantity; $R_\phi$ is an ill-conditioned metric.
+\item \textbf{The residual noise floor rises with refinement} (median $1.8\ten{-4}\to4.5\ten{-4}$ from $71\times58$ to $100\times70$, and inner-solve stagnation on $141\times85$) --- residual-level evidence for the conditioning sharpening with mesh density.
+\end{enumerate}
+\textbf{Consequence for certification:} certify on sustained observable flatness (e.g.\ $G_{ii}$/$G_{tot}$ drift over a fixed window), not on a single $R_\phi$ crossing nor the over-strict pointwise plateau gate.
+
+\section{The prior campaign (finite-iteration snapshots)}
+The columns below (except as noted) are \emph{finite-iteration snapshots} at a fixed stopping point; they document the campaign that produced and then overturned the apparent platform discrepancy.
+\begin{center}\small
+\begin{tabular}{l c c c c c c}
+\toprule
+node & Sep-24 ref & Win intr. & Win clean & Lx numba & Lx 1.18$^{\ddagger}$ & \textbf{Lx $R_\phi$-conv.} \\
+\midrule
+71$\times$58  & 3.075619 & 3.075619 & 3.075619 & 2.9847 & 2.7067 & \textbf{3.075752} \\
+100$\times$70 & 2.136180 & 2.142249 & 2.087561 & $\sim$1.80$^{\S}$ & --- & \textbf{2.144818} \\
+141$\times$85 & 2.387429 & 2.375921 & 2.399434 & --- & --- & \textbf{2.406344}$^{\dagger}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+{\footnotesize $^{\ddagger}$matched-stack snapshot at $\sim\!360$ iters, did not certify. $^{\S}$hotspot limit-cycle at a fixed budget, never certified --- \emph{resolved to $2.144818$ at $R_\phi$ convergence}. $^{\dagger}$earlier-run (solver-equivalent) node, \S\ref{sec:confirm}. Every figure except the last column is a snapshot, not a converged value.}
+
+\textbf{The non-reproducibility ``hierarchy'' was a convergence-rate hierarchy.} The mid-investigation deltas (gate-trip $\sim\!2\%$, kernel $\sim\!3$--$7\%$, SciPy $\sim\!3\%$, OS $\sim\!12\%$) were all finite-iteration snapshots. The matched-stack $71\times58$ read $2.7067\ten{25}$ ($-12\%$) at $360$ iters; continued to convergence the same configuration reaches $3.0758\ten{25}$ ($+0.006\%$). Matching the SciPy version moved the $360$-iteration snapshot the \emph{wrong} way ($-9.1\%\to-12.0\%$), correctly ruling out the SciPy version as a \emph{sufficient} cause --- it changed the transient, not the endpoint.
+
+\section{Mechanism}
+Peak $G_{ii}$ is numerically ill-conditioned: (i) a tail-dominated functional ($\varepsilon\gtrsim1.5$\,eV) controlled by a tiny near-null-space of the solution (a $10^{-8}$ linear residual does not pin it); (ii) floating-point-path-dependent assembly and solves (Appendix C: assembly coefficients differ across OS at $\sim\!10^{-16}$, single-threaded, from vectorized \texttt{exp}/\texttt{pow} in the coefficient kernels); (iii) amplification over hundreds of outer iterations. These compound along the ill-conditioned direction, producing large \emph{finite-iteration} deviations, a noisy outer residual (\S\ref{sec:diag}), slow and variable convergence (Finding 4), and on the finest mesh an inner-solve stagnation --- but \emph{not} a non-reproducible converged observable.
+
+\section{Remediation (proposed; none applied to the frozen reference)}
+\begin{itemize}[nosep]
+\item \textbf{Certify on the observable, not the residual.} Require sustained flatness of $G_{ii}$ (and $\int G_{ii}\,dV$) over a fixed window; report $R_\phi$ alongside as a diagnostic with its (mesh-dependent) noise floor. A single $R_\phi$ crossing is insufficient (\S\ref{sec:diag}).
+\item \textbf{Run each mesh to its own convergence}, not a common iteration budget; the finest meshes need a larger budget (and may still stagnate --- see direct solve).
+\item \textbf{Direct linear solve} where memory permits (raise the direct-solve DOF cutoff), removing the Krylov/ILU floating-point-path dependence and the inner-solve stagnation seen on $141\times85$. \emph{This is a method change and belongs in a separate error-budget study, not the frozen-method trio.}
+\item \textbf{Report a well-conditioned integrated observable and a properly-defined terminal current.} Quote $\int G_{ii}\,dV$ (generation rate per out-of-plane width) and the substrate hole current at the body contact including recombination (audit F-08); note $\int G_{ii}\,dV$ is \emph{not} itself the collected terminal current. The diagnostic already records the drain current ($\sim\!3.0\ten{-4}$ A/$\mu$m, drift $<\!0.1\%$) and relative number balance ($\sim\!10^{-4}$); the spatial convergence of $\int G_{ii}\,dV$ is \emph{not} yet demonstrated (node-to-node $G_{tot}$ changes $\sim\!35\%$, a discretization effect distinct from floating-point conditioning).
+\end{itemize}
+
+\section{For the independent reviewer (response to the ``major revisions'' review)}
+\begin{itemize}[nosep]
+\item \textbf{Accepted and incorporated:} (1) a single $R_\phi$ crossing is not certified convergence --- now demonstrated directly (\S\ref{sec:diag}) and the certification basis changed to observable flatness; (2) the title/claims no longer assert a clean single-run three-mesh confirmation --- node~3 is labeled an earlier-run solver-equivalent result and the current-run $141\times85$ is reported as unresolved (hung); (B) the Windows reference used the legacy gate, not $R_\phi<10^{-4}$ --- confirmed ($100\times70$ reference $R_\phi=2.57\ten{-4}$), which is why the comparison is now stated on the observable; (C) a 2-mesh iteration-count increase is not a monotonic three-mesh trend --- restated as supported by the residual-floor evidence; (E) spatial convergence of $\int G_{ii}\,dV$ is not demonstrated, and $G_{tot}\ne$ terminal current --- both stated; (F) provenance (dirty tree, \texttt{F3d} stored \texttt{float32}) --- documented below.
+\item \textbf{Robust (verify on Windows):} the non-monotone trio.
+\item \textbf{Reproducible when converged (verified both platforms):} the \emph{observable} agrees across Windows/Linux to $0.001\%$ ($71\times58$) and $0.25\%$ ($100\times70$) via the symmetric diagnostic (\S\ref{sec:diag}), and across $10^{-16}$ perturbations to $<\!1\%$ (Appendix C). A minimal check: continue a converged $100\times70$ state on each OS with stopping disabled and confirm $G_{ii}$ flat to $<\!0.5\%$ while $R_\phi$ remains in its $\sim\!10^{-4}$--$10^{-3}$ band.
+\item \textbf{Open:} the finest mesh's inner-solve stagnation; spatial-convergence and physical-validation studies (separate from this numerical-reproducibility report).
+\end{itemize}
+
+\section{Status and scope}\label{sec:status}
+The earlier $\sim\!12\%$ platform conclusion is \textbf{withdrawn}. \textbf{Supported:} the non-monotone trio; slow, path-dependent convergence with difficulty rising on finer meshes (iteration count, residual floor, and finally inner-solve stagnation); cross-platform agreement of the \emph{observable} to $<\!0.5\%$ on the two meshes tested this way; all three meshes certifying to $<\!1\%$ under the same solver. \textbf{Not established:} a clean single-run three-mesh trio (node~3 is an earlier solver-equivalent run; the current $141\times85$ is unresolved); a platform-dependent converged solution; pointwise $G_{ii}$-plateau or single-$R_\phi$-crossing convergence; spatial (continuum) convergence of $G_{ii}$ or $\int G_{ii}\,dV$; quantitative equivalence to the original 1997 device physics (the solver is a reconstructed/surrogate model).
+
+\textbf{Three distinct questions} should not be conflated: \emph{numerical reproducibility} (same equations $\to$ similar observables across platforms under matched stopping --- substantially supported on two meshes), \emph{discretization convergence} (grids fine enough for a continuum claim --- not established; anisotropic $x$-only/$y$-only refinement needed), and \emph{physical validity} (correct device physics and terminal currents vs Liang 1997 or experiment --- a separate study).
+
+\textbf{Report two quantities.} Quote $G_{ii}^{\mathrm{obs}}$ (at observable convergence) with the window variability $\Delta G_{ii}^{\mathrm{tail}}=(\max-\min)/\langle\cdot\rangle$ and the $R_\phi$ noise band, so the outer residual is not misread as proof of pointwise convergence.
+
+\section*{Appendix: provenance}
+Solver tag \texttt{solver-frozen-2026-09-26} (\texttt{930dd86}); reference \texttt{d30b471}. Confirmation nodes: $71\times58$/$100\times70$ npz \texttt{git\_commit}=\texttt{4e2374e}; $141\times85$ npz \texttt{git\_commit}=\texttt{1893b9c} (dirty), warm-chained from an earlier $100\times70$; the sole source difference \texttt{4e2374e}$\leftrightarrow$\texttt{1893b9c} is \texttt{src/trend\_snapshot.py}. The driver stores the distribution array \texttt{F3d} as \texttt{float32} and keeps full iteration trajectories in text logs; full-precision \texttt{float64} replay states are not retained for every node (a provenance limitation for bit-exact reconstruction, flagged by the reviewer). Diagnostic harness: \texttt{audit/diag\_continuation.py} (history keys \texttt{max\_dphi\_V}, \texttt{Gii\_max\_cm3s}, \texttt{G\_tot\_cm1s}, \texttt{relative\_number\_balance}, \texttt{drain\_current\_A\_per\_um}). Windows: Python 3.13.15. Linux: Python 3.13.12 (uv venv); both NumPy 2.5.1 / SciPy 1.18.0, pure-Python. $H$-hash \texttt{b4319bb03303}, 591 points. No thermal throttling (package 70--89\,$^\circ$C under the $95\,^\circ$C flag); the $141\times85$ hang was a compute-bound inner-solve stagnation, not a thermal event.
+
+\section*{Appendix B: Direct platform-FP probe (one-shot)}
+The identical $71\times58$ cold solve, run 3 capped outer iterations on both OSs with bit-identical mesh/energy-grid input and the \emph{same} OpenBLAS 0.3.33: $\phi$ diverges at $2.7\ten{-11}$ (well-conditioned) while $G_{ii}$ diverges at $6.6\ten{-4}$ pointwise (near-null-space), growing $5.7\ten{-13}\to2.2\ten{-12}\to1.5\ten{-10}$ over 3 iters. Establishes sensitivity/amplification; Appendix C localizes the first-divergence stage.
+
+\section*{Appendix C: Staged localization and the reversing ensemble}
+A frozen-state probe (\texttt{audit/fixed\_state\_probe.py}) froze one $71\times58$ state, copied identical bytes to both OSs, and assembled/solved single-threaded: state, CSR structure, $H$, active map all bit-identical; $A.\mathtt{data}$ and $b$ differ at $\sim\!1.1\ten{-16}$ (last ULP); a single solve reproduces $G_{ii}^{\mathrm{peak}}$ across OS to $3.8\ten{-13}$ (so SuperLU/LGMRES is not the primary seed). First divergence is thus in assembly-coefficient floating point (platform NumPy/libm elementary functions), upstream of the solve. A perturbation ensemble (control + three $10^{-16}$ seeds) initially spanned $\sim\!10\%$ at 400 iters (seed 3 at $-11\%$), then \emph{merged} when continued to the $R_\phi$ tolerance at 422--613 iters: all four within $0.66\%$ of the Windows reference (seed 3 climbed to $+0.03\%$). This established the $-12\%$ as a premature-stop artifact; the $100\times70$ production node (\S\ref{sec:confirm}) independently reproduced the late break on a second mesh. A driver-equivalence experiment (Windows, continuous vs Anderson-reset-every-60) differs by only $0.44\%$, rejecting Anderson reset as the dominant driver effect; the driver sensitivity is a symptom of under-convergence on the ill-conditioned problem.
+\end{document}
