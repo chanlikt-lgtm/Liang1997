@@ -1,6 +1,6 @@
 {
   "gate": "B fault-injection",
-  "repo": "C:\\Users\\User\\AppData\\Local\\Temp\\claude\\liang_gateb_wt",
+  "repo": "C:\\Users\\User\\AppData\\Local\\Temp\\claude\\liang_clos_wt",
   "overall": "PASS",
   "results": [
     {
@@ -16,6 +16,13 @@
       "observed": "exit 0 label=True",
       "passed": true,
       "detail": ""
+    },
+    {
+      "test": "CLOS-01 partial trio (3 NPZ / 1 sidecar) -> nonzero",
+      "expected": "exit 4",
+      "observed": "exit 4",
+      "passed": true,
+      "detail": "(one-to-one coverage required)"
     },
     {
       "test": "RUN-05 missing recal NPZ -> RuntimeError",
@@ -60,11 +67,18 @@
       "detail": ""
     },
     {
-      "test": "RUN-01 failing pdflatex -> nonzero + no false success",
-      "expected": "exit!=0 & no 'compiled'",
-      "observed": "exit 1 false_success=False",
+      "test": "RUN-01 failing pdflatex (exit 17) -> nonzero AND RUN-01 branch reached",
+      "expected": "exit!=0 & RUN-01 marker & no import-crash",
+      "observed": "exit 2 reached=True import_crash=False false_success=False",
       "passed": true,
-      "detail": "(Windows note: if the stub is not honored over a real pdflatex on PATH, run on a box where PATH precedence applies, e.g. Linux/TeX Live.)"
+      "detail": ""
+    },
+    {
+      "test": "RUN-01 pdflatex exit 0 but writes NO pdf -> nonzero AND RUN-01 branch reached",
+      "expected": "exit!=0 & RUN-01 marker & no import-crash",
+      "observed": "exit 2 reached=True import_crash=False false_success=False",
+      "passed": true,
+      "detail": ""
     }
   ]
 }

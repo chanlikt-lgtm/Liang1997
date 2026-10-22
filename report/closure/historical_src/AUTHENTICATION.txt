@@ -1,0 +1,22 @@
+# CLOS-04 historical source authentication (no 140MB git bundle needed)
+# Verify: 'git hash-object <file>' must equal the git blob OID below, which is the object
+# recorded in that commit's tree. This ties the shipped bytes to commits 1893b9c / 4e2374e.
+
+## commit 1893b9c
+   commit OID : 1893b9c9c156d174ca62e67ba9823092456cf0aa
+   tree   OID : 6828e84775cebd25e7dbeb877fd08b4f037b411a
+   src/coupled_she.py               blobOID=60c0cff980ed12b2413dd733b50618bdac1a3ea9  sha256=67ec83cb14ef9d1ba39884053a12870604bf5ab58bd340b52272e4e22a2497b8
+   src/she2d.py                     blobOID=1e6085a0e846db52dd5b7579239dd01f68c2c248  sha256=0eafc8bd1519f0d27fdd9d5be7ea75a27f08f87002fdea02692695308e25ae76
+   src/coupled_drain_richardson.py  blobOID=cbee41edb2882d203395cce14100778522bfaf79  sha256=76902fe1daa4f874b528dcd85bd3f0b89f3c54e491407ef4ebe799f75783bc8f
+   src/device.py                    blobOID=a3b9c3c9404eb1f28a7d16b9994d2aefcece8b64  sha256=cc3e5ae436fe3413ee52ddc5a22c82b6537a0d682675768b387f956a86ea2a2d
+   src/plateau_gate.py              blobOID=0107083e495008b606ca6b7f778ba74a09c3b0e8  sha256=58eb89472997fce17097a150b77a86afbbf8705a46754b79a92487b9bd28c1c1
+
+## commit 4e2374e
+   commit OID : 4e2374e374d43dc33efc4e5e533b768ea3e35541
+   tree   OID : db00c5bc9ccca5443a41a1725bf980f94e070869
+   src/coupled_she.py               blobOID=60c0cff980ed12b2413dd733b50618bdac1a3ea9  sha256=67ec83cb14ef9d1ba39884053a12870604bf5ab58bd340b52272e4e22a2497b8
+   src/she2d.py                     blobOID=1e6085a0e846db52dd5b7579239dd01f68c2c248  sha256=0eafc8bd1519f0d27fdd9d5be7ea75a27f08f87002fdea02692695308e25ae76
+   src/coupled_drain_richardson.py  blobOID=cbee41edb2882d203395cce14100778522bfaf79  sha256=76902fe1daa4f874b528dcd85bd3f0b89f3c54e491407ef4ebe799f75783bc8f
+   src/device.py                    blobOID=a3b9c3c9404eb1f28a7d16b9994d2aefcece8b64  sha256=cc3e5ae436fe3413ee52ddc5a22c82b6537a0d682675768b387f956a86ea2a2d
+   src/plateau_gate.py              blobOID=0107083e495008b606ca6b7f778ba74a09c3b0e8  sha256=58eb89472997fce17097a150b77a86afbbf8705a46754b79a92487b9bd28c1c1
+

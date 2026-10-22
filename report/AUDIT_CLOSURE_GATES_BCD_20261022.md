@@ -54,7 +54,7 @@ A fully frozen-tag, clean-tree replay is the remaining step for an independent C
 These are the **100-iteration drift** axis, reported **separately** from the 4-sample `3e-4`
 (`= 0.03%`) plateau spread, per your point 5. Observed: `G_ii` drift `0.185%`/`0.31%` (71×58/100×70),
 `R_phi` oscillating mostly above `1e-4` (82–100 of 100 iters); cross-platform `⟨G_ii⟩` agrees to
-`0.001%`/`0.25%`. Metric definitions, platform/build, and starting checkpoints are in
+`0.0096%`/`0.25%`. Metric definitions, platform/build, and starting checkpoints are in
 `report/report_reproducibility_technical_20261021.tex` (§4). The two convergence axes are **not**
 interchangeable, and we do not treat one as proof of the other.
 

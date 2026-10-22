@@ -92,20 +92,36 @@ def main():
         for p in sorted(all_payloads):
             f.write("  %-48s  %s\n" % (os.path.relpath(p, run), sha256_file(p)))
 
-    # Fail-closed: the per-node progress sidecars carry the certified acceptance buffer; without them
-    # the archive cannot be re-certified (audit RUN-02).
+    # Fail-closed (RUN-02 + CLOS-01): a CERTIFIED archive requires ONE-TO-ONE coverage -- every
+    # archived node NPZ must have its matching progress.json sidecar, AND all three required trio
+    # nodes (71x58, 100x70, 141x85) must be present. A partial trio (e.g. 3 NPZ but only 1 sidecar)
+    # must NOT archive as certified; it exits nonzero unless --exploratory (then labelled UNCERTIFIED).
+    REQUIRED_NODES = ("71x58", "100x70", "141x85")
+    def basenames(suffix):
+        return {os.path.basename(p)[len("she2d_richardson_"):-len(suffix)]
+                for p in dat if os.path.basename(p).startswith("she2d_richardson_") and p.endswith(suffix)}
+    npz_nodes = basenames(".npz")
+    sidecar_nodes = basenames(".progress.json")
     archived_sidecars = [p for p in dat if p.endswith(".progress.json")]
-    print("archived %d plots + %d reports + %d data/logs (%d sidecars) -> %s"
-          % (len(png), len(rep), len(dat), len(archived_sidecars), os.path.relpath(run, ROOT)))
-    if not archived_sidecars:
+    # every archived NPZ needs its sidecar; and the full required trio must be covered by both
+    npz_without_sidecar = sorted(npz_nodes - sidecar_nodes)
+    missing_required = sorted(n for n in REQUIRED_NODES if n not in npz_nodes or n not in sidecar_nodes)
+    coverage_ok = (not npz_without_sidecar) and (not missing_required)
+    print("archived %d plots + %d reports + %d data/logs (%d sidecars; npz_nodes=%s sidecar_nodes=%s) -> %s"
+          % (len(png), len(rep), len(dat), len(archived_sidecars),
+             sorted(npz_nodes), sorted(sidecar_nodes), os.path.relpath(run, ROOT)))
+    if not coverage_ok:
+        detail = []
+        if npz_without_sidecar: detail.append("NPZ without sidecar: %s" % npz_without_sidecar)
+        if missing_required:    detail.append("required trio node(s) missing NPZ or sidecar: %s" % missing_required)
         if exploratory:
-            sys.stderr.write("WARNING (RUN-02): no progress.json sidecars archived; labelled "
-                             "UNCERTIFIED (exploratory archive).\n")
+            sys.stderr.write("WARNING (RUN-02/CLOS-01): incomplete node coverage (%s); labelled "
+                             "UNCERTIFIED (exploratory archive).\n" % "; ".join(detail))
         else:
-            sys.stderr.write("ERROR (RUN-02): no she2d_richardson_*.progress.json archived -- a "
-                             "certified snapshot cannot reproduce its own plateau certificate. "
-                             "Re-run with sidecars present, or pass --exploratory for an uncertified "
-                             "archive.\n")
+            sys.stderr.write("ERROR (RUN-02/CLOS-01): incomplete node coverage (%s) -- a certified trio "
+                             "archive requires a matching progress.json for every node and all of %s. "
+                             "Re-run with complete sidecars, or pass --exploratory for an uncertified "
+                             "archive.\n" % ("; ".join(detail), list(REQUIRED_NODES)))
             sys.exit(4)
 
 if __name__ == "__main__":

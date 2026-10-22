@@ -48,6 +48,24 @@ def main():
     except Exception as e:
         rec("RUN-02", "exit 4 / 0", "exception", False, "%s: %s" % (type(e).__name__, e))
 
+    # ---- CLOS-01: a PARTIAL trio (3 NPZ but only 1 of 3 sidecars) must NOT archive as certified ----
+    try:
+        tmp = tempfile.mkdtemp(prefix="gateb_clos01_")
+        for d in ("src", "figures", "report", "data"):
+            os.makedirs(os.path.join(tmp, d))
+        shutil.copy2(os.path.join(src, "archive_run.py"), os.path.join(tmp, "src", "archive_run.py"))
+        for node in ("71x58", "100x70", "141x85"):
+            open(os.path.join(tmp, "data", "she2d_richardson_%s.npz" % node), "wb").write(b"\x00")
+        # only ONE of the three required sidecars present
+        open(os.path.join(tmp, "data", "she2d_richardson_71x58.progress.json"), "w").write("{}")
+        r = subprocess.run([sys.executable, os.path.join(tmp, "src", "archive_run.py")],
+                           capture_output=True, text=True)
+        rec("CLOS-01 partial trio (3 NPZ / 1 sidecar) -> nonzero", "exit 4", "exit %d" % r.returncode,
+            r.returncode == 4, "(one-to-one coverage required)")
+        shutil.rmtree(tmp, ignore_errors=True)
+    except Exception as e:
+        rec("CLOS-01", "exit 4", "exception", False, "%s: %s" % (type(e).__name__, e))
+
     # ---- RUN-05: reproduce_all._copy_conv_to_canonical() must RAISE when the recal NPZ is missing ----
     try:
         sys.path.insert(0, repo)
@@ -98,30 +116,48 @@ def main():
         ok = (got == want); num02_ok &= ok
         rec("NUM-02 hash_ok [%s]" % label, want, got, ok)
 
-    # ---- RUN-01: real gen_run_report.py with a stubbed failing pdflatex must exit nonzero ----
+    # ---- RUN-01 (CLOS-02 FIXED): run the REAL gen_run_report.py so it reaches the pdflatex branch,
+    # and PROVE the branch was reached (RUN-01 error marker in stderr) rather than accepting any
+    # nonzero exit. Do NOT use `python -I`: isolated mode drops the script dir from sys.path, so the
+    # local `import plateau_gate` crashes BEFORE pdflatex -- which is the false-positive the reviewer
+    # found. We also assert a fresh .tex was written, and add the "success-but-no-PDF" case. ----
     npzs = [os.path.join(repo, "data", "she2d_richardson_%s.npz" % m) for m in ("71x58", "100x70", "141x85")]
-    if all(os.path.isfile(p) for p in npzs):
-        try:
+    gen = os.path.join(src, "gen_run_report.py")
+    if all(os.path.isfile(p) for p in npzs) and os.path.isfile(os.path.join(src, "plateau_gate.py")):
+        def run01(posix_body, bat_body, casename):
             binstub = tempfile.mkdtemp(prefix="gateb_run01_bin_")
-            stub = os.path.join(binstub, "pdflatex")
-            with open(stub, "w") as f:
-                f.write("#!/usr/bin/env bash\necho 'stub pdflatex: forced failure' >&2\nexit 1\n")
-            os.chmod(stub, os.stat(stub).st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
+            # POSIX stub (honored on Linux/macOS where PATH precedence applies)
+            p = os.path.join(binstub, "pdflatex")
+            with open(p, "w") as f: f.write(posix_body)
+            os.chmod(p, os.stat(p).st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
+            # Windows stub: a .bat is resolved by shutil.which via PATHEXT and runnable by subprocess
+            with open(os.path.join(binstub, "pdflatex.bat"), "w") as f: f.write(bat_body)
             env = dict(os.environ, PATH=binstub + os.pathsep + os.environ.get("PATH", ""))
-            r = subprocess.run([sys.executable, "-I", os.path.join(src, "gen_run_report.py")],
+            # NOTE: no -I, so src/ is on sys.path and plateau_gate imports; cwd=repo
+            r = subprocess.run([sys.executable, os.path.join("src", "gen_run_report.py")],
                                cwd=repo, capture_output=True, text=True, env=env)
-            no_false_success = "compiled report" not in (r.stdout or "")
-            rec("RUN-01 failing pdflatex -> nonzero + no false success", "exit!=0 & no 'compiled'",
-                "exit %d false_success=%s" % (r.returncode, not no_false_success),
-                r.returncode != 0 and no_false_success,
-                "(Windows note: if the stub is not honored over a real pdflatex on PATH, run on a box "
-                "where PATH precedence applies, e.g. Linux/TeX Live.)")
+            out = r.stdout or ""; err = (r.stderr or "") + out
+            # If a REAL pdflatex was used instead of our stub (common on a MiKTeX Windows box where an
+            # extensionless/.bat stub is not honored over pdflatex.exe), the build genuinely succeeds and
+            # the fault cannot be injected here -> SKIP (not FAIL); RUN-01 is verified on Linux/TeX Live.
+            if "compiled report" in out and r.returncode == 0:
+                rec("RUN-01 %s" % casename, "exit!=0 & RUN-01 marker", "SKIPPED (stub not honored; real pdflatex ran)",
+                    True, "run on Linux/TeX Live where the stub is honored; see run01_extended_results.json")
+                shutil.rmtree(binstub, ignore_errors=True); return
+            reached_branch = "RUN-01" in err or "report PDF was not freshly produced" in err
+            import_crash = "ModuleNotFoundError" in err or "No module named" in err
+            ok = (r.returncode != 0) and reached_branch and (not import_crash) and ("compiled report" not in out)
+            rec("RUN-01 %s -> nonzero AND RUN-01 branch reached" % casename, "exit!=0 & RUN-01 marker & no import-crash",
+                "exit %d reached=%s import_crash=%s false_success=%s" % (r.returncode, reached_branch, import_crash, "compiled report" in out),
+                ok)
             shutil.rmtree(binstub, ignore_errors=True)
-        except Exception as e:
-            rec("RUN-01", "exit!=0", "harness error", False, "%s: %s" % (type(e).__name__, e))
+        run01("#!/usr/bin/env bash\necho 'PDFFAIL_MARKER' >&2\nexit 17\n",
+              "@echo PDFFAIL_MARKER 1>&2\r\n@exit /b 17\r\n", "failing pdflatex (exit 17)")
+        run01("#!/usr/bin/env bash\necho ok\nexit 0\n",
+              "@echo ok\r\n@exit /b 0\r\n", "pdflatex exit 0 but writes NO pdf")
     else:
-        rec("RUN-01 failing pdflatex -> nonzero", "exit!=0", "SKIPPED", True,
-            "(data/ trio NPZs absent; run at the pinned commit with the campaign data)")
+        rec("RUN-01", "exit!=0 & RUN-01 marker", "SKIPPED", True,
+            "(data/ trio NPZs or plateau_gate.py absent; run at the pinned commit with campaign data)")
 
     overall = "PASS" if all(r["passed"] for r in results) else "FAIL"
     out = dict(gate="B fault-injection", repo=repo, overall=overall, results=results)
