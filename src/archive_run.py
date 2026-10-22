@@ -60,6 +60,27 @@ def main():
     label = ("_" + argv[0]) if argv else ""
     if exploratory:
         label += "_UNCERTIFIED"
+
+    # R1 (audit follow-up): validate node coverage from the SOURCE data/ dir BEFORE creating any run
+    # folder, so a rejected certified archive leaves NO folder behind (an exit-code-ignoring publisher
+    # cannot mistake a partial reject for a certified snapshot). The post-copy report below is retained.
+    REQUIRED_NODES = ("71x58", "100x70", "141x85")
+    def _src_nodes(suffix):
+        return {os.path.basename(p)[len("she2d_richardson_"):-len(suffix)]
+                for p in glob.glob(os.path.join(DATA, "she2d_richardson_*" + suffix))
+                if os.path.basename(p).startswith("she2d_richardson_")}
+    src_npz, src_sidecar = _src_nodes(".npz"), _src_nodes(".progress.json")
+    pre_npz_without_sidecar = sorted(src_npz - src_sidecar)
+    pre_missing_required = sorted(n for n in REQUIRED_NODES if n not in src_npz or n not in src_sidecar)
+    if (pre_npz_without_sidecar or pre_missing_required) and not exploratory:
+        det = []
+        if pre_npz_without_sidecar: det.append("NPZ without sidecar: %s" % pre_npz_without_sidecar)
+        if pre_missing_required:    det.append("required trio node(s) missing NPZ or sidecar: %s" % pre_missing_required)
+        sys.stderr.write("ERROR (RUN-02/CLOS-01/R1): incomplete node coverage (%s) -- refusing to create a "
+                         "certified archive folder. Re-run with complete sidecars, or pass --exploratory "
+                         "for an uncertified archive.\n" % "; ".join(det))
+        sys.exit(4)
+
     ts = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
     run = os.path.join(ROOT, "runs", ts + label)
     plots = os.path.join(run, "plots")
