@@ -24,6 +24,7 @@ Usage: python run_richardson_trio.py
 import os, sys, csv, json, time, subprocess, datetime
 import numpy as np
 import plateau_gate as pg    # corrected cumulative-window observable-plateau gate (shared thresholds)
+import certified_window as cw  # NUM-01: single authoritative certified-window reader
 try:
     import psutil
 except Exception:
@@ -103,11 +104,8 @@ def chunk_samples(m, cum_iters):
     return pg.chunk_samples_from_last4(m["last4_Gii"], m["last4_Gtot"], m["last4_R"], cum_iters)
 
 def node_plateau_from_npz(m):
-    """Reconstruct the observable-plateau decision for an EXISTING checkpoint using only the terminal
-    chunk's stored last-4 real samples (per-iteration history across chunks is not persisted). If that
-    terminal chunk ran a full window its own last-4 ARE the cumulative last-4, so the decision is exact;
-    if it ran <4 real iterations (the degenerate case) evaluate() returns plateau_evaluable=False and
-    the node is NOT certified -- it will be resumed and rebuild a genuine cumulative window."""
+    """(superseded by certified_window.read_certified_window -- NUM-01). Retained only as a
+    reference for the terminal-chunk semantics; callers now route through the shared reader."""
     return pg.evaluate(pg.roll_window([], chunk_samples(m, m["niter"])))
 
 def validate_checkpoint(Nx, Ny):
@@ -193,18 +191,19 @@ def main():
         # ---- decide start mode (warm-start priority: same-node -> prev-node -> cold) ----
         if prov == "valid":
             m0 = read_metrics(Nx, Ny)
-            # certify only via an EVALUABLE cumulative window: prefer a persisted buffer (new harness);
-            # otherwise reconstruct from the NPZ terminal chunk. A degenerate <4-sample terminal chunk
-            # (e.g. the 71x58 tol_phi early-stop) is NOT evaluable -> not certified -> resumed.
-            buf0 = list(prog["plateau_buffer"]) if (prog and prog.get("plateau_buffer")) else None
-            buf0_origin = "persisted_sidecar" if buf0 is not None else "npz_terminal_reconstruction"
-            if buf0 is not None:
-                ok, det = pg.check_monotonic(buf0)
-                if not ok:
-                    log("FAIL CLOSED: %dx%d persisted plateau_buffer failed integrity check [%s]. Refusing "
-                        "to certify a possibly-fabricated plateau." % (Nx, Ny, det), "ERROR")
-                    sys.exit(4)
-            ev0 = pg.evaluate(buf0) if buf0 is not None else node_plateau_from_npz(m0)
+            # NUM-01: certify an EXISTING checkpoint's window through the single authoritative reader
+            # (validates 4 unique consecutive abs-iters + terminal-scalar match, and REJECTS a stale/
+            # mismatched sidecar). A degenerate <4-sample terminal chunk is NOT evaluable -> resumed.
+            w0 = cw.read_certified_window(npz, prog_path(Nx, Ny))
+            if w0["valid"]:
+                buf0 = w0["window"]; buf0_origin = w0["buffer_origin"]
+                ev0 = pg.evaluate(buf0)
+            else:
+                buf0 = None; buf0_origin = None
+                ev0 = dict(plateau_evaluable=False, n_samples=w0["n_samples"], spread_Gii=None,
+                           spread_Gtot=None, Rphi_last=None, iterations=[], passed=False)
+                if w0["sidecar_rejected"]:
+                    log("NOTE: %dx%d %s" % (Nx, Ny, w0["sidecar_rejected"]), "WARN")
             already = bool(ev0["plateau_evaluable"] and ev0["passed"])
             if already:
                 cum = int(prog["cum_iters"]) if prog and prog.get("cum_iters") else m0["niter"]
@@ -249,13 +248,16 @@ def main():
         # rolling buffer of the last <=4 REAL cumulative iterations, spanning chunk boundaries and
         # persisted across solver invocations. On same-node resume we reload it; a cold / prev-node
         # warm start begins with an empty buffer (the previous node's trajectory does not carry over).
-        if prog and prog.get("plateau_buffer"):
-            buffer = list(prog["plateau_buffer"]); buffer_origin = "persisted_sidecar"
-            ok, det = pg.check_monotonic(buffer)
+        # NUM-01: the reload is validated against the NPZ (consecutive abs-iters + terminal-scalar
+        # match), so a stale/mismatched sidecar cannot seed the resume with a different run's window.
+        if prov == "valid" and prog and prog.get("plateau_buffer"):
+            ok, det = cw.validate_buffer(list(prog["plateau_buffer"]), np.load(npz, allow_pickle=True))
             if not ok:
-                log("FAIL CLOSED: %dx%d resumed plateau_buffer failed integrity check [%s]. A duplicated or "
-                    "out-of-order iteration could fabricate a plateau -- refusing to certify." % (Nx, Ny, det), "ERROR")
-                sys.exit(4)
+                log("NOTE: %dx%d resume plateau_buffer rejected [%s] -- restarting window fresh."
+                    % (Nx, Ny, det), "WARN")
+                buffer = []; buffer_origin = "empty_fresh"
+            else:
+                buffer = list(prog["plateau_buffer"]); buffer_origin = "persisted_sidecar"
         else:
             buffer = []; buffer_origin = "empty_fresh"
         node_t0 = time.time(); prev_Gii = None; passed = False

@@ -1,0 +1,70 @@
+======================================================================
+ Linux engineering items NUM-01 / NUM-02 / RUN-03 -- test log
+ date: 2026-10-22T04:18:15Z  host: Linux 6.8.0-124-generic x86_64
+ repo: 1cefe68  branch: main
+ python: Python 3.13.12  numpy: 2.5.1  scipy: 1.18.0
+ BLAS threads: OPENBLAS/OMP/MKL = 1 (apples-to-apples with the Windows arm)
+======================================================================
+
+### NUM-01 + NUM-02 unit tests  (src/test_certified_window.py)
+$ python src/test_certified_window.py
+
+== NUM-01 certified window ==
+[PASS] u_Gii > 0 (1-iter terminal chunk + drifting prior 3)  -- u_Gii=1.1108e+21
+[PASS] window uses the persisted sidecar  -- persisted_sidecar
+[PASS] window is 4 consecutive iters  -- [58, 59, 60, 61]
+[PASS] mean_Gii == window mean
+[PASS] u_Gii == (max-min)/2
+[PASS] spread_Gii * mean_Gii / 2 == u_Gii (gen_run_report derivation)
+[PASS] degenerate no-sidecar terminal chunk -> not valid  -- npz_terminal_reconstruction rejected: only 1 real sample(s) (< 4)
+[PASS] stale sidecar rejected  -- persisted_sidecar rejected: terminal sample (Gii=2.730000e+25) != NPZ scalar (Gii_max=3.075752e+25)
+[PASS] stale sidecar -> fallback to npz reconstruction  -- npz_terminal_reconstruction
+
+== NUM-02 per-node manifest ==
+[PASS] clean manifest verifies OK
+[PASS] missing H_hash -> FAIL  -- missing H array (cannot compute H_sha1)
+[PASS] changed Phi_gate -> FAIL  -- frozen definition mismatch (e.g. Phi_gate changed): {'Phi_gate': -0.75, 'ratio': 6.0, 'W': 0.09, 'X_C': 0.6, 'dH_eV': 0.0125, 'eps_max_eV': 3.02, 'she_tol': 1e-08, 'tol_phi': 0.0001, 'aa_depth': 6, 'aa_beta': 0.5, 'aa_step_cap': 5.0, 'aa_restart': 6, 'common_phi_span': [-0.6, 3.65]}
+[PASS] warm node records a warm-source SHA
+[PASS] changed warm-source SHA -> FAIL  -- warm-source SHA-256 mismatch (manifest 0000000000000000000000000000000000000000000000000000000000000000 != actual eca330a5c618f10409dfc8f958c4a0dd4bb87771da3c81fcf96afecf4e57692a)
+
+RESULT: ALL PASS
+exit=0
+
+### NUM-01 real-data consumer check -- all three consumers on the committed trio
+$ python src/richardson_fit.py data/she2d_richardson_{71x58,100x70,141x85}.npz
+certified windows: 71x58 iters [322..325] (npz_terminal_reconstruction); 100x70 iters [926..929] (npz_terminal_reconstruction); 141x85 iters [714..717] (npz_terminal_reconstruction)
+grid        Nx  Ny   drain_dx   surf_dy    Gii_max(+/-u)          G_tot(+/-u)           R_phi
+ 0  71x58    71   58  0.00380  0.000484  3.0756e+25+/-1.1e+21  9.2647e+13+/-6.7e+09  7.10e-05
+ 1 100x70   100   70  0.00269  0.000343  2.1448e+25+/-2.3e+20  6.0500e+13+/-8.3e+08  6.97e-05
+ 2 141x85   141   85  0.00190  0.000241  2.4064e+25+/-9.3e+19  6.5759e+13+/-2.3e+08  7.30e-05
+
+comparability: mesh-law/solver signatures identical: True    {(6.0, 0.09, 0.6, 0.0125, 591, 1e-08)}
+H-grid identical (sha1): True    {'b4319bb03303'}
+refinement ratios  r_x=1.4144,1.4144   r_y=1.4104,1.4249   (target sqrt2=1.4142)
+r_x ~ r_y ~ sqrt2 (within 5%%): True   -> single representative h is defensible
+
+--- Gii_max  (finest-grid value 2.4064e+25 cm^-3 s^-1) ---
+
+-- gen_run_report.certified_plateau vs certified_window.read_certified_window (same u?)
+71x58  origin=npz_terminal_reconstruction iters=[322, 323, 324, 325]  u_cw=1.072401e+21  u_report=1.072401e+21  match=True
+100x70  origin=npz_terminal_reconstruction iters=[926, 927, 928, 929]  u_cw=2.284844e+20  u_report=2.284844e+20  match=True
+141x85  origin=npz_terminal_reconstruction iters=[714, 715, 716, 717]  u_cw=9.321655e+19  u_report=9.321655e+19  match=True
+
+### NUM-02 manifest on real data (expected FAIL: committed run was made on a dirty tree)
+$ python src/node_manifest.py data/she2d_richardson_71x58.npz  (then verify)
+git_commit_full: 4e2374e374d43dc33efc4e5e533b768ea3e35541
+git_dirty: True
+H_sha1: b4319bb03303846a3ea0e2e6453b6c6d2ee3750d prefix: b4319bb03303 npz H_hash: b4319bb03303
+doping_geometry_sha256: 9e0d5d5ed0e89dd6c3301d3b1b9da63e079e72eadbca738a36ad26b9cecf5478
+verify: FAIL -> ['git tree dirty (refused): not a frozen solver']
+
+### RUN-03 run_linux_full.sh Stage-1 sentinel gate
+TEST A: sentinel ABSENT  -> expect nonzero exit and NO stage 2
+TEST B: sentinel PRESENT -> expect exit 0 and stages continue
+(executed in a throwaway sandbox with a stub python3; see transcript below)
+  EXIT_A=1  log contained 'sentinel figures/she2d_iv_moment.png MISSING'  stage 2 NOT reached
+  EXIT_B=0  'STAGE 1/6: DONE' -> 'STAGE 2/6' -> 'RUN LINUX FULL DONE'
+
+### Clean-tree replay (reviewer residual R5) -- see report/closure/CLEANROOM_PROOF_20261022.md
+  Gate B on pristine clone @ e4c7587: 11/11 PASS, tree still pristine after the run
+  Gate C on pristine clone @ e4c7587: 'Source tree clean = True'

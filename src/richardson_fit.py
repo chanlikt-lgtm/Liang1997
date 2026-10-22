@@ -11,6 +11,7 @@ Usage: python richardson_fit.py coarse.npz medium.npz fine.npz
 """
 import sys
 import numpy as np
+import certified_window as cw   # NUM-01: single authoritative certified-window reader
 
 def load(fs):
     return [np.load(f) for f in fs]
@@ -42,16 +43,24 @@ def main(fs):
     dx = [float(z["drain_dx"]) for z in d]; dy = [float(z["surface_dy"]) for z in d]
     Rp = [float(z["R_phi"]) for z in d]; sp = [float(z["spread"]) for z in d]
 
-    # Node value = MEAN of the last 4 plateau iterates; per-node uncertainty = last-4 HALF-RANGE.
+    # Node value = MEAN of the CERTIFIED cumulative window; per-node uncertainty = its HALF-RANGE.
     # This absolute band is what a sign reversal must exceed to count as genuine non-monotonicity
     # (vs "grid-stable within numerical resolution").
-    def node(z, key4, keymean):
-        a = np.asarray(z[key4], float) if key4 in z.files else np.array([float(z[keymean])])
-        return float(a.mean()), float((a.max() - a.min()) / 2.0)
-    G, uG, Gt, uGt = [], [], [], []
-    for z in d:
-        v, u = node(z, "last4_Gii_max", "Gii_max"); G.append(v); uG.append(u)
-        v, u = node(z, "last4_G_tot", "G_tot"); Gt.append(v); uGt.append(u)
+    # NUM-01: routed through the single authoritative reader so a degenerate 1-iteration terminal
+    # chunk (chunk-local last4 == one sample -> u=0) can never fake a finite uncertainty; the
+    # certified cross-chunk window carries the prior 3 drifting values, so u > 0.
+    G, uG, Gt, uGt, win_notes = [], [], [], [], []
+    for i, f in enumerate(fs):
+        w = cw.read_certified_window(f)
+        if not w["valid"]:
+            print("*** REFUSE: node %s has no certified window (%s) -- cannot extrapolate."
+                  % (w["node"], w["detail"]))
+            sys.exit(1)
+        G.append(w["mean_Gii"]); uG.append(w["u_Gii"])
+        Gt.append(w["mean_Gtot"]); uGt.append(w["u_Gtot"])
+        win_notes.append("%s iters [%d..%d] (%s)" % (w["node"], w["iterations"][0],
+                         w["iterations"][-1], w["buffer_origin"]))
+    print("certified windows: " + "; ".join(win_notes))
     print("grid        Nx  Ny   drain_dx   surf_dy    Gii_max(+/-u)          G_tot(+/-u)           R_phi")
     for i in range(3):
         print("%2d %3dx%-3d %4d %4d  %.5f  %.6f  %.4e+/-%.1e  %.4e+/-%.1e  %.2e"

@@ -37,7 +37,10 @@ done
 if [ -f figures/she2d_iv_moment.png ]; then
   stamp "STAGE 1/6: DONE (sentinel figures/she2d_iv_moment.png present)"
 else
-  stamp "STAGE 1/6: reproduce_all exited but sentinel figures/she2d_iv_moment.png MISSING -- check data/reproduce_run.log"
+  # RUN-03: hard-fail when the Stage-1 sentinel is absent (previously warn+continue). A missing
+  # sentinel means reproduce_all --full did not actually complete, and continuing into Stages 2-6
+  # would chain onto a broken/incomplete Stage 1.
+  fail "STAGE 1/6 sentinel figures/she2d_iv_moment.png MISSING" 1
 fi
 
 # ---------------------------------------------------------------- Stage 2

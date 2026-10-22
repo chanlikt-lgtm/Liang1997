@@ -12,6 +12,7 @@ Usage: python gen_run_report.py
 import os, sys, csv, math, json, subprocess, datetime, shutil
 import numpy as np
 import plateau_gate as pg   # certified cumulative-window plateau evidence (single source of thresholds)
+import certified_window as cw  # NUM-01: single authoritative certified-window reader
 
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 DATA = os.path.join(ROOT, "data"); REP = os.path.join(ROOT, "report")
@@ -35,24 +36,18 @@ def load():
     return zs
 
 def certified_plateau(nx, ny, z):
-    """Certified cumulative-window plateau evidence for a node, evaluated over the last four REAL
-    cumulative iterations (spanning driver chunks). Prefer the persisted sidecar plateau_buffer -- the
-    genuine window that certified the gate; otherwise reconstruct from the NPZ terminal chunk (a
-    degenerate <4-sample terminal chunk then reports plateau_evaluable=False, never a spurious pass).
+    """Certified cumulative-window plateau evidence for a node -- NUM-01: routed through the single
+    authoritative reader (certified_window.read_certified_window), so this, richardson_fit, and
+    run_richardson_trio all derive the SAME window and the SAME u>0 half-range. A stale/mismatched
+    sidecar is rejected; a degenerate <4-sample terminal chunk reports plateau_evaluable=False.
     Returns (evaluate-dict, buffer_origin)."""
-    prg = os.path.join(DATA, "she2d_richardson_%dx%d.progress.json" % (nx, ny))
-    buf, origin = None, "npz_terminal_reconstruction"
-    if os.path.exists(prg):
-        d = json.load(open(prg, encoding="utf-8"))
-        if d.get("plateau_buffer"):
-            buf = list(d["plateau_buffer"]); origin = d.get("buffer_origin") or "persisted_sidecar"
-    if buf is None:
-        l4g = np.atleast_1d(np.asarray(z["last4_Gii_max"], float))
-        l4t = np.atleast_1d(np.asarray(z["last4_G_tot"], float))
-        l4r = (np.atleast_1d(np.asarray(z["last4_R_phi"], float)) if "last4_R_phi" in z.files
-               else np.array([float(z["R_phi"])]))
-        buf = pg.roll_window([], pg.chunk_samples_from_last4(l4g, l4t, l4r, int(z["n_iter"])))
-    return pg.evaluate(buf), origin
+    w = cw.read_certified_window(npz(nx, ny),
+                                 os.path.join(DATA, "she2d_richardson_%dx%d.progress.json" % (nx, ny)))
+    if w["valid"]:
+        return pg.evaluate(w["window"]), w["buffer_origin"]
+    return (dict(plateau_evaluable=False, n_samples=w["n_samples"], spread_Gii=None,
+                 spread_Gtot=None, Rphi_last=None, iterations=[], passed=False),
+            w["buffer_origin"] or "npz_terminal_reconstruction")
 
 EXPECT_CSV_COLS = {"node", "cum_iters", "wall_s"}  # current harness schema (see run_richardson_trio.CSV_HEADER)
 

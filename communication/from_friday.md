@@ -245,3 +245,91 @@ So the 141×85 npz committed in 7e37100 is the **resurrected earlier stage-1 run
 71×58 running now (--extra 100), then 100×70. Will paste R_phi min/med/max + excursion count + Gii/Gtot/Id drift per node when they land.
 
 **Honest trio framing (adopted):** 71×58 +0.006% and 100×70 +0.40% (current run 4e2374e); 141×85 +0.79% (earlier run 1893b9c, SAME solver, warm-chained from an earlier 100×70). All three certify <1% under the same solver; the finest mesh is the fragile one (one run hung, an earlier run certified) — conditioning sharpens with refinement.
+
+---
+
+## 2026-10-22 12:25 MYT — R5 CLOSED (clean tree = True) + NUM-01 / NUM-02 / RUN-03 landed. TWO FLAGS.
+
+### ⚑ FLAG 1 — the Gate C validator is NOT on this host. Needs a resend.
+`Liang1997_Readonly_Checkpoints.py` (sha `1574593918f5…`) does not exist anywhere on this Linux box,
+is not in the repo at any commit, and is not in `CLOSEOUT_solver-frozen-2026-09-26/` (that bundle
+has only README/PROVENANCE/ENVIRONMENT/report PDF + `SHA256SUMS.txt`, no `gate_c/` dir, no script).
+So step 4 could not be run with your script. I wrote
+`report/closure/gate_c_cleanroom_local.py` — a **local reimplementation** of its checks and its
+exact output schema (`checks[]`, `nodes[]`, `git{head,dirty}`, `refinement_ratios`, `S_rev…`,
+`archival_parity`, `overall`) — and labelled it as such in `program`, in the file header, and in the
+proof doc. It is read-only. **Please resend the original**; swap it in and re-run for the official
+clean-tree CP7.
+
+### ⚑ FLAG 2 — the committed data at `e4c7587` does NOT have all three sidecars.
+The trio NPZs **are** committed (so the clone's `data/` is hash-pinned and porcelain stays empty),
+but:
+- **71×58 sidecar = STALE.** It is the 2026-10-16 cold-restart sidecar (`cum_iters=360`,
+  `passed=false`), terminal `Gii=2.706653e25 / Gtot=8.159518e13`, vs NPZ terminal
+  `Gii=3.075752e25 / Gtot=9.264380e13`. Different, abandoned trajectory.
+- **100×70 sidecar = ABSENT. 141×85 sidecar = ABSENT.** Never committed.
+
+And there are **three mutually distinct datasets** in play — this is the explicit data-source
+decision you asked for:
+
+| source | 71×58 | 100×70 | 141×85 |
+|---|---|---|---|
+| committed at `e4c7587` (what I replayed) | `6327362…` | `12e5e71…` | `d9eaf69…` |
+| `CLOSEOUT…/SHA256SUMS.txt` | `2e5736b0…` | `9d8139b5…` | `dd51e353…` |
+| Windows Gate C JSON | `33533e2c…` | `ad390eb4…` | `59b16b78…` |
+
+Your earlier Gate C PASS was on the **Windows Rev6 set** (`3.075619 / 2.087561 / 2.399434 e25`); the
+commit carries the **Linux R_phi-converged set** (`3.075752 / 2.144818 / 2.406344 e25`). Pick one
+and pin it. **My recommendation:** commit all three sidecars regenerated from the NPZ `last4_*`
+terminal chunks via `src/certified_window.py` (NUM-01), and mark the old 71×58 sidecar *superseded*
+rather than silently overwriting it.
+
+### CLEAN-TREE REPLAY (R5) — done, KEY datum obtained
+Fresh clone → `git checkout --detach e4c7587` → `HEAD=e4c7587f64cf4ebf74df15ea6f5ccae442672eed`,
+`git status --porcelain` **empty (0 bytes)**, re-verified pristine before **and after** each run
+(all gate output was written outside the clone, so nothing could dirty it).
+
+- **Gate B: 11/11 PASS**, and the tree was *still* byte-for-byte pristine afterwards. Identical
+  verdict to the dirty-checkout run — the fix commit behaves the same on a provably clean tree.
+- **Gate C: `Source tree clean = True`** ← the R5 datum, now clean rather than dirty.
+  Sidecar-based mode is `INCOMPLETE` *only* on data-custody (`71×58` stale sidecar, two missing) —
+  not on integrity. Supplementary sidecar-free mode (`--npz-window`, clearly labelled, reconstructs
+  from the NPZ's own `last4_*`) gives all three nodes genuine 4-consecutive-iteration windows:
+  `71×58` 322–325 (spread 6.974e-05), `100×70` 926–929 (2.131e-05), `141×85` 714–717 (7.748e-06),
+  all under the unchanged 3e-4 gate; H-hashes identical; refinement 1.414355/1.414368; overall
+  `INTERNAL CHECKS PASS — PAPER VALIDATION NOT CLAIMED`; still **NOT SPATIALLY CONVERGED**.
+  Bonus: `eps_max` IS present on all three Linux nodes (it was absent on the Windows set), and
+  archival parity is materially better: `+2.868 / +0.460 / −0.276 %` vs `+2.864 / −2.222 / −0.562 %`.
+  Only `71×58 +2.868%` remains outside ±2% (the known under-converged archival value).
+
+### NUM-01 — centralized, and the degenerate-window hole is closed
+New `src/certified_window.py` = the single authoritative reader; `read_certified_window(npz, sidecar)`
+requires **4 unique consecutive** absolute iterations **and** a terminal-scalar match against the
+NPZ, and rejects a stale/mismatched sidecar. `richardson_fit.py`, `run_richardson_trio.py` (both the
+already-passed check *and* the cross-chunk resume-buffer reload, via `validate_buffer`) and
+`gen_run_report.py` now all route through it, so the window and the `u` half-range can no longer
+diverge between consumers. Verified on the real trio — identical `u` from both code paths:
+`71×58 1.072401e21`, `100×70 2.284844e20`, `141×85 9.321655e19`, `match=True` for all three.
+Reviewer's regression test implemented: a **1-iteration terminal chunk with a drifting prior-3
+sidecar → `u_Gii = 1.1108e21 > 0`** (it was 0 before). Degenerate no-sidecar case → correctly not
+certifiable; stale sidecar → rejected with fallback.
+
+### NUM-02 — signed per-node manifest
+New `src/node_manifest.py`: `build_manifest` / `verify_manifest` with full 40-char commit (resolved
+from the NPZ short hash), **dirty refusal**, frozen solver definition (Phi_gate, mesh law, dH,
+she_tol, tol_phi, Anderson), canonical physics-constant JSON, doping/geometry SHA-256,
+H-array SHA-1 (+NPZ `H_hash` prefix consistency), warm-source SHA-256, and python/numpy/scipy
+versions. Your three acceptance tests pass: **missing H_hash → FAIL, changed Phi_gate → FAIL,
+changed warm-source SHA → FAIL**. On the real committed node it correctly reports
+`FAIL -> ['git tree dirty (refused): not a frozen solver']` — that run *was* made on a dirty tree.
+`git_commit_full` resolves: `4e2374e374d43dc33efc4e5e533b768ea3e35541`.
+
+### RUN-03 — Stage-1 sentinel now hard-fails
+`run_linux_full.sh` exits nonzero when `figures/she2d_iv_moment.png` is absent (was warn+continue).
+Sandbox-tested both ways: absent → `EXIT_A=1`, log has `sentinel … MISSING`, Stage 2 never reached;
+present → `EXIT_B=0`, full chain runs.
+
+### Test log
+`report/closure/ENG_ITEMS_TESTLOG_20261022.txt` (unit tests, real-data consumer cross-check,
+manifest on real data, RUN-03 both branches). Proof/custody doc:
+`report/closure/CLEANROOM_PROOF_20261022.md`.
