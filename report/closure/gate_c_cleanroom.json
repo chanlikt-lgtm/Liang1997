@@ -1,19 +1,18 @@
 {
-  "program": "Liang1997 read-only checkpoint validator (LOCAL REIMPLEMENTATION \u2014 reviewer's original script unavailable on this host)",
-  "inspected_utc": "2026-10-22T04:17:22+00:00",
-  "repo": "/home/chanlik/.openclaw/workspace/liang_cleanroom",
+  "program": "Liang1997 read-only checkpoint validator",
+  "inspected_utc": "2026-10-22T04:39:17+00:00",
+  "repo": "/home/chanlik/.openclaw/workspace/liang_cleanroom2",
   "nodes": [
     {
       "node": "71x58",
       "npz": "data/she2d_richardson_71x58.npz",
       "sidecar": "data/she2d_richardson_71x58.progress.json",
       "sha256_npz": "632736219b130f79d932603bb1c2e09971b1409abd236cb3b4fa7619e5e27b36",
-      "sha256_sidecar": "6852c7e52b5a09d2d402a0b5ebfbef3caa3de6db43050ff4d054673571656208",
+      "sha256_sidecar": "07753fe4fceb0fe0fec077522b4ab4e4eedbda626ab976ef88dad4c1de161fb9",
       "Gii": 3.0757521592531657e+25,
       "Gtot": 92643797265133.03,
       "Rphi": 7.103532818497627e-05,
       "drain_dx": 0.003803151376701064,
-      "surface_dy": 0.00048364121085098916,
       "H_hash": "b4319bb03303",
       "signature": {
         "ratio": 6.0,
@@ -23,35 +22,30 @@
         "NH": 591.0,
         "she_tol": 1e-08
       },
-      "git_commit": "4e2374e",
-      "Phi_gate": null,
-      "eps_max": 3.02,
       "abs_dev_pct": 2.867965192413568,
-      "sidecar_passed": false,
-      "sidecar_cum_iters": 360,
-      "plateau_spread_Gii": 0.009420690876952909,
-      "plateau_spread_Gtot": 0.009759655808518472,
-      "uncertainty_half_range": 1.2788611971630663e+23,
-      "last_Rphi": 0.0015040238183279264,
+      "surface_dy": 0.00048364121085098916,
+      "git_commit": "4e2374e",
+      "plateau_spread_Gii": 6.973526139881215e-05,
+      "plateau_spread_Gtot": 0.00014429434235078354,
+      "uncertainty_half_range": 1.0724014402231809e+21,
+      "last_Rphi": 7.103532818497627e-05,
       "certified_iters": [
-        357,
-        358,
-        359,
-        360
-      ],
-      "buffer_origin": "empty_fresh"
+        322,
+        323,
+        324,
+        325
+      ]
     },
     {
       "node": "100x70",
       "npz": "data/she2d_richardson_100x70.npz",
-      "sidecar": null,
+      "sidecar": "data/she2d_richardson_100x70.progress.json",
       "sha256_npz": "12e5e7171985014a34778fd07caedea1e61a22852649143d5880127afe6a9e59",
-      "sha256_sidecar": null,
+      "sha256_sidecar": "a24b59c6693db8f5d2c7ad872390aec8be00c609e339eb5a3482b571a2907d20",
       "Gii": 2.144817881348891e+25,
       "Gtot": 60499443837326.72,
       "Rphi": 6.970369334124982e-05,
       "drain_dx": 0.0026889651645903845,
-      "surface_dy": 0.0003429017303743266,
       "H_hash": "b4319bb03303",
       "signature": {
         "ratio": 6.0,
@@ -61,28 +55,30 @@
         "NH": 591.0,
         "she_tol": 1e-08
       },
-      "git_commit": "4e2374e",
-      "Phi_gate": null,
-      "eps_max": 3.02,
       "abs_dev_pct": 0.4598539273485219,
-      "plateau_spread_Gii": null,
-      "plateau_spread_Gtot": null,
-      "uncertainty_half_range": null,
-      "last_Rphi": null,
-      "certified_iters": null,
-      "buffer_origin": null
+      "surface_dy": 0.0003429017303743266,
+      "git_commit": "4e2374e",
+      "plateau_spread_Gii": 2.1305507032650095e-05,
+      "plateau_spread_Gtot": 2.7599312267962804e-05,
+      "uncertainty_half_range": 2.2848441260844253e+20,
+      "last_Rphi": 6.970369334124982e-05,
+      "certified_iters": [
+        926,
+        927,
+        928,
+        929
+      ]
     },
     {
       "node": "141x85",
       "npz": "data/she2d_richardson_141x85.npz",
-      "sidecar": null,
+      "sidecar": "data/she2d_richardson_141x85.progress.json",
       "sha256_npz": "d9eaf6985ee00bf98e2f9e90dada5fabd50a092b0b758ef22600a8f2b82d9817",
-      "sha256_sidecar": null,
+      "sha256_sidecar": "23f4a5f5dad1c6deb67e7b75b97ce572d361784baeb359572b59f508b3582651",
       "Gii": 2.4063436613300577e+25,
       "Gtot": 65759050711080.27,
       "Rphi": 7.30230877791227e-05,
       "drain_dx": 0.0019011775602025827,
-      "surface_dy": 0.00024065524150034372,
       "H_hash": "b4319bb03303",
       "signature": {
         "ratio": 6.0,
@@ -92,16 +88,19 @@
         "NH": 591.0,
         "she_tol": 1e-08
       },
-      "git_commit": "1893b9c",
-      "Phi_gate": null,
-      "eps_max": 3.02,
       "abs_dev_pct": -0.2758532395334548,
-      "plateau_spread_Gii": null,
-      "plateau_spread_Gtot": null,
-      "uncertainty_half_range": null,
-      "last_Rphi": null,
-      "certified_iters": null,
-      "buffer_origin": null
+      "surface_dy": 0.00024065524150034372,
+      "git_commit": "1893b9c",
+      "plateau_spread_Gii": 7.747541863118068e-06,
+      "plateau_spread_Gtot": 7.125124531597395e-06,
+      "uncertainty_half_range": 9.321654997554823e+19,
+      "last_Rphi": 7.30230877791227e-05,
+      "certified_iters": [
+        714,
+        715,
+        716,
+        717
+      ]
     }
   ],
   "checks": [
@@ -113,7 +112,7 @@
     {
       "name": "Source tree clean",
       "passed": true,
-      "detail": "Working tree is CLEAN at the pinned commit"
+      "detail": "Git tree clean"
     },
     {
       "name": "Exists src/plateau_gate.py",
@@ -143,47 +142,77 @@
     {
       "name": "71x58 four real consecutive samples",
       "passed": true,
-      "detail": "abs_iters=[357, 358, 359, 360]"
+      "detail": "abs_iters=[322, 323, 324, 325]"
     },
     {
       "name": "71x58 sidecar matches final NPZ",
-      "passed": false,
-      "detail": "last_Gii=2.70665265e+25, saved_Gii=3.07575216e+25, last_Gtot=8.15951835e+13, saved_Gtot=9.26437973e+13"
+      "passed": true,
+      "detail": "last_Gii=3.07575216e+25, saved_Gii=3.07575216e+25, last_Gtot=9.26437973e+13, saved_Gtot=9.26437973e+13"
     },
     {
       "name": "71x58 sidecar integrity",
-      "passed": false,
-      "detail": "passed=False, cum_iters=360, last_sample=360"
+      "passed": true,
+      "detail": "passed=True, cum_iters=325, last_sample=325"
     },
     {
       "name": "71x58 plateau criterion",
-      "passed": false,
-      "detail": "spread_Gii=9.421e-03, spread_Gtot=9.760e-03, last_Rphi=1.504e-03"
+      "passed": true,
+      "detail": "spread_Gii=6.974e-05, spread_Gtot=1.443e-04, last_Rphi=7.104e-05"
     },
     {
       "name": "71x58 NPZ metrics finite",
       "passed": true,
-      "detail": "Gii=3.075752e+25, Gtot=9.264380e+13, dx=0.003803151376701064, Rphi=7.104e-05"
+      "detail": "Gii=3.075752e+25, Gtot=9.264380e+13, dx=0.00380315, Rphi=7.104e-05"
     },
     {
-      "name": "100x70 certified 4-sample window available",
-      "passed": false,
-      "detail": "sidecar absent from the pinned commit"
+      "name": "100x70 four real consecutive samples",
+      "passed": true,
+      "detail": "abs_iters=[926, 927, 928, 929]"
+    },
+    {
+      "name": "100x70 sidecar matches final NPZ",
+      "passed": true,
+      "detail": "last_Gii=2.14481788e+25, saved_Gii=2.14481788e+25, last_Gtot=6.04994438e+13, saved_Gtot=6.04994438e+13"
+    },
+    {
+      "name": "100x70 sidecar integrity",
+      "passed": true,
+      "detail": "passed=True, cum_iters=929, last_sample=929"
+    },
+    {
+      "name": "100x70 plateau criterion",
+      "passed": true,
+      "detail": "spread_Gii=2.131e-05, spread_Gtot=2.760e-05, last_Rphi=6.970e-05"
     },
     {
       "name": "100x70 NPZ metrics finite",
       "passed": true,
-      "detail": "Gii=2.144818e+25, Gtot=6.049944e+13, dx=0.0026889651645903845, Rphi=6.970e-05"
+      "detail": "Gii=2.144818e+25, Gtot=6.049944e+13, dx=0.00268897, Rphi=6.970e-05"
     },
     {
-      "name": "141x85 certified 4-sample window available",
-      "passed": false,
-      "detail": "sidecar absent from the pinned commit"
+      "name": "141x85 four real consecutive samples",
+      "passed": true,
+      "detail": "abs_iters=[714, 715, 716, 717]"
+    },
+    {
+      "name": "141x85 sidecar matches final NPZ",
+      "passed": true,
+      "detail": "last_Gii=2.40634366e+25, saved_Gii=2.40634366e+25, last_Gtot=6.57590507e+13, saved_Gtot=6.57590507e+13"
+    },
+    {
+      "name": "141x85 sidecar integrity",
+      "passed": true,
+      "detail": "passed=True, cum_iters=717, last_sample=717"
+    },
+    {
+      "name": "141x85 plateau criterion",
+      "passed": true,
+      "detail": "spread_Gii=7.748e-06, spread_Gtot=7.125e-06, last_Rphi=7.302e-05"
     },
     {
       "name": "141x85 NPZ metrics finite",
       "passed": true,
-      "detail": "Gii=2.406344e+25, Gtot=6.575905e+13, dx=0.0019011775602025827, Rphi=7.302e-05"
+      "detail": "Gii=2.406344e+25, Gtot=6.575905e+13, dx=0.00190118, Rphi=7.302e-05"
     },
     {
       "name": "All three H grid hashes equal and mandatory",
@@ -202,8 +231,8 @@
     },
     {
       "name": "All nodes contain eps_max",
-      "passed": true,
-      "detail": "present on all nodes"
+      "passed": false,
+      "detail": "Optional schema field eps_max absent from one or more nodes; freeze from external config digest"
     },
     {
       "name": "Drain mesh refinement ratio",
@@ -228,13 +257,12 @@
   ],
   "warnings": [
     "All nodes contain Phi_gate: Optional schema field Phi_gate absent from one or more nodes; freeze from external config digest",
-    "Archival \u00b12% numerical parity: [('71x58', 2.868), ('100x70', 0.4599), ('141x85', -0.2759)]",
-    "100x70: no evaluable 4-consecutive-iteration certified window in the pinned commit (sidecar missing)",
-    "141x85: no evaluable 4-consecutive-iteration certified window in the pinned commit (sidecar missing)"
+    "All nodes contain eps_max: Optional schema field eps_max absent from one or more nodes; freeze from external config digest",
+    "Archival \u00b12% numerical parity: [('71x58', 2.868), ('100x70', 0.4599), ('141x85', -0.2759)]"
   ],
   "claim": "Data/integrity diagnostics only; NOT paper validation or spatial convergence.",
   "git": {
-    "head": "e4c7587f64cf4ebf74df15ea6f5ccae442672eed",
+    "head": "fca646b98fbb9272a2a3068f8b6aeff1c170dcc4",
     "dirty": false
   },
   "refinement_ratios": [
@@ -243,15 +271,14 @@
   ],
   "nonmonotone_Gii": true,
   "richardson_extrapolation_allowed": false,
-  "S_rev_certified_window": null,
+  "S_rev_certified_window": 10598.042158266231,
   "archival_parity": "YELLOW numerically",
   "scientific_status": "NOT SPATIALLY CONVERGED",
   "run_report": {
     "exists": true,
-    "sha256": "b7f2cb6163cca66200cd052b0c3053d5087ad26b5b4d1b6da91037839b5bdd35",
-    "size_bytes": 286555,
-    "newer_than_inputs": true
+    "sha256": "5ecfd8730b0c7f68762a067743ac98f1677fa186e0fd97b6111fac5fe0fc00ac",
+    "size_bytes": 216443
   },
   "errors": [],
-  "overall": "INCOMPLETE \u2014 see failed checks"
+  "overall": "INTERNAL CHECKS PASS \u2014 PAPER VALIDATION NOT CLAIMED"
 }

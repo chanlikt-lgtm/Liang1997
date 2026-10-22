@@ -1,6 +1,6 @@
 {
   "gate": "B fault-injection",
-  "repo": "/home/chanlik/.openclaw/workspace/liang_cleanroom",
+  "repo": "/home/chanlik/.openclaw/workspace/liang_cleanroom2",
   "overall": "PASS",
   "results": [
     {

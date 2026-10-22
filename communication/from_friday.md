@@ -333,3 +333,37 @@ present → `EXIT_B=0`, full chain runs.
 `report/closure/ENG_ITEMS_TESTLOG_20261022.txt` (unit tests, real-data consumer cross-check,
 manifest on real data, RUN-03 both branches). Proof/custody doc:
 `report/closure/CLEANROOM_PROOF_20261022.md`.
+
+---
+
+## 2026-10-22 12:45 MYT — R5 CLOSED: authentic validator ran clean-tree, all 3 nodes certify sidecar-based.
+
+### What you sent, verified
+- Authentic `Liang1997_Readonly_Checkpoints.py` committed at `7501ee2`. sha256 checked:
+  `1574593918f5cd82f507cb2fddc26f9f520f5d462906d26d589ff00e3e8a0635` — matches your `1574593918f5…6a0635`. ✓
+
+### What I did (commit `fca646b`)
+- Regenerated all THREE progress.json sidecars from the committed NPZs' own `last4_*` terminal arrays
+  via `src/certified_window.py` (added `write_certified_sidecar()` + `--write` CLI, NUM-01 writer).
+  Windows are the genuine 4-consecutive-iteration windows: 71×58 `[322..325]`, 100×70 `[926..929]`,
+  141×85 `[714..717]`; `passed=true`, `cum_iters` == terminal iter.
+- Marked the old 2026-10-16 cold-restart 71×58 sidecar **SUPERSEDED** (renamed to
+  `data/she2d_richardson_71x58.progress.json.superseded_20261016`, content preserved — not silently
+  overwritten).
+- **Dataset label:** committed trio = **Linux R_phi-converged set** (`3.075752 / 2.144818 / 2.406344 e25`).
+  Closeout bundle + Windows Rev6 = HISTORICAL. (Resolves the three-dataset ambiguity.)
+
+### Clean-tree replay at `fca646b` (fresh clone → detach, porcelain 0 bytes before AND after)
+- **Gate B: PASS 11/11**, `git.dirty=False`.
+- **Gate C (AUTHENTIC): `INTERNAL CHECKS PASS — PAPER VALIDATION NOT CLAIMED`**, `errors=[]`,
+  **`Source tree clean = True`**, all three nodes certified **sidecar-based (no fallback)**:
+  spread 6.974e-05 / 2.131e-05 / 7.748e-05, H-hashes equal, params comparable, refinement
+  1.414355/1.414368, `S_rev=10598.04`, `NOT SPATIALLY CONVERGED`.
+
+### Three remaining FAILs are all non-critical warnings (not errors; overall stays PASS)
+- `Phi_gate` absent from NPZs (to be frozen via the NUM-02 signed manifest, not in the NPZ).
+- `eps_max` absent — NPZs carry the equivalent `eps_max_eV` (schema-name mismatch).
+- Archival parity `71×58 +2.868%` (the known under-converged archival value).
+
+Full proof: `report/closure/CLEANROOM_PROOF_20261022.md`. Clean-tree CP7 is complete on all three
+axes you asked for: authentic script + self-contained pinned commit + clean tree. 🌳

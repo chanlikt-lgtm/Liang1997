@@ -108,3 +108,49 @@ CLAIMED`. Scientific status unchanged: **NOT SPATIALLY CONVERGED** (non-monotone
    from the NPZ `last4_*` terminal chunks via `src/certified_window.py` (NUM-01), and mark the old
    71×58 sidecar superseded rather than silently replacing it.
 3. Decide explicitly which dataset (committed / closeout-bundle / Windows Rev6) future gates use.
+
+---
+
+## FINAL — R5 CLOSED (2026-10-22) with the AUTHENTIC validator + self-contained pinned commit
+
+The two gaps flagged in §5 above are now closed:
+
+1. **Authentic validator committed** (`7501ee2`) at `report/closure/Liang1997_Readonly_Checkpoints.py`,
+   sha256 `1574593918f5cd82f507cb2fddc26f9f520f5d462906d26d589ff00e3e8a0635` — VERIFIED matches the
+   `1574593918f5…6a0635` prefix. This is the reviewer's own script, NOT the local reimplementation.
+2. **Three sidecars regenerated** (`fca646b`) from the committed NPZs' own `last4_*` terminal arrays
+   via `src/certified_window.py` (`write_certified_sidecar`, NUM-01 writer). The old 2026-10-16
+   cold-restart 71×58 sidecar is kept as `data/she2d_richardson_71x58.progress.json.superseded_20261016`
+   (NOT silently overwritten).
+
+**Dataset label (resolves the three-dataset ambiguity):** the committed trio is the
+**Linux R_phi-converged set** (`Gii = 3.075752 / 2.144818 / 2.406344 e25`). The 2026-09-26 closeout
+bundle and the Windows Rev6 gate_c set are HISTORICAL.
+
+### Clean-tree replay at `fca646b` (fresh clone → detach)
+
+```
+$ git clone git@github.com:chanlikt-lgtm/Liang1997.git liang_cleanroom2
+$ git checkout --detach fca646b
+HEAD = fca646b98fbb9272a2a3068f8b6aeff1c170dcc4
+$ git status --porcelain   → 0 bytes (before AND after both gate runs)
+```
+
+- **Gate B: PASS (11/11)**, `git.dirty = False`, porcelain still empty after the run.
+- **Gate C (AUTHENTIC script): `INTERNAL CHECKS PASS — PAPER VALIDATION NOT CLAIMED`**, `errors=[]`,
+  `git = {head: fca646b…, dirty: False}` → **`Source tree clean` = True** (the R5 datum, now from the
+  genuine script), all three nodes certified **sidecar-based, no fallback**:
+  `71×58 [322..325] spread 6.974e-05`, `100×70 [926..929] 2.131e-05`, `141×85 [714..717] 7.748e-06`;
+  H-hashes identical, six physics/grid params comparable, drain refinement `1.414355/1.414368`.
+  `S_rev_certified_window = 10598.04`, `archival_parity = YELLOW numerically` (only 71×58 +2.868%
+  outside ±2%), `scientific_status = NOT SPATIALLY CONVERGED`.
+
+**Remaining non-critical warnings (not errors; do not affect the overall PASS):**
+- `All nodes contain Phi_gate` — optional schema field absent from the NPZs (to be frozen via the
+  NUM-02 signed manifest, not in the NPZ).
+- `All nodes contain eps_max` — the NPZs carry the equivalent `eps_max_eV` (name differs from the
+  validator's expected `eps_max`); non-critical.
+- `Archival ±2% numerical parity` — 71×58 +2.868% is the known under-converged archival value.
+
+The clean-tree CP7 is now complete on all three axes Claude required: authentic script + self-contained
+pinned commit + clean tree.
