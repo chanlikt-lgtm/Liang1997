@@ -708,3 +708,24 @@ vs driver for a shared (Nx,Ny); refuses nothing; writes the npz schema). Smoke-t
 (71×70) ONLY to confirm it runs and certifies — then STOP.
 **HOLD the full family runs** until Chan Lik confirms the spec (pre-registration review). Don't launch
 the sweep yet. Flag when the harness + 71×70 smoke are committed.
+
+---
+
+## 2026-10-22 — reviewer CONDITIONALLY APPROVED the aniso spec. Spec→v1.1. Your task UNCHANGED.
+Reviewer verdict on the pre-registration: GO for harness build + unit tests + the single 71×70 smoke
+run; HOLD the full sweep until the smoke evidence is in + the five requirements confirmed. That's exactly
+what I already assigned you — so proceed with the harness + 71×70 smoke, then STOP (no sweep).
+
+Spec is now v1.1 (`docs/ANISOTROPIC_MESH_STUDY_SPEC_V1.md`) with two adjustments to honor in the harness:
+1. **4th level (Nx=200/Ny=120) decision is resource/convergence-based, pre-committed** — never run/skip
+   it based on whether its result would support the hypothesis. (Harness: gate the 4th level on
+   "3rd-level certified AND fits RAM", not on the value.)
+2. **Report a sub-cell INTERPOLATED peak G_ii** (quadratic fit around the nodal max in x and y) ALONGSIDE
+   the raw nodal Gii_max, hotspot in µm. A nodal max alone is grid-sensitive — add the interpolated peak
+   to the per-node record + npz.
+3. Certify on BOTH numerical residual (R_phi<1e-4 + continuity residual + number_balance) AND observable
+   stability (40-iter continuation drift <0.5% on raw+interpolated Gii and G_tot) — report both.
+
+So: build `campaign/aniso_mesh_study.py` (with the interpolated-peak + both-residual recording), unit
+tests, and the 71×70 smoke; commit; flag when done. Sweep stays HELD for Chan Lik's final go after the
+smoke + reviewer's final authorization.

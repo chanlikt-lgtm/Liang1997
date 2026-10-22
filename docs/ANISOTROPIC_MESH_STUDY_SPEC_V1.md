@@ -1,8 +1,15 @@
-# Anisotropic mesh-convergence study — SPEC v1 (pre-registration)
+# Anisotropic mesh-convergence study — SPEC v1.1 (pre-registration)
 
 **Date:** 2026-10-22 · **Scope:** Gate E / SCI-01, discretization-convergence only. **No physics change.**
 This spec is frozen and committed BEFORE any run (reviewer requirement: metrics + acceptance specified
 before results; never tune parameters until outcomes are seen).
+
+**v1.1 — folds in the reviewer's conditional-approval adjustments (2026-10-22):** (adj. 1) the 4th
+refinement level is pre-committed to a resource/convergence rule, never an outcome-dependent one (§3);
+(adj. 2) report a sub-cell interpolated peak G_ii alongside the raw nodal max, hotspot in physical units
+(§4); (req. 4) certify on numerical residual AND observable stability, both reported (§5). Reviewer
+status: GO for harness + unit tests + the single 71×70 smoke; full sweep HELD pending the smoke evidence
+and confirmation of the five requirements.
 
 ## 1. Objective
 
@@ -27,27 +34,40 @@ guard. New harness `campaign/aniso_mesh_study.py`:
 
 ## 3. Families (PRE-REGISTERED — do not alter after seeing results)
 
-- **X-family** (refine drain-x, hold depth-y): `Ny = 70` fixed; `Nx ∈ {71, 100, 141}` (add `200` iff the
-  141 level certifies and compute allows).
-- **Y-family** (refine depth-y, hold drain-x): `Nx = 100` fixed; `Ny ∈ {58, 70, 85}` (add `120` iff 85
-  certifies and compute allows).
+- **X-family** (refine drain-x, hold depth-y): `Ny = 70` fixed; `Nx ∈ {71, 100, 141}`.
+- **Y-family** (refine depth-y, hold drain-x): `Nx = 100` fixed; `Ny ∈ {58, 70, 85}`.
 - **Shared anchor `(100,70)`** appears in both families → cross-check both families reproduce it
   (sanity / determinism).
 - Both families have ≥3 levels (minimum for an order estimate).
+- **4th level (`Nx=200` / `Ny=120`) — pre-committed decision rule (reviewer adj. 1):** run the 4th
+  level **iff** (a) the 3rd level CERTIFIED (per §5) **and** (b) its peak working set fit available
+  physical RAM with no swap-thrash. The decision is **resource/convergence-based only** — it is NEVER
+  made on whether the extra level's result would support or weaken the hypothesis. This rule is frozen
+  here, before any result exists.
 
 ## 4. Observables per node (all already produced by the solver; no new physics)
 
-peak `G_ii` (`Gii_max`); hotspot `xy_Gii_max` (x,y) + width `avalanche_y_fwhm`; `G_tot` (vertically
-integrated ∫G_ii, the well-conditioned observable); `drain_current_A_per_um`; `R_phi` at stop +
-`ΔG_ii^tail` (last-window relative drift); `relative_number_balance` (conservation).
+peak `G_ii` (raw nodal `Gii_max`); **sub-cell interpolated peak `G_ii`** (parabolic/quadratic fit
+around the nodal max in both x and y) reported ALONGSIDE the raw nodal max (reviewer adj. 2 — a nodal
+maximum alone is grid-sensitive and does NOT establish spatial convergence); hotspot location
+`xy_Gii_max` **in physical units (µm)** + width `avalanche_y_fwhm` (µm); `G_tot` (vertically integrated
+∫G_ii, the well-conditioned observable); `drain_current_A_per_um`; `R_phi` at stop + `ΔG_ii^tail`
+(last-window relative drift); `relative_number_balance` (conservation). Because the hotspot is reported
+in fixed physical units against the pre-registered observable set, an apparent shift cannot be an
+artifact of merely changing cell dimensions — it must move in µm to count.
 
 ## 5. Certification (PRE-REGISTERED) — observable flatness, not a single R_phi crossing
 
-A node is CERTIFIED only if: (a) run reaches `R_phi < 1e-4`, AND (b) a 40-iteration diagnostic
-continuation (stopping disabled) shows `G_ii` and `G_tot` drift `< 0.5%` and `R_phi` stays in its
-mesh-dependent band (per the established R_phi-noise finding). A node that hangs on the inner
-Krylov/ILU solve (the 141×85-type stagnation) or fails to reach `R_phi<1e-4` within a 1500 cap is
-**UNRESOLVED**, recorded, and NOT compared as a converged value.
+A node is CERTIFIED only if BOTH are met and BOTH are reported (reviewer req. 4 — observable stability
+AND numerical residual, never one alone): (a) **numerical residual** — run reaches `R_phi < 1e-4`, with
+the linear/continuity residual and `relative_number_balance` recorded at the endpoint; AND (b)
+**observable stability** — a 40-iteration diagnostic continuation (stopping disabled) shows raw and
+interpolated `G_ii` and `G_tot` drift `< 0.5%` while `R_phi` stays in its mesh-dependent band (per the
+established R_phi-noise finding). Both the residual history and the observable-drift window are reported
+for every node. A node that hangs on the inner Krylov/ILU solve (the 141×85-type stagnation) or fails
+to reach `R_phi<1e-4` within a 1500 cap is **UNRESOLVED**, recorded, and NOT compared as a converged
+value. Per-node provenance (full commit + dirty flag, mesh+H hashes, versions, warm-source) is recorded
+for every run.
 
 ## 6. Analysis (PRE-REGISTERED)
 
