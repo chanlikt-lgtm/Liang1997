@@ -65,7 +65,10 @@ def _copy_conv_to_canonical():
         shutil.copy(CONV_NPZ, CANON_NPZ)
         print("    (copied 50-iter conv result -> canonical recalibrated npz)", flush=True)
     else:
-        print("    ! conv npz missing; overlays will use whatever canonical npz exists", flush=True)
+        # RUN-05: a missing recalibration output must be FATAL, not a warning -- otherwise downstream
+        # overlays silently consume a stale canonical NPZ and present it as a fresh result.
+        raise RuntimeError("recalibration output missing: %s -- refusing to reuse a stale canonical "
+                           "NPZ for fresh overlays (run the coupled_recal stage first)" % CONV_NPZ)
 
 
 def _paper_crops():
@@ -188,6 +191,10 @@ def main():
     print("\nAll requested stages finished in %.0f s. Failed: %s"
           % (time.time() - t0, failed or "none"), flush=True)
     print("Figures in %s ; data in %s" % (FIGS, DATA), flush=True)
+    # RUN-04: --keep-going must still exit NONZERO if any stage failed, so CI / callers never read a
+    # partially-failed reproduction as success.
+    if failed:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

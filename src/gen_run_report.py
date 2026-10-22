@@ -103,8 +103,12 @@ def main():
     dx = [float(x["drain_dx"]) for x in z]
     G = [float(x["Gii_max"]) for x in z]; Gt = [float(x["G_tot"]) for x in z]
     Rp = [float(x["R_phi"]) for x in z]; Te = [float(x["Te_max"]) for x in z]
-    u = [float((np.asarray(x["last4_Gii_max"]).max() - np.asarray(x["last4_Gii_max"]).min()) / 2) for x in z]
-    hashes = {str(x["H_hash"]) for x in z if "H_hash" in x.files}
+    # NUM-01: the reversal half-range u is derived from the CERTIFIED cumulative window (computed
+    # below as sp[]), NOT the chunk-local last4_* (which is a degenerate 0 for a 1-iteration terminal
+    # chunk and would inflate/zero S_rev). u is assigned after the certified window is known.
+    # NUM-02: a node that OMITS H_hash must FAIL the comparability gate, not be silently skipped,
+    # so missing keys are represented by an explicit sentinel in the set.
+    hashes = {(str(x["H_hash"]) if "H_hash" in x.files else "__MISSING_H_HASH__") for x in z}
     laws = {(round(float(x["ratio"]), 4), round(float(x["W"]), 4), round(float(x["X_C"]), 4),
              round(float(x["dH_eV"]), 6), int(x["NH"]), float(x["she_tol"])) for x in z}
 
@@ -117,6 +121,12 @@ def main():
     spt = [ev["spread_Gtot"] if ev["plateau_evaluable"] else float("nan") for ev in evs]
     win = [ev["iterations"] for ev in evs]
 
+    # NUM-01: absolute reversal half-range from the certified RELATIVE window spread sp[]=(max-min)/mean,
+    # scaled by the node value (u_abs = sp * G / 2). Non-evaluable window -> nan -> S_rev nan (and
+    # plateau_ok is already False), so a degenerate terminal chunk can no longer fake a finite u.
+    u = [(sp[i] * G[i] / 2.0) if (sp[i] is not None and math.isfinite(sp[i])) else float("nan")
+         for i in range(3)]
+
     rx = [dx[i] / dx[i + 1] for i in range(2)]
     d12, d23 = G[0] - G[1], G[1] - G[2]
     monotone = (d12 > 0 and d23 > 0) or (d12 < 0 and d23 < 0)
@@ -124,7 +134,7 @@ def main():
 
     # --- comparability + plateau gates (the FULL rule; plateau via certified cumulative windows) ---
     sig_ok = len(laws) == 1
-    hash_ok = len(hashes) == 1
+    hash_ok = (len(hashes) == 1) and ("__MISSING_H_HASH__" not in hashes)   # NUM-02: missing = FAIL, not skip
     ratios_ok = all(abs(r - math.sqrt(2)) < RATIO_TOL for r in rx)
     plateau_ok = all(ev["plateau_evaluable"] and ev["passed"] for ev in evs)
     gates_ok = sig_ok and hash_ok and ratios_ok and plateau_ok
@@ -267,14 +277,32 @@ spatial-convergence.
     print("wrote", out_tex)
     pdflatex = shutil.which("pdflatex") or \
         r"C:\Users\User\AppData\Local\Programs\MiKTeX\miktex\bin\x64\pdflatex.exe"
+    out_pdf = os.path.join(REP, "report_run_latest.pdf")
     if os.path.exists(pdflatex) or shutil.which("pdflatex"):
+        # RUN-01: fail-closed PDF build. Check pdflatex exit code, and verify the PDF was actually
+        # refreshed (mtime advanced + non-trivial size) before announcing success. Never let a failed
+        # or stale compile masquerade as a fresh report. (--enable-installer dropped: MiKTeX-only,
+        # breaks portable TeX Live; nonstopmode is enough.)
+        pre_mtime = os.path.getmtime(out_pdf) if os.path.exists(out_pdf) else 0.0
+        ok = True
         for _ in range(2):
-            subprocess.run([pdflatex, "--enable-installer", "--interaction=nonstopmode",
-                            "report_run_latest.tex"], cwd=REP,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        print("compiled report/report_run_latest.pdf")
+            r = subprocess.run([pdflatex, "--interaction=nonstopmode", "report_run_latest.tex"],
+                               cwd=REP, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            if r.returncode != 0:
+                ok = False
+                sys.stderr.write("ERROR (RUN-01): pdflatex exited %d; tail:\n%s\n"
+                                 % (r.returncode, (r.stdout or "")[-2000:]))
+                break
+        fresh = (os.path.exists(out_pdf) and os.path.getmtime(out_pdf) > pre_mtime
+                 and os.path.getsize(out_pdf) > 1024)
+        if ok and fresh:
+            print("compiled report/report_run_latest.pdf")
+        else:
+            sys.stderr.write("ERROR (RUN-01): report PDF was not freshly produced; "
+                             "build FAILED -- refusing to present a stale/missing PDF as current.\n")
+            sys.exit(2)
     else:
-        print("pdflatex not found -- wrote .tex only.")
+        print("pdflatex not found -- wrote .tex only (no PDF claimed).")
 
 if __name__ == "__main__":
     main()

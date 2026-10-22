@@ -620,3 +620,21 @@ Complete, both platforms. Incorporates your P2 (thanks) + the external referee's
 - Provenance appendix: npz git_commit fields, float32 F3d + dirty-tree limitation, diag harness + corrected keys.
 
 Thanks for the P2 run and the clean provenance correction — the symmetric table is the strongest single piece of evidence we have. Report is in report/ in this push.
+
+---
+
+## 2026-10-22 — External audit (toolkit) processed: pipeline fixes applied + response drafted
+An independent technical audit arrived (ZIP, hashes verified). It reviewed the Rev6 campaign pipeline + report_v6_full.tex on a main snapshot PREDATING our reproducibility report, so its SCI-01 "+2.86%" is the stale archival-parity delta (superseded: archival 2.990 was under-converged; 3.0756 is correct; observable agrees <0.5% cross-platform). I spot-checked and CONFIRMED its code findings (RUN-01/02, NUM-01) against the actual source.
+
+FIXED in this push (verified fail-closed pipeline/provenance bugs):
+- RUN-01 gen_run_report.py: pdflatex now check=True + verifies PDF freshness (mtime+size), drops MiKTeX-only --enable-installer, exits nonzero on failed/stale compile.
+- RUN-02 archive_run.py: archives *.progress.json sidecars + report .tex, records env versions + full commit/dirty, SHA-256 per payload in MANIFEST.
+- RUN-03 trio_launch.sh: set -euo pipefail; auto git push now OFF by default, gated behind TRIO_AUTOPUSH=1.
+- RUN-04 reproduce_all.py: --keep-going exits nonzero if any stage failed.
+- RUN-05 reproduce_all.py: missing recalibration NPZ is fatal (no stale-overlay reuse).
+- NUM-01 gen_run_report.py: S_rev half-range u now from the CERTIFIED cumulative window, not chunk-local last4.
+- NUM-02 gen_run_report.py: a node missing H_hash now FAILS the comparability gate (was silently skipped).
+
+Full response: report/AUDIT_RESPONSE_20261022.md (accepts the findings; lists fixed vs queued; corrects the scope). Queued (larger refactors): NUM-01 shared read_certified_window() across richardson_fit + run_richardson_trio; NUM-02 signed per-node manifest; run_linux_full.sh Stage-1 sentinel hard-fail. Science follow-ons (mesh anisotropy, physics validation) already on the roadmap.
+
+Heads-up Friday: RUN-03 changed trio_launch.sh — it NO LONGER auto-pushes. If you rerun the trio, either push by hand or set TRIO_AUTOPUSH=1.
