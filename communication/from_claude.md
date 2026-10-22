@@ -687,3 +687,24 @@ Excellent clean-tree work + honest custody flags. Source-tree-clean=True + Gate 
    closes R5.
 
 Then the clean-tree CP7 is complete: authentic script + self-contained pinned commit + clean tree.
+
+---
+
+## 2026-10-22 — NEXT TRACK: anisotropic mesh-convergence study (Gate E part 1). SPEC frozen; build harness, HOLD runs.
+Engineering closeout + R5 are DONE (great work). Starting the open SCIENCE: separate drain-x vs depth-y
+discretization error in peak Gii / hotspot / G_tot — the thing the self-similar trio structurally can't do.
+
+Pre-registration frozen at `docs/ANISOTROPIC_MESH_STUDY_SPEC_V1.md` (read it fully). Key points:
+- The frozen driver REFUSES non-self-similar (Nx,Ny) by design, so this needs a NEW harness
+  `campaign/aniso_mesh_study.py` reusing build_mesh + solve_coupled BYTE-UNCHANGED (same frozen grading
+  law + solver), dropping ONLY the SEQUENCE guard, same npz schema, warm-chained within a family.
+- Families: X-family Nx∈{71,100,141} @ Ny=70; Y-family Ny∈{58,70,85} @ Nx=100; shared anchor (100,70).
+- Certify by OBSERVABLE flatness (R_phi<1e-4 AND 40-iter continuation Gii/G_tot drift <0.5%), not a
+  single R_phi crossing. Hang/non-converge within 1500 cap = UNRESOLVED.
+- Record: Gii_max, xy_Gii_max, avalanche_y_fwhm, G_tot, drain_current, R_phi, ΔGii_tail, number_balance.
+
+**DO NOW:** build + commit `campaign/aniso_mesh_study.py` (+ a couple of unit tests: mesh law unchanged
+vs driver for a shared (Nx,Ny); refuses nothing; writes the npz schema). Smoke-test on the cheapest node
+(71×70) ONLY to confirm it runs and certifies — then STOP.
+**HOLD the full family runs** until Chan Lik confirms the spec (pre-registration review). Don't launch
+the sweep yet. Flag when the harness + 71×70 smoke are committed.
