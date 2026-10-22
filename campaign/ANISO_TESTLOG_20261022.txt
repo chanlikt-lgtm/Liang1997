@@ -1,0 +1,22 @@
+======================================================================
+ aniso_mesh_study harness -- unit tests + 1-iter wiring sanity
+ date: 2026-10-22T10:39:17Z  host: Linux 6.8.0-124-generic x86_64
+ git: 278ecb9 (main)
+ python: Python 3.13.12  numpy: 2.5.1
+ BLAS threads: OPENBLAS/OMP/MKL = 1
+======================================================================
+
+### unit tests (campaign/test_aniso_mesh_study.py)
+PASS  test_dy_at_unchanged_vs_driver
+PASS  test_interpolated_peak_degenerate
+PASS  test_interpolated_peak_subcell
+PASS  test_mesh_law_unchanged_vs_driver
+PASS  test_npz_schema_written
+PASS  test_refuses_nothing
+
+RESULT: 6/6 PASS
+
+### 1-iteration wiring sanity (71x70, cold DD start)
+  n_iter=1  Gii_max=3.8334e+26  G_tot=2.0050e+15  R_phi=5.008e-02
+  Gii_interp=3.4462e+26  xy_interp=(0.5948,0.0003)um  y_fwhm=0.0042um
+  balance=-1.127e-04  continuity_residual=2.798e-09  NH=591  (~66s/outer-iter)
