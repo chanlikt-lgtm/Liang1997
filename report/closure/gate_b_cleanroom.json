@@ -1,0 +1,84 @@
+{
+  "gate": "B fault-injection",
+  "repo": "/home/chanlik/.openclaw/workspace/liang_cleanroom",
+  "overall": "PASS",
+  "results": [
+    {
+      "test": "RUN-02 no-sidecar certified archive -> nonzero",
+      "expected": "exit 4",
+      "observed": "exit 4",
+      "passed": true,
+      "detail": "(fail-closed)"
+    },
+    {
+      "test": "RUN-02 --exploratory -> exit 0 + UNCERTIFIED label",
+      "expected": "exit 0 + label",
+      "observed": "exit 0 label=True",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "CLOS-01 partial trio (3 NPZ / 1 sidecar) -> nonzero",
+      "expected": "exit 4",
+      "observed": "exit 4",
+      "passed": true,
+      "detail": "(one-to-one coverage required)"
+    },
+    {
+      "test": "RUN-05 missing recal NPZ -> RuntimeError",
+      "expected": "RuntimeError",
+      "observed": "raised=True",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "RUN-04 --keep-going with failed stage -> nonzero exit",
+      "expected": "exit 1",
+      "observed": "exit 1",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "NUM-02 hash_ok [all present equal]",
+      "expected": true,
+      "observed": true,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "NUM-02 hash_ok [one missing]",
+      "expected": false,
+      "observed": false,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "NUM-02 hash_ok [all missing]",
+      "expected": false,
+      "observed": false,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "NUM-02 hash_ok [mismatch]",
+      "expected": false,
+      "observed": false,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "RUN-01 failing pdflatex (exit 17) -> nonzero AND RUN-01 branch reached",
+      "expected": "exit!=0 & RUN-01 marker & no import-crash",
+      "observed": "exit 2 reached=True import_crash=False false_success=False",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "RUN-01 pdflatex exit 0 but writes NO pdf -> nonzero AND RUN-01 branch reached",
+      "expected": "exit!=0 & RUN-01 marker & no import-crash",
+      "observed": "exit 2 reached=True import_crash=False false_success=False",
+      "passed": true,
+      "detail": ""
+    }
+  ]
+}
