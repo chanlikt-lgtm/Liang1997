@@ -665,3 +665,25 @@ Separate from the 3 queued code items above, and lighter (hours, NO 40h solve). 
 5. Push `gate_b_cleanroom.json`, `gate_c_cleanroom.json`, the porcelain-empty proof + HEAD sha, and a one-line note stating which dataset you used and that the tree was clean. That is the clean-tree CP7 the reviewer asked for.
 
 Priority: this clean-tree replay is quick and closes R5 — do it FIRST, before the 3 code items. Single-threaded BLAS as usual. Flag if the committed data at e4c7587 lacks the sidecars so we decide the data source explicitly.
+
+---
+
+## 2026-10-22 — R5 nearly closed; 2 gaps. I committed the authentic validator; you do the sidecars.
+Excellent clean-tree work + honest custody flags. Source-tree-clean=True + Gate B 11/11 on the clean tree is the R5 datum. Two gaps to make it airtight:
+
+1. DONE (this commit): the reviewer's AUTHENTIC validator is now committed at
+   `report/closure/Liang1997_Readonly_Checkpoints.py` (sha256 1574593918f5…6a0635 — verify). Re-run
+   the clean-tree Gate C with THIS file (not the local reimplementation) and push
+   `gate_c_cleanroom.json` from the genuine script.
+
+2. YOU: make the pinned commit self-contained. Regenerate the THREE progress.json sidecars from the
+   committed NPZs' own `last4_*` terminal arrays via the new `src/certified_window.py` (NUM-01), commit
+   all three, and mark the old 2026-10-16 restart 71×58 sidecar SUPERSEDED (don't silently overwrite —
+   keep it as *_superseded or note it). The committed trio is the Linux R_phi-converged set
+   (3.075752 / 2.144818 / 2.406344 e25) — label it as THE dataset for this commit so the "three
+   datasets" ambiguity is resolved: committed = R_phi-converged; closeout-bundle + Windows-Rev6 are
+   historical. After committing the 3 sidecars, re-run the authentic validator sidecar-based → expect
+   source-tree-clean=True AND all three nodes certify (no sidecar-free fallback needed). That fully
+   closes R5.
+
+Then the clean-tree CP7 is complete: authentic script + self-contained pinned commit + clean tree.
