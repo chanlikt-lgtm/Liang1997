@@ -173,11 +173,60 @@ def read_certified_window(node_npz, node_progress=None):
     return out
 
 
+def write_certified_sidecar(node_npz, out_path=None, note=None):
+    """Regenerate a faithful progress.json sidecar from the NPZ's own last4_* terminal chunk.
+
+    NUM-01 writer half: reconstructs the certified 4-sample window via read_certified_window()
+    (so the emitted sidecar is guaranteed to round-trip through validate_buffer /
+    read_certified_window) and writes a schema-compatible progress.json. `passed` is True only
+    because the reconstructed window genuinely certifies under the UNCHANGED plateau gate;
+    `cum_iters` equals the terminal abs_iter so the reviewer's `sidecar integrity` check holds.
+
+    Used to make a pinned commit self-contained where the original cross-chunk sidecar was never
+    committed (100x70, 141x85) or is stale (71x58 2026-10-16 cold restart). Never touches the NPZ.
+    """
+    w = read_certified_window(node_npz, None)
+    if not w["valid"]:
+        raise RuntimeError("cannot regenerate a certified sidecar for %s: %s" % (w["node"], w["detail"]))
+    z = np.load(node_npz, allow_pickle=True)
+    sidecar = {
+        "cum_iters": int(z["n_iter"]),
+        "passed": True,
+        "plateau_evaluable": True,
+        "plateau_buffer": w["window"],
+        "buffer_origin": "npz_terminal_reconstruction",
+        "H_hash": str(z["H_hash"]),
+        "git_commit": str(z["git_commit"]) if "git_commit" in z.files else None,
+        "git_dirty": str(z["git_dirty"]) if "git_dirty" in z.files else None,
+        "dataset_label": "Linux R_phi-converged set (committed trio)",
+        "regenerated_from_npz_last4": True,
+        "generated_note": (note or
+            "Regenerated from the committed NPZ's own last4_* terminal chunk via "
+            "src/certified_window.py (NUM-01); the original cross-chunk progress.json was not "
+            "committed (100x70, 141x85) or was the stale 2026-10-16 cold-restart sidecar (71x58)."),
+    }
+    if out_path is None:
+        out_path = os.path.splitext(os.fspath(node_npz))[0] + ".progress.json"
+    out_path = os.fspath(out_path)
+    with open(out_path, "w", encoding="utf-8") as fh:
+        json.dump(sidecar, fh, indent=2)
+        fh.write("\n")
+    return sidecar, out_path
+
+
 if __name__ == "__main__":
     import sys
     args = sys.argv[1:]
+    if args and args[0] == "--write":
+        for n in args[1:]:
+            sidecar, out = write_certified_sidecar(n)
+            print("wrote %s (cum_iters=%d, iters=%s, passed=%s)"
+                  % (out, sidecar["cum_iters"], [b["abs_iter"] for b in sidecar["plateau_buffer"]],
+                     sidecar["passed"]))
+        sys.exit(0)
     if not args:
         print("usage: python certified_window.py <node.npz> [<node.progress.json>]")
+        print("       python certified_window.py --write <node.npz> [...]   # regenerate certified sidecars")
         sys.exit(1)
     w = read_certified_window(args[0], args[1] if len(args) > 1 else None)
     print(json.dumps({k: w[k] for k in ("valid", "node", "detail", "buffer_origin",

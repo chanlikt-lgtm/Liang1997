@@ -1,37 +1,38 @@
 {
-  "cum_iters": 360,
-  "chunks_done": 6,
-  "passed": false,
+  "cum_iters": 325,
+  "passed": true,
   "plateau_evaluable": true,
   "plateau_buffer": [
     {
-      "abs_iter": 357,
-      "Gii": 2.7322298743423256e+25,
-      "Gtot": 82394141202536.8,
-      "Rphi": 0.0010639994252250595
+      "abs_iter": 322,
+      "Gii": 3.075537678965121e+25,
+      "Gtot": 92643167879700.16,
+      "Rphi": 0.00020007182438896987
     },
     {
-      "abs_iter": 358,
-      "Gii": 2.711765922511309e+25,
-      "Gtot": 81775283472906.69,
-      "Rphi": 0.0017446545832640048
+      "abs_iter": 323,
+      "Gii": 3.075548985465769e+25,
+      "Gtot": 92643495212974.89,
+      "Rphi": 0.00019679205163358748
     },
     {
-      "abs_iter": 359,
-      "Gii": 2.7093720235746796e+25,
-      "Gtot": 81688619314022.05,
-      "Rphi": 0.0014988600771714822
+      "abs_iter": 324,
+      "Gii": 3.075705613227717e+25,
+      "Gtot": 92656536281441.11,
+      "Rphi": 0.00041361163333242246
     },
     {
-      "abs_iter": 360,
-      "Gii": 2.7066526503990642e+25,
-      "Gtot": 81595183504105.36,
-      "Rphi": 0.0015040238183279264
+      "abs_iter": 325,
+      "Gii": 3.0757521592531657e+25,
+      "Gtot": 92643797265133.03,
+      "Rphi": 7.103532818497627e-05
     }
   ],
-  "buffer_origin": "empty_fresh",
+  "buffer_origin": "npz_terminal_reconstruction",
   "H_hash": "b4319bb03303",
-  "resume_source": "cold",
-  "restart_ts": "2026-10-16T12:04:16",
-  "last_update": "2026-10-16T17:53:21"
+  "git_commit": "4e2374e",
+  "git_dirty": "dirty",
+  "dataset_label": "Linux R_phi-converged set (committed trio)",
+  "regenerated_from_npz_last4": true,
+  "generated_note": "Regenerated from the committed NPZ's own last4_* terminal chunk via src/certified_window.py (NUM-01); the original cross-chunk progress.json was not committed (100x70, 141x85) or was the stale 2026-10-16 cold-restart sidecar (71x58)."
 }

@@ -1,0 +1,38 @@
+{
+  "cum_iters": 717,
+  "passed": true,
+  "plateau_evaluable": true,
+  "plateau_buffer": [
+    {
+      "abs_iter": 714,
+      "Gii": 2.4063623046400528e+25,
+      "Gtot": 65759519253920.33,
+      "Rphi": 0.0001433745586079116
+    },
+    {
+      "abs_iter": 715,
+      "Gii": 2.4063484070707135e+25,
+      "Gtot": 65759220595631.984,
+      "Rphi": 0.00016937467286448626
+    },
+    {
+      "abs_iter": 716,
+      "Gii": 2.4063521491803947e+25,
+      "Gtot": 65759206464116.39,
+      "Rphi": 0.00017333094784088843
+    },
+    {
+      "abs_iter": 717,
+      "Gii": 2.4063436613300577e+25,
+      "Gtot": 65759050711080.27,
+      "Rphi": 7.30230877791227e-05
+    }
+  ],
+  "buffer_origin": "npz_terminal_reconstruction",
+  "H_hash": "b4319bb03303",
+  "git_commit": "1893b9c",
+  "git_dirty": "dirty",
+  "dataset_label": "Linux R_phi-converged set (committed trio)",
+  "regenerated_from_npz_last4": true,
+  "generated_note": "Regenerated from the committed NPZ's own last4_* terminal chunk via src/certified_window.py (NUM-01); the original cross-chunk progress.json was not committed (100x70, 141x85) or was the stale 2026-10-16 cold-restart sidecar (71x58)."
+}
