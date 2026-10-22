@@ -1,0 +1,28 @@
+{
+  "mode": "perturbed",
+  "seed": 3,
+  "assemble_perturb_calls": 400,
+  "perturbation_applied_first_iter": {
+    "A_data": {
+      "n": 9873760,
+      "frac_changed": 0.4226004075448461,
+      "max_abs_rel_applied": 6.5541872739134e-16,
+      "rms_rel_applied": 1.2377460115045541e-16
+    },
+    "b": {
+      "n": 994794,
+      "frac_changed": 0.009610029815218026,
+      "max_abs_rel_applied": 5.114243188636082e-16,
+      "rms_rel_applied": 1.8677957948472358e-17
+    }
+  },
+  "Gii_max_final": 2.7380711091956687e+25,
+  "first_gate_iter": 376,
+  "post_gate_iters": 24,
+  "certified_persistent": true,
+  "hotspot_node_ij": [
+    41,
+    0
+  ],
+  "n_outer": 400
+}

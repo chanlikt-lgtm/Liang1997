@@ -1,0 +1,31 @@
+{
+  "mode": "perturbed",
+  "seed": 1,
+  "assemble_perturb_calls": 470,
+  "perturbation_applied_first_iter": {
+    "A_data": {
+      "n": 9873760,
+      "frac_changed": 0.42257245466772536,
+      "max_abs_rel_applied": 6.633704785475621e-16,
+      "rms_rel_applied": 1.237945552461781e-16
+    },
+    "b": {
+      "n": 994794,
+      "frac_changed": 0.009629129246859148,
+      "max_abs_rel_applied": 5.004352051167855e-16,
+      "rms_rel_applied": 1.874267992491607e-17
+    }
+  },
+  "Gii_max_final": 3.0741796055516903e+25,
+  "classification": "continuing_drift",
+  "hardened_persistent": false,
+  "max_consecutive_gate_run": 21,
+  "first_gate_iter": 374,
+  "last_window_drift": 0.0012198825702601323,
+  "trend_window": 0.003548500927343708,
+  "hotspot_node_ij": [
+    41,
+    0
+  ],
+  "n_outer": 470
+}

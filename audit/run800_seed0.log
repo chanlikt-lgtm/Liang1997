@@ -1,0 +1,18 @@
+{
+  "mode": "control",
+  "seed": 0,
+  "assemble_perturb_calls": 0,
+  "perturbation_applied_first_iter": {},
+  "Gii_max_final": 3.067845286284698e+25,
+  "classification": "continuing_drift",
+  "hardened_persistent": false,
+  "max_consecutive_gate_run": 14,
+  "first_gate_iter": 420,
+  "last_window_drift": 0.00499905689935743,
+  "trend_window": 0.009178409662615752,
+  "hotspot_node_ij": [
+    41,
+    0
+  ],
+  "n_outer": 465
+}

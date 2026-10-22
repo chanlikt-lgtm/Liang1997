@@ -1,0 +1,198 @@
+Jum 2026-10-16 09:37:38  WIPE: removed all node NPZ + progress sidecars + Stage-1/2 sentinels (cold)
+Jum 2026-10-16 09:37:38  === RUN START.  Interpreter: /home/chanlik/.openclaw/workspace/Liang1997/.venv/bin/python
+numpy 2.5.1 scipy 1.18.0
+Jum 2026-10-16 09:37:38  STAGE 1/6: foundation -> one-way SHE -> coupled -> Figs 2-8 overlays (~1.5-2 h)
+Reproducing: foundation, she_oneway, coupled40, coupled_recal, overlays, paper_crops, iv
+
+=== STAGE foundation (~2-4 min) -- device doping, bands, equilibrium Poisson, DD bias point, bulk hot-electron ===
+    $ python src/device.py 
+wrote figures/device_doping.png
+Nnet range: -4.07e+17 .. 1.01e+20
+peak |Nnet| = 1.01e+20
+      -> exit 0  (1 s)
+    $ python src/bands.py 
+=== N_c benchmark at T = 300.0 K (converged 4000-pt grid) ===
+  nonparabolic (alpha=0.50): Nc = 2.8567e+19 cm^-3
+  parabolic limit (alpha=0): Nc = 2.7231e+19 cm^-3   (code)
+  parabolic closed-form    : Nc = 2.7255e+19 cm^-3   (2 g_v (2 pi m* kT/h^2)^{3/2})
+  prefactor error (code vs analytic, parabolic): 0.09 %
+v at 0.1 eV = 3.089e+07 cm/s, at 1 eV = 6.420e+07 cm/s
+wrote figures/bands.png
+      -> exit 0  (1 s)
+    $ python src/poisson.py 
+Solving equilibrium Poisson (Vg=Vd=0)...
+    newton  0  max|dphi|=4.730e-01
+    newton  1  max|dphi|=2.606e-01
+    newton  2  max|dphi|=6.240e-02
+    newton  3  max|dphi|=8.750e-03
+    newton  4  max|dphi|=3.146e-04
+    newton  5  max|dphi|=6.057e-07
+    newton  6  max|dphi|=2.730e-12
+phi range: -0.440 .. 0.586 V
+n range: 5.83e+02 .. 1.01e+20
+wrote figures/poisson_equilibrium.png
+      -> exit 0  (1 s)
+    $ python src/dd.py 
+Solving DD at Vg=3, Vd=3 ...
+  gummel  0  max|dphi|=4.047e-01
+  gummel  1  max|dphi|=3.809e-01
+  gummel  2  max|dphi|=3.637e-01
+  gummel  3  max|dphi|=3.483e-01
+  gummel  4  max|dphi|=3.326e-01
+  gummel  5  max|dphi|=3.147e-01
+  gummel  6  max|dphi|=2.901e-01
+  gummel  7  max|dphi|=2.630e-01
+  gummel  8  max|dphi|=2.491e-01
+  gummel  9  max|dphi|=2.326e-01
+  gummel 10  max|dphi|=2.263e-01
+  gummel 11  max|dphi|=2.166e-01
+  gummel 12  max|dphi|=2.052e-01
+  gummel 13  max|dphi|=1.953e-01
+  gummel 14  max|dphi|=1.856e-01
+  gummel 15  max|dphi|=1.756e-01
+  gummel 16  max|dphi|=1.679e-01
+  gummel 17  max|dphi|=1.595e-01
+  gummel 18  max|dphi|=1.509e-01
+  gummel 19  max|dphi|=1.403e-01
+  gummel 20  max|dphi|=1.348e-01
+  gummel 21  max|dphi|=1.214e-01
+  gummel 22  max|dphi|=1.195e-01
+  gummel 23  max|dphi|=1.150e-01
+  gummel 24  max|dphi|=9.927e-02
+  gummel 25  max|dphi|=9.648e-02
+  gummel 26  max|dphi|=9.320e-02
+  gummel 27  max|dphi|=8.951e-02
+  gummel 28  max|dphi|=8.518e-02
+  gummel 29  max|dphi|=8.093e-02
+  gummel 30  max|dphi|=7.898e-02
+  gummel 31  max|dphi|=7.483e-02
+  gummel 32  max|dphi|=6.961e-02
+  gummel 33  max|dphi|=6.365e-02
+  gummel 34  max|dphi|=5.708e-02
+  gummel 35  max|dphi|=5.448e-02
+  gummel 36  max|dphi|=5.188e-02
+  gummel 37  max|dphi|=4.870e-02
+  gummel 38  max|dphi|=4.500e-02
+  gummel 39  max|dphi|=4.085e-02
+  gummel 40  max|dphi|=3.757e-02
+  gummel 41  max|dphi|=3.525e-02
+  gummel 42  max|dphi|=3.261e-02
+  gummel 43  max|dphi|=2.971e-02
+  gummel 44  max|dphi|=2.668e-02
+  gummel 45  max|dphi|=2.429e-02
+  gummel 46  max|dphi|=2.248e-02
+  gummel 47  max|dphi|=2.059e-02
+  gummel 48  max|dphi|=1.868e-02
+  gummel 49  max|dphi|=1.682e-02
+  gummel 50  max|dphi|=1.511e-02
+  gummel 51  max|dphi|=1.396e-02
+  gummel 52  max|dphi|=1.282e-02
+  gummel 53  max|dphi|=1.171e-02
+  gummel 54  max|dphi|=1.066e-02
+  gummel 55  max|dphi|=9.662e-03
+  gummel 56  max|dphi|=8.785e-03
+  gummel 57  max|dphi|=8.142e-03
+  gummel 58  max|dphi|=7.525e-03
+  gummel 59  max|dphi|=6.938e-03
+  gummel 60  max|dphi|=6.384e-03
+  gummel 61  max|dphi|=5.865e-03
+  gummel 62  max|dphi|=5.381e-03
+  gummel 63  max|dphi|=4.970e-03
+  gummel 64  max|dphi|=4.630e-03
+  gummel 65  max|dphi|=4.306e-03
+  gummel 66  max|dphi|=3.999e-03
+  gummel 67  max|dphi|=3.709e-03
+  gummel 68  max|dphi|=3.437e-03
+  gummel 69  max|dphi|=3.180e-03
+  gummel 70  max|dphi|=2.941e-03
+  gummel 71  max|dphi|=2.717e-03
+  gummel 72  max|dphi|=2.508e-03
+  gummel 73  max|dphi|=2.331e-03
+  gummel 74  max|dphi|=2.171e-03
+  gummel 75  max|dphi|=2.020e-03
+  gummel 76  max|dphi|=1.878e-03
+  gummel 77  max|dphi|=1.744e-03
+  gummel 78  max|dphi|=1.618e-03
+  gummel 79  max|dphi|=1.501e-03
+phi range -0.348..3.586  n max 1.01e+20  Id=2.528e-04 A/cm
+wrote figures/dd_bias.png
+      -> exit 0  (65 s)
+    $ python src/she_bulk.py 
+Detailed-balance residual (Qmat @ Maxwellian), relative: 2.06e-05
+  COP = 4.689e-34 J m^3/s  (derived from tau_op_ref=1.0e-13 s)
+Te vs field: ['0kV/cm->311K', '50kV/cm->831K', '100kV/cm->1478K', '200kV/cm->2548K', '300kV/cm->3392K']
+wrote figures/she_bulk_validation.png
+      -> exit 0  (1 s)
+=== stage foundation done (68 s) ===
+
+=== STAGE she_oneway (~2-4 min) -- one-way SHE core -> she2d_result.npz, audit, moments (Fig 3/4/7), Fig 2 dist. ===
+    $ python src/run_she_clean.py 
+phi range -0.348..3.586 V
+assembled WITH-II: DOF=328544 nnz=3187123 orphans=0
+no-II ILU built in 21.7s
+lgmres info=0 in 0.8s
+scaled residual 1.50e-09
+n 0.00e+00..1.05e+20  Te 295..3233 K  |v|max 9.73e+06 cm/s  Gii max 1.35e+27
+Isrc=-1.704e-04 Idrn=1.707e-04 A/um  number-balance -5.70e-06
+saved data/she2d_result.npz
+      -> exit 0  (29 s)
+    $ python src/audit_result.py 
+==================================================================
+NUMERICAL AUDIT  --  clean 40x34 SHE (with II collision operator)
+==================================================================
+1. n_max            1.0516e+20 cm^-3   at (x=0.082, y=0.043) um
+2. Te_max           3232.9 K          at (x=0.595, y=0.005) um  [baseline 3236 K]
+3. Gii_max          1.3513e+27 /cm^3/s at (x=0.595, y=0.009) um  [baseline 1.37e27]
+4. |v|_max          9.7318e+06 cm/s    at (x=0.554, y=0.000) um  [old postproc 1.23e7]
+5. Te--Gii peak separation                      0.005 um
+6. SHE currents     I_source = -1.7044e-04 A/um   I_drain = +1.7071e-04 A/um   I_body = +5.503e-15
+   |I_src|-|I_drn| mismatch                     0.16 %
+7. normalized global continuity residual        -5.700e-06
+   (contact injection -1.704e+18 + II gen 1.691e+18 - cutoff loss 3.524e+08 per m/s)
+8. orphan states pinned                         0
+9. f0 raw (pre-clip): min = -3.301e-11   max = 3.799e+00
+   negative entries beyond -1e-12*scale         46 of 328544  (1.40e-04 of DOF)
+   scaled linear residual                       1.497e-09 (lgmres info=0)
+==================================================================
+      -> exit 0  (29 s)
+    $ python src/she2d_figures.py 
+wrote /home/chanlik/.openclaw/workspace/Liang1997/src/../figures/she2d_moments.png
+n 0.00e+00..1.05e+20  Te 295..3233 K  |v|max 9.73e+06 cm/s  Gii max 1.35e+27
+      -> exit 0  (1 s)
+    $ python src/she2d_fig2.py 
+wrote /home/chanlik/.openclaw/workspace/Liang1997/src/../figures/she2d_fig2_distribution.png
+  y=0.001 um, x=0.6: DOS-weighted carrier tail (eps>1eV) = 2.34e-02  [legacy unweighted f0 metric 5.77e-03]
+  y=0.200 um, x=0.6: DOS-weighted carrier tail (eps>1eV) = 7.00e-08  [legacy unweighted f0 metric 8.60e-09]
+  y=0.640 um, x=0.6: DOS-weighted carrier tail (eps>1eV) = 6.59e-11  [legacy unweighted f0 metric 2.87e-11]
+      -> exit 0  (1 s)
+=== stage she_oneway done (60 s) ===
+
+=== STAGE coupled40 (~5-10 min) -- self-consistent 40x34 coupled loop + convergence figure ===
+    $ python src/coupled_she.py 40 34 0.3
+outer  0  dphi=1.769e-02 V  NH=565  nmax=1.052e+20  pmax=1.092e+18  Temax=3233 K  Gmax=1.351e+27  Id=1.708e-04 A/um  bal=-1.86e-04  SHE[a=3.41s,l=8.38s,x0=0,pc=0]  (12.1s)
+outer  1  dphi=1.410e-02 V  NH=565  nmax=1.010e+20  pmax=6.410e+17  Temax=3239 K  Gmax=1.232e+27  Id=1.562e-04 A/um  bal=-7.02e-05  SHE[a=3.44s,l=7.72s,x0=0,pc=0]  (11.4s)
+outer  2  dphi=1.123e-02 V  NH=565  nmax=1.014e+20  pmax=4.171e+17  Temax=3243 K  Gmax=1.129e+27  Id=1.441e-04 A/um  bal=-9.73e-05  SHE[a=3.43s,l=8.89s,x0=0,pc=0]  (12.6s)
+outer  3  dphi=8.895e-03 V  NH=565  nmax=1.025e+20  pmax=2.926e+17  Temax=3246 K  Gmax=1.037e+27  Id=1.335e-04 A/um  bal=-7.13e-05  SHE[a=3.46s,l=8.95s,x0=0,pc=0]  (12.7s)
+outer  4  dphi=7.170e-03 V  NH=565  nmax=1.021e+20  pmax=2.263e+17  Temax=3247 K  Gmax=9.897e+26  Id=1.288e-04 A/um  bal=-7.68e-05  SHE[a=3.45s,l=9.08s,x0=0,pc=0]  (12.8s)
+outer  5  dphi=6.202e-03 V  NH=565  nmax=1.010e+20  pmax=1.856e+17  Temax=3245 K  Gmax=9.573e+26  Id=1.257e-04 A/um  bal=3.88e-05  SHE[a=3.45s,l=7.84s,x0=0,pc=0]  (11.6s)
+outer  6  dphi=5.752e-03 V  NH=565  nmax=1.010e+20  pmax=1.564e+17  Temax=3246 K  Gmax=9.274e+26  Id=1.233e-04 A/um  bal=-8.41e-05  SHE[a=3.43s,l=8.98s,x0=0,pc=0]  (12.7s)
+outer  7  dphi=5.366e-03 V  NH=565  nmax=1.010e+20  pmax=1.372e+17  Temax=3244 K  Gmax=9.043e+26  Id=1.218e-04 A/um  bal=-3.17e-05  SHE[a=3.45s,l=7.87s,x0=0,pc=0]  (11.6s)
+outer  8  dphi=4.960e-03 V  NH=565  nmax=1.017e+20  pmax=1.234e+17  Temax=3244 K  Gmax=8.855e+26  Id=1.208e-04 A/um  bal=2.91e-05  SHE[a=3.44s,l=7.83s,x0=0,pc=0]  (11.6s)
+outer  9  dphi=4.576e-03 V  NH=565  nmax=1.010e+20  pmax=1.133e+17  Temax=3242 K  Gmax=8.725e+26  Id=1.206e-04 A/um  bal=-1.15e-04  SHE[a=3.45s,l=7.91s,x0=0,pc=0]  (11.7s)
+outer 10  dphi=4.307e-03 V  NH=565  nmax=1.010e+20  pmax=1.055e+17  Temax=3242 K  Gmax=8.604e+26  Id=1.205e-04 A/um  bal=-9.26e-05  SHE[a=3.50s,l=8.92s,x0=0,pc=0]  (12.7s)
+outer 11  dphi=4.030e-03 V  NH=565  nmax=1.010e+20  pmax=1.004e+17  Temax=3239 K  Gmax=8.500e+26  Id=1.207e-04 A/um  bal=-2.52e-06  SHE[a=3.48s,l=7.86s,x0=0,pc=0]  (11.6s)
+Gii_max=8.5002e+26 at (x=0.595,y=0.009) um  Te_max=3238.5  n_max=1.0100e+20
+final conservation: {'contact_particle_injection_per_m_s': -1.1008442020335186e+18, 'ii_event_rate_per_m_s': 1.0970558915171205e+18, 'cutoff_loss_per_m_s': 322269.72756014357, 'cutoff_spatial_per_m_s': 53792.348414349675, 'cutoff_acoustic_per_m_s': 256396.16311529107, 'cutoff_optical_per_m_s': 12081.216030502837, 'number_balance_per_m_s': -3788310516720349.5, 'relative_number_balance': -2.516742807276941e-06, 'source_current_A_per_um': np.float64(-0.00012049510338261312), 'drain_current_A_per_um': np.float64(0.00012067147806844995), 'body_current_A_per_um': np.float64(-1.959730785375965e-17), 'scaled_linear_residual_inf': 7.912787186730658e-09}
+saved data/she2d_coupled_result.npz
+      -> exit 0  (162 s)
+    $ python src/she2d_coupled_fig.py 
+wrote /home/chanlik/.openclaw/workspace/Liang1997/src/../figures/she2d_coupled_convergence.png
+outer0 -> outer11:  Gii 1.351e+27 -> 8.500e+26 (37%),  Id 1.708e-04 -> 1.207e-04 (29%),  dphi 17.7 -> 4.0 mV
+      -> exit 0  (1 s)
+=== stage coupled40 done (163 s) ===
+
+=== STAGE coupled_recal (~45-55 min) -- recalibrated 60x50 coupled loop, 50 iters toward 2 mV + convergence study ===
+    $ python src/coupled_converge.py 0.35 50
+outer  0  dphi=1.713e-02 V  NH=565  nmax=1.681e+20  pmax=1.818e+17  Temax=3483 K  Gmax=2.115e+27  Id=5.374e-04 A/um  bal=-1.80e-04  SHE[a=7.74s,l=26.68s,x0=0,pc=0]  (35.1s)
+outer  1  dphi=1.458e-02 V  NH=565  nmax=1.344e+20  pmax=1.139e+17  Temax=3522 K  Gmax=1.891e+27  Id=4.339e-04 A/um  bal=-1.18e-04  SHE[a=7.79s,l=30.78s,x0=0,pc=0]  (39.1s)
+outer  2  dphi=1.414e-02 V  NH=565  nmax=1.153e+20  pmax=8.148e+16  Temax=3554 K  Gmax=1.716e+27  Id=3.644e-04 A/um  bal=1.07e-04  SHE[a=7.79s,l=28.94s,x0=0,pc=0]  (37.3s)

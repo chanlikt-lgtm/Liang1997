@@ -1,0 +1,48 @@
+history record keys: ['G_tot_cm1s', 'Gii_max_cm3s', 'NH', 'Te_max_K', 'drain_current_A_per_um', 'iteration', 'max_dphi_V', 'n_max_cm3', 'p_max_cm3', 'relative_number_balance', 'seconds', 'she_assembly_s', 'she_krylov_outer_iterations', 'she_linear_s', 'she_preconditioner_reused', 'she_used_x0']
+{
+  "tag": "she2d_richardson_100x70",
+  "keys": {
+    "rphi": "max_dphi_V",
+    "gii": "Gii_max_cm3s",
+    "gtot": "G_tot_cm1s",
+    "bal": "relative_number_balance",
+    "idrain": "drain_current_A_per_um"
+  },
+  "rphi_recompute_at_saved_state": 6.970369334435844e-05,
+  "rphi_excursions_above_tol": 99,
+  "R_phi": {
+    "min": 6.970369334435844e-05,
+    "med": 0.0003830650157263804,
+    "max": 0.0010785263745889395,
+    "mean": 0.00042104609190304676,
+    "drift": 2.395991081843078
+  },
+  "Gii_max": {
+    "min": 2.1403189918189253e+25,
+    "med": 2.143390696061827e+25,
+    "max": 2.144817881339563e+25,
+    "mean": 2.1432375317390747e+25,
+    "drift": 0.0020991091533317293
+  },
+  "G_tot": {
+    "min": 60361563261521.85,
+    "med": 60454155013631.53,
+    "max": 60499443837188.99,
+    "mean": 60450369554634.55,
+    "drift": 0.002280888879306607
+  },
+  "balance": {
+    "min": -0.00024778542225305813,
+    "med": -0.00022042692526280357,
+    "max": -0.00016968801166483965,
+    "mean": -0.00021348305673794896,
+    "drift": -0.3658248658303749
+  },
+  "drain_current": {
+    "min": 0.00029494521423906677,
+    "med": 0.00029511630085805104,
+    "max": 0.0002951692028809192,
+    "mean": 0.00029510390725553064,
+    "drift": 0.0007590161849619353
+  }
+}

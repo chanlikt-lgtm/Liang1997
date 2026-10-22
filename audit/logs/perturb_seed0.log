@@ -1,0 +1,15 @@
+{
+  "mode": "control",
+  "seed": 0,
+  "assemble_perturb_calls": 0,
+  "perturbation_applied_first_iter": {},
+  "Gii_max_final": 3.0293774798023067e+25,
+  "first_gate_iter": null,
+  "post_gate_iters": 0,
+  "certified_persistent": false,
+  "hotspot_node_ij": [
+    41,
+    0
+  ],
+  "n_outer": 400
+}
