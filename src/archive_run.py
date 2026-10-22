@@ -52,7 +52,14 @@ def env_versions():
     return out
 
 def main():
-    label = ("_" + sys.argv[1]) if len(sys.argv) > 1 else ""
+    # RUN-02 (hardened): a CERTIFIED archive must contain the per-node acceptance sidecars, or the
+    # snapshot cannot reconstruct its own plateau certificate. Missing sidecars now FAIL CLOSED
+    # (nonzero exit) unless the caller explicitly marks this an EXPLORATORY/uncertified archive.
+    argv = [a for a in sys.argv[1:] if a != "--exploratory"]
+    exploratory = "--exploratory" in sys.argv
+    label = ("_" + argv[0]) if argv else ""
+    if exploratory:
+        label += "_UNCERTIFIED"
     ts = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
     run = os.path.join(ROOT, "runs", ts + label)
     plots = os.path.join(run, "plots")
@@ -91,8 +98,15 @@ def main():
     print("archived %d plots + %d reports + %d data/logs (%d sidecars) -> %s"
           % (len(png), len(rep), len(dat), len(archived_sidecars), os.path.relpath(run, ROOT)))
     if not archived_sidecars:
-        sys.stderr.write("WARNING (RUN-02): no she2d_richardson_*.progress.json archived -- "
-                         "this snapshot cannot reproduce its own plateau certificate.\n")
+        if exploratory:
+            sys.stderr.write("WARNING (RUN-02): no progress.json sidecars archived; labelled "
+                             "UNCERTIFIED (exploratory archive).\n")
+        else:
+            sys.stderr.write("ERROR (RUN-02): no she2d_richardson_*.progress.json archived -- a "
+                             "certified snapshot cannot reproduce its own plateau certificate. "
+                             "Re-run with sidecars present, or pass --exploratory for an uncertified "
+                             "archive.\n")
+            sys.exit(4)
 
 if __name__ == "__main__":
     main()

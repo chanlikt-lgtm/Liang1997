@@ -1,0 +1,277 @@
+diff --git a/reproduce_all.py b/reproduce_all.py
+index 66b77a1..5c0db91 100644
+--- a/reproduce_all.py
++++ b/reproduce_all.py
+@@ -65,7 +65,10 @@ def _copy_conv_to_canonical():
+         shutil.copy(CONV_NPZ, CANON_NPZ)
+         print("    (copied 50-iter conv result -> canonical recalibrated npz)", flush=True)
+     else:
+-        print("    ! conv npz missing; overlays will use whatever canonical npz exists", flush=True)
++        # RUN-05: a missing recalibration output must be FATAL, not a warning -- otherwise downstream
++        # overlays silently consume a stale canonical NPZ and present it as a fresh result.
++        raise RuntimeError("recalibration output missing: %s -- refusing to reuse a stale canonical "
++                           "NPZ for fresh overlays (run the coupled_recal stage first)" % CONV_NPZ)
+ 
+ 
+ def _paper_crops():
+@@ -188,6 +191,10 @@ def main():
+     print("\nAll requested stages finished in %.0f s. Failed: %s"
+           % (time.time() - t0, failed or "none"), flush=True)
+     print("Figures in %s ; data in %s" % (FIGS, DATA), flush=True)
++    # RUN-04: --keep-going must still exit NONZERO if any stage failed, so CI / callers never read a
++    # partially-failed reproduction as success.
++    if failed:
++        sys.exit(1)
+ 
+ 
+ if __name__ == "__main__":
+diff --git a/src/archive_run.py b/src/archive_run.py
+index df48079..82e9d06 100644
+--- a/src/archive_run.py
++++ b/src/archive_run.py
+@@ -3,10 +3,16 @@ archive_run.py -- snapshot every plot (and the run's key products) into a timest
+ 
+ At the end of a run this copies all generated figures into runs/<YYYY-MM-DD_HHMMSS>/plots/ so each
+ run's plots are preserved instead of overwritten, alongside the run-results report, the trio data,
+-and the convergence logs. Writes a MANIFEST.txt (timestamp, git commit, file list).
++the per-node progress sidecars, the report source, and the convergence logs. Writes a MANIFEST.txt
++(timestamp, git commit + dirty flag, environment versions, and a SHA-256 for every archived payload)
++so the snapshot can be independently re-certified on another machine.
+ Usage: python archive_run.py [label]      (optional short label appended to the folder name)
++
++Audit note (RUN-02): the archive MUST include she2d_richardson_*.progress.json (which persists the
++corrected cumulative cross-chunk four-iteration acceptance buffer) and per-file SHA-256 hashes, or the
++archived run alone cannot reproduce its own certificate.
+ """
+-import os, sys, glob, shutil, subprocess, datetime
++import os, sys, glob, shutil, subprocess, datetime, hashlib
+ 
+ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
+ FIG = os.path.join(ROOT, "figures"); REP = os.path.join(ROOT, "report"); DATA = os.path.join(ROOT, "data")
+@@ -17,44 +23,90 @@ def git(*a):
+     except Exception:
+         return "?"
+ 
++def sha256_file(path):
++    h = hashlib.sha256()
++    with open(path, "rb") as f:
++        for chunk in iter(lambda: f.read(1 << 20), b""):
++            h.update(chunk)
++    return h.hexdigest()
++
+ def copy_into(dst, patterns):
+-    n = 0
++    """Copy every file matching patterns into dst; return the list of destination paths."""
++    copied = []
+     for pat in patterns:
+         for src in glob.glob(pat):
+             if os.path.isfile(src):
+-                shutil.copy2(src, os.path.join(dst, os.path.basename(src))); n += 1
+-    return n
++                d = os.path.join(dst, os.path.basename(src))
++                shutil.copy2(src, d); copied.append(d)
++    return copied
++
++def env_versions():
++    out = {}
++    for mod in ("numpy", "scipy"):
++        try:
++            out[mod] = __import__(mod).__version__
++        except Exception:
++            out[mod] = "?"
++    out["python"] = sys.version.split()[0]
++    out["SHE2D_DISABLE_NUMBA"] = os.environ.get("SHE2D_DISABLE_NUMBA", "")
++    return out
+ 
+ def main():
+-    label = ("_" + sys.argv[1]) if len(sys.argv) > 1 else ""
++    # RUN-02 (hardened): a CERTIFIED archive must contain the per-node acceptance sidecars, or the
++    # snapshot cannot reconstruct its own plateau certificate. Missing sidecars now FAIL CLOSED
++    # (nonzero exit) unless the caller explicitly marks this an EXPLORATORY/uncertified archive.
++    argv = [a for a in sys.argv[1:] if a != "--exploratory"]
++    exploratory = "--exploratory" in sys.argv
++    label = ("_" + argv[0]) if argv else ""
++    if exploratory:
++        label += "_UNCERTIFIED"
+     ts = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
+     run = os.path.join(ROOT, "runs", ts + label)
+     plots = os.path.join(run, "plots")
+     os.makedirs(plots, exist_ok=True)
+ 
+-    n_png = copy_into(plots, [os.path.join(FIG, "*.png"), os.path.join(FIG, "*.pdf")])
+-    n_rep = copy_into(run, [os.path.join(REP, "report_run_latest.pdf"),
+-                            os.path.join(REP, "report_v6_full.pdf")])
+-    n_dat = copy_into(run, [os.path.join(DATA, "she2d_richardson_*.npz"),
+-                            os.path.join(DATA, "richardson_trio_run.log"),
+-                            os.path.join(DATA, "richardson_trio_metrics.csv"),
+-                            os.path.join(DATA, "richardson_*.log"),
+-                            os.path.join(DATA, "run_from_scratch.log")])
++    png = copy_into(plots, [os.path.join(FIG, "*.png"), os.path.join(FIG, "*.pdf")])
++    rep = copy_into(run, [os.path.join(REP, "report_run_latest.pdf"),
++                          os.path.join(REP, "report_run_latest.tex"),      # RUN-02: archive the report SOURCE
++                          os.path.join(REP, "report_v6_full.pdf")])
++    dat = copy_into(run, [os.path.join(DATA, "she2d_richardson_*.npz"),
++                          os.path.join(DATA, "she2d_richardson_*.progress.json"),  # RUN-02: the acceptance buffer
++                          os.path.join(DATA, "richardson_trio_run.log"),
++                          os.path.join(DATA, "richardson_trio_metrics.csv"),
++                          os.path.join(DATA, "richardson_*.log"),
++                          os.path.join(DATA, "run_from_scratch.log")])
+ 
++    all_payloads = png + rep + dat
+     with open(os.path.join(run, "MANIFEST.txt"), "w", encoding="utf-8") as f:
+         f.write("run snapshot: %s%s\n" % (ts, label))
+         f.write("generated:    %s\n" % datetime.datetime.now().isoformat(timespec="seconds"))
+-        f.write("git commit:   %s (%s)\n" % (git("rev-parse", "--short", "HEAD"),
++        f.write("git commit:   %s (%s)\n" % (git("rev-parse", "HEAD"),
+                                              "dirty" if git("status", "--porcelain") else "clean"))
+-        f.write("plots:        %d  (plots/)\n" % n_png)
+-        f.write("reports:      %d\n" % n_rep)
+-        f.write("data/logs:    %d\n\n" % n_dat)
+-        f.write("plots/:\n")
+-        for p in sorted(os.listdir(plots)):
+-            f.write("  %s\n" % p)
+-
+-    print("archived %d plots + %d reports + %d data/logs -> %s"
+-          % (n_png, n_rep, n_dat, os.path.relpath(run, ROOT)))
++        ev = env_versions()
++        f.write("environment:  python %s, numpy %s, scipy %s, SHE2D_DISABLE_NUMBA=%s\n"
++                % (ev["python"], ev["numpy"], ev["scipy"], ev["SHE2D_DISABLE_NUMBA"]))
++        f.write("plots:        %d  (plots/)\n" % len(png))
++        f.write("reports:      %d\n" % len(rep))
++        f.write("data/logs:    %d\n\n" % len(dat))
++        f.write("SHA-256 (relative path  hash):\n")
++        for p in sorted(all_payloads):
++            f.write("  %-48s  %s\n" % (os.path.relpath(p, run), sha256_file(p)))
++
++    # Fail-closed: the per-node progress sidecars carry the certified acceptance buffer; without them
++    # the archive cannot be re-certified (audit RUN-02).
++    archived_sidecars = [p for p in dat if p.endswith(".progress.json")]
++    print("archived %d plots + %d reports + %d data/logs (%d sidecars) -> %s"
++          % (len(png), len(rep), len(dat), len(archived_sidecars), os.path.relpath(run, ROOT)))
++    if not archived_sidecars:
++        if exploratory:
++            sys.stderr.write("WARNING (RUN-02): no progress.json sidecars archived; labelled "
++                             "UNCERTIFIED (exploratory archive).\n")
++        else:
++            sys.stderr.write("ERROR (RUN-02): no she2d_richardson_*.progress.json archived -- a "
++                             "certified snapshot cannot reproduce its own plateau certificate. "
++                             "Re-run with sidecars present, or pass --exploratory for an uncertified "
++                             "archive.\n")
++            sys.exit(4)
+ 
+ if __name__ == "__main__":
+     main()
+diff --git a/src/gen_run_report.py b/src/gen_run_report.py
+index 7920e2c..a63ec89 100644
+--- a/src/gen_run_report.py
++++ b/src/gen_run_report.py
+@@ -103,8 +103,12 @@ def main():
+     dx = [float(x["drain_dx"]) for x in z]
+     G = [float(x["Gii_max"]) for x in z]; Gt = [float(x["G_tot"]) for x in z]
+     Rp = [float(x["R_phi"]) for x in z]; Te = [float(x["Te_max"]) for x in z]
+-    u = [float((np.asarray(x["last4_Gii_max"]).max() - np.asarray(x["last4_Gii_max"]).min()) / 2) for x in z]
+-    hashes = {str(x["H_hash"]) for x in z if "H_hash" in x.files}
++    # NUM-01: the reversal half-range u is derived from the CERTIFIED cumulative window (computed
++    # below as sp[]), NOT the chunk-local last4_* (which is a degenerate 0 for a 1-iteration terminal
++    # chunk and would inflate/zero S_rev). u is assigned after the certified window is known.
++    # NUM-02: a node that OMITS H_hash must FAIL the comparability gate, not be silently skipped,
++    # so missing keys are represented by an explicit sentinel in the set.
++    hashes = {(str(x["H_hash"]) if "H_hash" in x.files else "__MISSING_H_HASH__") for x in z}
+     laws = {(round(float(x["ratio"]), 4), round(float(x["W"]), 4), round(float(x["X_C"]), 4),
+              round(float(x["dH_eV"]), 6), int(x["NH"]), float(x["she_tol"])) for x in z}
+ 
+@@ -117,6 +121,12 @@ def main():
+     spt = [ev["spread_Gtot"] if ev["plateau_evaluable"] else float("nan") for ev in evs]
+     win = [ev["iterations"] for ev in evs]
+ 
++    # NUM-01: absolute reversal half-range from the certified RELATIVE window spread sp[]=(max-min)/mean,
++    # scaled by the node value (u_abs = sp * G / 2). Non-evaluable window -> nan -> S_rev nan (and
++    # plateau_ok is already False), so a degenerate terminal chunk can no longer fake a finite u.
++    u = [(sp[i] * G[i] / 2.0) if (sp[i] is not None and math.isfinite(sp[i])) else float("nan")
++         for i in range(3)]
++
+     rx = [dx[i] / dx[i + 1] for i in range(2)]
+     d12, d23 = G[0] - G[1], G[1] - G[2]
+     monotone = (d12 > 0 and d23 > 0) or (d12 < 0 and d23 < 0)
+@@ -124,7 +134,7 @@ def main():
+ 
+     # --- comparability + plateau gates (the FULL rule; plateau via certified cumulative windows) ---
+     sig_ok = len(laws) == 1
+-    hash_ok = len(hashes) == 1
++    hash_ok = (len(hashes) == 1) and ("__MISSING_H_HASH__" not in hashes)   # NUM-02: missing = FAIL, not skip
+     ratios_ok = all(abs(r - math.sqrt(2)) < RATIO_TOL for r in rx)
+     plateau_ok = all(ev["plateau_evaluable"] and ev["passed"] for ev in evs)
+     gates_ok = sig_ok and hash_ok and ratios_ok and plateau_ok
+@@ -267,14 +277,32 @@ spatial-convergence.
+     print("wrote", out_tex)
+     pdflatex = shutil.which("pdflatex") or \
+         r"C:\Users\User\AppData\Local\Programs\MiKTeX\miktex\bin\x64\pdflatex.exe"
++    out_pdf = os.path.join(REP, "report_run_latest.pdf")
+     if os.path.exists(pdflatex) or shutil.which("pdflatex"):
++        # RUN-01: fail-closed PDF build. Check pdflatex exit code, and verify the PDF was actually
++        # refreshed (mtime advanced + non-trivial size) before announcing success. Never let a failed
++        # or stale compile masquerade as a fresh report. (--enable-installer dropped: MiKTeX-only,
++        # breaks portable TeX Live; nonstopmode is enough.)
++        pre_mtime = os.path.getmtime(out_pdf) if os.path.exists(out_pdf) else 0.0
++        ok = True
+         for _ in range(2):
+-            subprocess.run([pdflatex, "--enable-installer", "--interaction=nonstopmode",
+-                            "report_run_latest.tex"], cwd=REP,
+-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+-        print("compiled report/report_run_latest.pdf")
++            r = subprocess.run([pdflatex, "--interaction=nonstopmode", "report_run_latest.tex"],
++                               cwd=REP, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
++            if r.returncode != 0:
++                ok = False
++                sys.stderr.write("ERROR (RUN-01): pdflatex exited %d; tail:\n%s\n"
++                                 % (r.returncode, (r.stdout or "")[-2000:]))
++                break
++        fresh = (os.path.exists(out_pdf) and os.path.getmtime(out_pdf) > pre_mtime
++                 and os.path.getsize(out_pdf) > 1024)
++        if ok and fresh:
++            print("compiled report/report_run_latest.pdf")
++        else:
++            sys.stderr.write("ERROR (RUN-01): report PDF was not freshly produced; "
++                             "build FAILED -- refusing to present a stale/missing PDF as current.\n")
++            sys.exit(2)
+     else:
+-        print("pdflatex not found -- wrote .tex only.")
++        print("pdflatex not found -- wrote .tex only (no PDF claimed).")
+ 
+ if __name__ == "__main__":
+     main()
+diff --git a/trio_launch.sh b/trio_launch.sh
+index cb57d16..01b39dc 100755
+--- a/trio_launch.sh
++++ b/trio_launch.sh
+@@ -1,7 +1,11 @@
+ #!/usr/bin/env bash
+ # Full-trio R_phi-convergence confirmation (reviewer-approved, corrected methodology).
+ # Nodes sequential, warm-chained; each node runs to tol_phi=1e-4 (1500 cap = safety only).
+-set -u
++#
++# RUN-03 (audit): fail-closed pipes and NO automatic git push by default. A scientific runner must
++# not silently mutate the repository, and a failed solver/tee must not be hidden by the pipe. Set
++# TRIO_AUTOPUSH=1 explicitly, as a deliberate manual choice, to stage+commit+push the results.
++set -euo pipefail
+ cd ~/.openclaw/workspace/Liang1997
+ PY=.venv/bin/python
+ mkdir -p logs
+@@ -17,7 +21,13 @@ echo "[trio] node 100x70 done $(date -Is)"
+ echo "[trio] node 141x85 done $(date -Is)"
+ 
+ echo "[trio] all 3 done $(date -Is)"
+-git add logs/trioRphi_*.log data/she2d_richardson_*.npz
+-git commit -m "relay: full-trio R_phi-convergence confirmation (Linux)" 2>&1
+-git push 2>&1
+-echo "[trio] pushed $(date -Is)"
++
++if [ "${TRIO_AUTOPUSH:-0}" = "1" ]; then
++    echo "[trio] TRIO_AUTOPUSH=1 -> staging + committing + pushing results"
++    git add logs/trioRphi_*.log data/she2d_richardson_*.npz
++    git commit -m "relay: full-trio R_phi-convergence confirmation (Linux)"
++    git push
++    echo "[trio] pushed $(date -Is)"
++else
++    echo "[trio] results NOT pushed (set TRIO_AUTOPUSH=1 to push deliberately). Review, then push by hand."
++fi
