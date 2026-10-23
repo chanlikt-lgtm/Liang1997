@@ -8,7 +8,7 @@ Covers the reviewer's three build requirements:
 Plus a sub-cell interpolated-peak sanity test (reviewer adj. 2).
 Run:  python campaign/test_aniso_mesh_study.py
 """
-import os, sys, ast, tempfile, io
+import os, sys, ast, tempfile, io, json
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -171,6 +171,60 @@ def test_certify_runs():
     assert status in ("CERTIFIED", "UNRESOLVED")
     assert isinstance(drift["cont_R_phi_band"], list) and len(drift["cont_R_phi_band"]) == 2
     assert all(np.isfinite(float(v)) for v in drift["cont_R_phi_band"])
+
+
+def test_config_hash_stable():
+    """G1.3: config hash is deterministic (same frozen config -> same 12-char hash)."""
+    h1, h2 = aniso._config_hash(), aniso._config_hash()
+    assert h1 == h2 and len(h1) == 12
+
+
+def test_thread_env_enforced():
+    """G1.2: thread env vars are pinned to THREADS_REQUESTED at import time."""
+    assert aniso.THREADS_REQUESTED in (1, 8) or aniso.THREADS_REQUESTED >= 1
+    for v in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"):
+        assert os.environ.get(v) == str(aniso.THREADS_REQUESTED)
+
+
+def test_exec_auth_hard_block():
+    """G0.2: run_family must HARD-BLOCK (SystemExit), not warn, when authorization is absent."""
+    saved = aniso.AUTH_FILE
+    aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_absent_%d.json" % os.getpid())
+    if os.path.exists(aniso.AUTH_FILE):
+        os.remove(aniso.AUTH_FILE)
+    try:
+        try:
+            aniso.run_family("X")
+            raised = False
+        except SystemExit:
+            raised = True
+        assert raised, "run_family must hard-block without execution authorization"
+    finally:
+        aniso.AUTH_FILE = saved
+
+
+def test_exec_auth_recorded():
+    """G0.2: a valid auth file is accepted and its who/when is surfaced."""
+    saved = aniso.AUTH_FILE
+    aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_ok_%d.json" % os.getpid())
+    with open(aniso.AUTH_FILE, "w") as fh:
+        json.dump({"execution_authorized": True, "who": "Chan Lik", "when": "2026-10-23T00:00:00Z"}, fh)
+    try:
+        a = aniso._require_exec_auth()
+        assert a["execution_authorized"] is True and a["who"] == "Chan Lik"
+    finally:
+        aniso.AUTH_FILE = saved
+
+
+def test_warm_start_assert():
+    """G1.1: a missing warm-start npz must raise, never silently cold-start."""
+    missing = os.path.join(tempfile.gettempdir(), "does_not_exist_%d.npz" % os.getpid())
+    try:
+        aniso._solve(71, 70, 1500, warm_npz=missing)
+        raised = False
+    except SystemExit:
+        raised = True
+    assert raised, "missing warm-start npz must HARD-FAIL (no silent cold-start fallback)"
 
 
 if __name__ == "__main__":

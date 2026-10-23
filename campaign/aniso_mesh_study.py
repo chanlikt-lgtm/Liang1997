@@ -34,7 +34,24 @@ Usage:
   python campaign/aniso_mesh_study.py --node Nx Ny [maxouter]
   python campaign/aniso_mesh_study.py --family X|Y [--include-4th]   # HELD: do not run yet
 """
-import os, sys, json, hashlib, subprocess, time
+import os, sys
+
+# ---- thread policy (spec v1.2 / reviewer G1.2): pin env BEFORE any BLAS/OpenMP loads ----
+def _threads_from_argv(argv):
+    if "--threads" in argv:
+        i = argv.index("--threads")
+        try:
+            return int(argv[i + 1])
+        except (IndexError, ValueError):
+            raise SystemExit("--threads requires an integer argument")
+    return 8
+
+THREADS_REQUESTED = _threads_from_argv(sys.argv)
+for _tv in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS",
+            "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+    os.environ[_tv] = str(THREADS_REQUESTED)
+
+import json, hashlib, subprocess, time, platform
 import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
@@ -76,6 +93,64 @@ def _git(*a):
         return "?"
 _git_commit = _git("rev-parse", "--short", "HEAD")
 _git_dirty = "dirty" if _git("status", "--porcelain") else "clean"
+
+
+# ---- config identity + execution authorization + provenance (G0.2/G1.2/G1.3) ----
+AUTH_FILE = os.path.join(os.path.dirname(__file__), "aniso_exec_auth.json")
+
+
+def _config_hash():
+    cfg = dict(ratio=RATIO, W=W, X_C=X_C, phi_gate=PHI_GATE, aa_depth=AA_DEPTH, aa_beta=AA_BETA,
+               she_tol=SHE_TOL, dH_eV=DH_EV, tol_phi=TOL_PHI, cont_n_iter=CONT_N_ITER,
+               drift_gate=DRIFT_GATE, common_phi_span=list(COMMON_PHI_SPAN), ref_depth=REF_DEPTH,
+               solver_commit=_git_commit)
+    return hashlib.sha1(json.dumps(cfg, sort_keys=True).encode()).hexdigest()[:12]
+
+
+def _exec_auth():
+    if not os.path.exists(AUTH_FILE):
+        return None
+    try:
+        with open(AUTH_FILE) as fh:
+            return json.load(fh)
+    except Exception:
+        return None
+
+
+def _require_exec_auth():
+    a = _exec_auth()
+    if not (a and a.get("execution_authorized") is True):
+        raise SystemExit(
+            "G0.2 HARD-BLOCK: full-sweep execution is NOT authorized. The anisotropic sweep is HELD "
+            "until Gates 0-3 PASS with evidence (docs/ANISO_STUDY_REVIEW_CHECKPOINT_20261023.md). "
+            "To authorize, write %s with {\"execution_authorized\": true, \"who\": ..., \"when\": ...}."
+            % AUTH_FILE)
+    return a
+
+
+def _provenance():
+    info = {
+        "threads_requested": THREADS_REQUESTED,
+        "threads_env": {v: os.environ.get(v) for v in
+                        ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS")},
+        "numpy_version": np.__version__,
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+        "machine": platform.machine(),
+        "cpu": platform.processor() or None,
+        "git_commit": _git_commit,
+        "git_dirty": _git_dirty,
+    }
+    try:
+        import threadpoolctl
+        info["threadpool_actual"] = [
+            dict(library=t.get("user_api"), internal_api=t.get("internal_api"),
+                 num_threads=t.get("num_threads"), prefix=t.get("prefix"),
+                 version=t.get("version"), threading_layer=t.get("threading_layer"))
+            for t in threadpoolctl.threadpool_info()]
+    except Exception as e:  # pragma: no cover
+        info["threadpool_actual"] = "unavailable: %s" % e
+    return info
 
 
 # ============================================================================
@@ -167,9 +242,14 @@ def _solve(Nx, Ny, max_outer, warm_npz=None, verbose=True):
     x, y, dx_drain, dy_surf, dy_depth = build_mesh(Nx, Ny)
     phi0 = p0 = None
     warm_name = ""
-    if warm_npz and os.path.exists(warm_npz):
-        phi0, p0, _prev = _regrid_from_npz(warm_npz, x, y, Nx, Ny)
-        warm_name = os.path.basename(warm_npz)
+    if warm_npz:
+        wp = os.path.abspath(warm_npz)          # G1.1: resolve relative-to-outdir or absolute
+        if not os.path.exists(wp):
+            raise SystemExit("G1.1 HARD-FAIL: warm-start npz not found: %s "
+                             "(no silent cold-start fallback)." % wp)
+        print("  warm-start: %s (exists -> loading + regridding)" % wp, flush=True)
+        phi0, p0, _prev = _regrid_from_npz(wp, x, y, Nx, Ny)
+        warm_name = os.path.basename(wp)
     r = solve_coupled(x_mesh=x, y_mesh=y, Phi_gate=PHI_GATE, accel="anderson", aa_depth=AA_DEPTH,
                       aa_beta=AA_BETA, aa_step_cap=AA_STEP_CAP, freeze_H=True, dH_eV=DH_EV,
                       she_tol=SHE_TOL, max_outer=max_outer, tol_phi=TOL_PHI, verbose=verbose,
@@ -268,18 +348,27 @@ def _save_npz(path, r, x, y, Nx, Ny, dx_drain, dy_surf, dy_depth, warm_name, obs
     return H_hash
 
 
-def run_node(Nx, Ny, max_outer=MAX_OUTER_CAP, warm_npz=None, verbose=True, outdir=None):
+def run_node(Nx, Ny, max_outer=MAX_OUTER_CAP, warm_npz=None, verbose=True, outdir=None, run_id=None):
     outdir = outdir or os.path.join(os.path.dirname(__file__), "..", "data")
     os.makedirs(outdir, exist_ok=True)
-    tag = "she2d_aniso_%dx%d" % (Nx, Ny)
+    cfg = _config_hash()
+    prov = _provenance()
+    tag = "she2d_aniso_%dx%d_t%d_%s" % (Nx, Ny, THREADS_REQUESTED, cfg)
+    if run_id:
+        tag = "%s_%s" % (tag, run_id)
     npz_path = os.path.join(outdir, tag + ".npz")
     json_path = os.path.join(outdir, tag + ".json")
+    if os.path.exists(npz_path) or os.path.exists(json_path):
+        raise SystemExit("G1.3 HARD-FAIL: output already exists for %s (refusing to overwrite a "
+                         "control artifact); pass --run-id for a distinct replicate." % tag)
 
     print("=" * 78)
     print("ANISO MESH-STUDY NODE: Nx=%d Ny=%d  (max_outer=%d, tol_phi=%.1e)" % (Nx, Ny, max_outer, TOL_PHI))
     print("  mesh law: ratio=%.3f W=%.3f X_C=%.3f (x graded, y=Ly*s^1.8); solver Phi_gate=%.3f, anderson d=%d b=%.2f"
           % (RATIO, W, X_C, PHI_GATE, AA_DEPTH, AA_BETA))
-    print("  provenance: git %s (%s)" % (_git_commit, _git_dirty), flush=True)
+    print("  provenance: git %s (%s); config_hash=%s" % (_git_commit, _git_dirty, cfg), flush=True)
+    print("  threads: requested=%d env=%s" % (THREADS_REQUESTED, prov["threads_env"]), flush=True)
+    print("  threadpool_actual=%s" % prov["threadpool_actual"], flush=True)
 
     r, x, y, dx_drain, dy_surf, dy_depth, warm_name = _solve(Nx, Ny, max_outer, warm_npz, verbose)
 
@@ -299,18 +388,22 @@ def run_node(Nx, Ny, max_outer=MAX_OUTER_CAP, warm_npz=None, verbose=True, outdi
     extra = dict(status=status, certified=certified, max_outer=max_outer,
                  tol_phi=TOL_PHI, cont_n_iter=drift["cont_n_iter"],
                  drift_raw_Gii=drift["drift_raw_Gii"], drift_interp_Gii=drift["drift_interp_Gii"],
-                 drift_G_tot=drift["drift_G_tot"], cont_R_phi_band=np.array(drift["cont_R_phi_band"]))
+                 drift_G_tot=drift["drift_G_tot"], cont_R_phi_band=np.array(drift["cont_R_phi_band"]),
+                 config_hash=cfg, threads_requested=THREADS_REQUESTED,
+                 numpy_version=prov["numpy_version"], platform=prov["platform"])
     H_hash = _save_npz(npz_path, r, x, y, Nx, Ny, dx_drain, dy_surf, dy_depth, warm_name, obs, extra)
 
     rec = dict(Nx=Nx, Ny=Ny, family=None, direction=None, level=None, warm_source=warm_name,
                status=status, certified=certified, certification=detail,
                git_commit=_git_commit, git_dirty=_git_dirty, H_hash=H_hash,
+               config_hash=cfg, provenance=prov,
                drain_dx=dx_drain, surface_dy=dy_surf, dy_depth=dy_depth, ref_depth=REF_DEPTH,
                **{k: obs[k] for k in ("Gii_max", "Gii_interp", "xy_Gii_max", "xy_Gii_max_interp",
                                       "avalanche_y_fwhm", "G_tot", "drain_current_A_per_um", "R_phi",
                                       "dGii_tail", "relative_number_balance", "continuity_residual",
                                       "n_iter")},
-               **drift, npz=os.path.relpath(npz_path, outdir), json_path=os.path.relpath(json_path, outdir))
+               **drift, npz=npz_path, npz_rel=os.path.relpath(npz_path, outdir),
+               json_path=json_path, json_rel=os.path.relpath(json_path, outdir))
     with open(json_path, "w") as fh:
         json.dump(rec, fh, indent=2)
     print("\n=== NODE %dx%d -> %s  (R_phi=%.3e, Gii_raw=%.4e, Gii_interp=%.4e, G_tot=%.4e) ==="
@@ -321,6 +414,7 @@ def run_node(Nx, Ny, max_outer=MAX_OUTER_CAP, warm_npz=None, verbose=True, outdi
 
 
 def run_family(name, include_fourth=False):
+    auth = _require_exec_auth()          # G0.2: HARD-BLOCK without execution authorization
     fam = FAMILIES[name]
     levels = list(fam["levels"])
     records = []
@@ -328,6 +422,7 @@ def run_family(name, include_fourth=False):
     for i, (Nx, Ny) in enumerate(levels):
         rec = run_node(Nx, Ny, warm_npz=warm, verbose=True)
         rec["family"] = name; rec["direction"] = fam["direction"]; rec["level"] = i
+        rec["authorized_by"] = auth.get("who"); rec["authorized_when"] = auth.get("when")
         records.append(rec)
         if rec["certified"]:
             warm = rec["npz"]
@@ -356,8 +451,16 @@ if __name__ == "__main__":
         sys.exit(0)
     if argv[0] == "--node":
         Nx, Ny = int(argv[1]), int(argv[2])
-        maxo = int(argv[3]) if len(argv) > 3 else MAX_OUTER_CAP
-        run_node(Nx, Ny, max_outer=maxo)
+        rest = argv[3:]
+        maxo, run_id = MAX_OUTER_CAP, None
+        i = 0
+        while i < len(rest):
+            if rest[i].isdigit():
+                maxo = int(rest[i])
+            elif rest[i] == "--run-id" and i + 1 < len(rest):
+                run_id = rest[i + 1]; i += 1
+            i += 1
+        run_node(Nx, Ny, max_outer=maxo, run_id=run_id)
     elif argv[0] == "--family":
         name = argv[1].upper()
         run_family(name, include_fourth=("--include-4th" in argv))
