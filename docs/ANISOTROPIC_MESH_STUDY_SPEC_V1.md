@@ -1,15 +1,29 @@
-# Anisotropic mesh-convergence study — SPEC v1.2 (pre-registration)
+# Anisotropic mesh-convergence study — SPEC v1.3 (pre-registration)
+
+**v1.3 (2026-10-23):** adopts the reviewer gating checkpoint
+(`docs/ANISO_STUDY_REVIEW_CHECKPOINT_20261023.md`, Gates 0–4, all blocking before full-sweep
+authorization) and sharpens three pre-registration points per it: authorization status split into
+acceptance / sign-off / execution (G0.1, above); exact fallback trigger `d=2|a−b|/(|a|+|b|)<0.01` as an
+operational trigger not a bound (G3.3); the 71×70 thread measurement is a 71×70-only reference, not a
+universal noise bound (G3.5). Harness-integrity (Gate 1), full certification recording (Gate 2), and
+paired-thread controls (Gate 3) are implementation items for the harness.
 
 **v1.2 (2026-10-22, user-approved):** thread policy amended from strict single-threaded to a FIXED
-8-thread sweep + a one-time 71×70 single-vs-8 threading-noise measurement + single-threaded fallback
-for any sub-1% node-pair (§7). Rationale: strict single-threaded ≈ 200–300 h is impractical, and the
-trio's ~40% non-monotone differences sit far above threading noise. Reviewer to be notified of this
-pre-registration change.
+8-thread sweep + a one-time 71×70 single-vs-8 measurement + single-threaded fallback for triggered
+node-pairs (§7). Rationale: strict single-threaded ≈ 200–300 h is impractical; the trio's ~40%
+non-monotone differences sit far above threading noise.
 
 
 **Date:** 2026-10-22 · **Scope:** Gate E / SCI-01, discretization-convergence only. **No physics change.**
 This spec is frozen and committed BEFORE any run (reviewer requirement: metrics + acceptance specified
 before results; never tune parameters until outcomes are seen).
+
+**Authorization status (reviewer G0.1 — three distinct things, do not conflate):** (a) *proposal /
+thread-amendment acceptance* = **user-approved** (Chan Lik, 2026-10-22); (b) *scientific-review
+sign-off* = **PENDING** (reviewer checkpoint `docs/ANISO_STUDY_REVIEW_CHECKPOINT_20261023.md`, Gates
+0–4); (c) *execution authorization for the full sweep* = **HELD** until Gates 0–3 PASS with evidence and
+Gate 4 rules are frozen. "User-approved" in §7 means (a) only; it is NOT (b) or (c). The harness must
+HARD-BLOCK a full-sweep launch while (c) is absent (G0.2), not merely warn.
 
 **v1.1 — folds in the reviewer's conditional-approval adjustments (2026-10-22):** (adj. 1) the 4th
 refinement level is pre-committed to a resource/convergence rule, never an outcome-dependent one (§3);
@@ -103,12 +117,19 @@ trio differences are ~40% and non-monotone, orders above that noise, so threadin
 node-pair difference approaches ~1%. Policy:
 1. **Fixed thread count for the whole sweep:** `OPENBLAS_NUM_THREADS = OMP_NUM_THREADS = MKL_NUM_THREADS
    = 8`, identical for EVERY node, recorded in each node's provenance. Feasible (~10 h/node).
-2. **Quantify the threading contribution once:** run the cheap `71×70` BOTH at threads=8 and threads=1;
-   report `|ΔG_ii|`, `|ΔG_tot|`, hotspot shift. This fixes the threading-noise floor for the study.
-3. **Fallback:** for ANY node-pair whose observable difference falls below ~1% (the regime where
-   threading could contaminate the convergence conclusion), re-run that specific pair single-threaded
-   before drawing an asymptotic/order conclusion from it.
-This keeps the sweep feasible while bounding — and, where it matters, eliminating — threading noise.
+2. **Quantify the threading contribution once:** run the cheap `71×70` BOTH at threads=8 and threads=1
+   (identical frozen physics/solver/init), retain separate artifacts, and tabulate raw + normalized
+   `ΔG_ii,max`, `ΔG_tot`, hotspot `(x,y)` shift. This is an **operational reference for `71×70` only** —
+   **NOT** a rigorous threading-noise bound generalizable to every mesh (reviewer G3.5). Larger meshes
+   are not assumed to share this difference.
+3. **Fallback trigger (pre-registered, reviewer G3.3):** for an adjacent node-pair `(a,b)` of a positive
+   observable, the relative difference `d(a,b) = 2|a−b| / (|a|+|b|)`; the **operational trigger** is
+   `d < 0.01` (with separate absolute tolerances for near-zero quantities and for coordinate/hotspot
+   shifts). The `1%` is a **trigger, not a proven uncertainty bound.** Whenever such a pair is used for a
+   near-convergence or asymptotic-order claim and meets the trigger, **re-run BOTH members
+   single-threaded** and compare the inferred mesh trend before drawing the conclusion (G3.4).
+This keeps the sweep feasible while controlling threading exactly where a convergence conclusion depends
+on it — without overclaiming a universal noise bound.
 
 ## 8. Explicit non-goals
 

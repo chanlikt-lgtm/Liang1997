@@ -750,3 +750,37 @@ Spec → **v1.2** (`docs/ANISOTROPIC_MESH_STUDY_SPEC_V1.md` §7), user-approved 
 So when the sweep is authorized: all nodes at threads=8, plus the 71×70 single-thread control.
 STILL HELD — don't launch the sweep. After v2 smoke lands + the reviewer is notified of the v1.2 thread
 change + Chan Lik's go, I'll relay "launch". Flag when v2 certifies with outputs.
+
+---
+
+## 2026-10-23 — reviewer CHECKPOINT (Gates 0–4, all blocking). Spec→v1.3. Your harness fix-list below.
+Reviewer disposition: CONDITIONAL GO for harness fixes + validation; full sweep HELD until Gates 0–3
+PASS with evidence + Gate 4 rules frozen. Checklist committed at `docs/ANISO_STUDY_REVIEW_CHECKPOINT_20261023.md`
+— treat it as the live gate. I patched the DOC items (G0.1 auth-status split, G3.3 exact trigger
+d=2|a−b|/(|a|+|b|)<0.01, G3.5 "71×70 measurement is 71×70-only, not a universal bound") into spec v1.3.
+
+YOUR harness implementation items (all need linked evidence to mark PASS):
+- **G0.2** HARD-BLOCK a full-sweep launch when execution-authorization is absent (not a console warning);
+  record who/when authorized.
+- **G1.1** warm-start `.npz` paths: resolve relative to the output dir (or absolute); ASSERT the file
+  exists; NO silent cold-start fallback. (two-node dry run logs the actual path + load + receiving mesh.)
+- **G1.2** set/CHECK effective BLAS/OMP thread config BEFORE numerical work; persist actual thread-pool
+  info + backend/lib versions + CPU/platform + solver commit per node. Logs must show the 1-thread AND
+  8-thread controls ran at the requested effective config.
+- **G1.3** collision-free output names: include mesh + thread count + run ID + config hash; never
+  overwrite a control. (1-thread and 8-thread same-mesh runs coexist, distinct checksums.)
+- **G1.4** 4th-level RAM gate: a MEASURED peak-memory feasibility rule (not a comment); block an
+  infeasible case, record the resource decision for a feasible one.
+- **G1.5** hotspot FWHM from TWO interpolated half-max crossings; flag boundary-truncated / unresolved /
+  multi-peak vs a valid full width. Unit-test on analytic peaks to a documented tolerance.
+- **G1.6** state whether (100,70) is ONE shared computation or independent X/Y repeats; if repeats
+  support reproducibility, keep independent files + compare.
+- **G2.1–G2.4** record explicit PER-NODE PASS/FAIL for EACH numerical criterion (R_phi, continuity
+  residual, conservation, observable drift) with raw values+units; document what state the 40-iter
+  continuation carries (incl Anderson history) and separate endpoint→restart delta from drift; certify
+  on Gii+Gtot+hotspot, never R_phi alone; archive the corrected 71×70 smoke (logs/json/npz/traces).
+- **G3.1–G3.2** run 71×70 at effective 1 AND 8 threads, identical frozen physics/solver/init, separate
+  artifacts; tabulate raw + normalized ΔGii_max/ΔGtot/Δhotspot.
+
+Finish v2 smoke first, then do these on the harness. Still HELD — do NOT launch the sweep. Flag when the
+Gate-1 fixes + the paired 71×70 thread controls are committed with evidence.
