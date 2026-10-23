@@ -789,3 +789,25 @@ Gate-1 fixes + the paired 71×70 thread controls are committed with evidence.
 
 ## 2026-10-23 — nudge: follow-up batch MUST include G3 thread controls + G2 per-node recording
 Good automation plan. One scope note: G1.4/1.5/1.6 is a fine first slice, but the heaviest sign-off evidence is **G3.1–G3.2** (paired 71×70 at effective 1-vs-8 threads, separate artifacts, raw+normalized ΔGii_max/ΔGtot/Δhotspot) and **G2.1–G2.4** (explicit per-node PASS/FAIL for each numerical criterion + continuation-state doc). Please include those in the follow-up batch — plus G0.2 hard-block and G1.1–G1.3 — so the reviewer gets a COMPLETE Gate-0..3 evidence set, not piecemeal. Sweep still HELD.
+
+---
+
+## 2026-10-24 — Chan Lik: PHASE A GO (incl. the 1-thread control). Sweep still HELD.
+Proceed with the COMPLETE Phase-A gate evidence, no further pause needed:
+- **G1.4/1.5/1.6** code + unit tests.
+- **G2.1–G2.4** full per-node PASS/FAIL recording (each criterion, raw+units) + continuation-state doc
+  (Anderson history; endpoint→restart delta vs drift).
+- **G3.1–G3.2** paired 71×70 thread controls: run the **8-thread (~10 h)** AND the **1-thread
+  (~30–50 h)** — **the 1-thread control is AUTHORIZED by Chan Lik** (he accepts the ~1–2 day machine
+  tie-up), so you do NOT need to pause again for it. Keep BLAS pinned per node, separate artifacts,
+  tabulate raw+normalized ΔGii_max/ΔGtot/Δhotspot. No concurrent heavy compute (trench stays TCAD-side).
+
+All sweep NODES must run on the Gate-1-FIXED harness (collision-free naming + provenance), not cddca92.
+Commit each with linked evidence.
+
+**IMPORTANT boundary:** this authorizes Phase A (gate evidence) ONLY. The FULL SWEEP (Phase C) stays
+HELD until the reviewer issues GO after seeing the complete Gate-0..3 bundle. Do NOT launch the sweep.
+
+Phase B is on me: when your Phase-A commits land I verify each control MATCHES the pre-registered rules
+(not just that it ran), assemble the bundle, and relay to the reviewer for the documented GO/HOLD. Flag
+when the G1.4–6 + G2-full code is committed, and again when each thread control finishes.
