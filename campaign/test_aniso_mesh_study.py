@@ -159,6 +159,20 @@ def test_npz_schema_written():
         assert str(z["status"]) == "CERTIFIED"
 
 
+def test_certify_runs():
+    """_certify must not crash on a converged-looking node (regression: 'Gc and' array-truth bug)."""
+    obs = dict(R_phi=1e-5, Gii_interp=3.0)
+    Ny, Nx = 70, 71
+    x = np.linspace(0.0, 0.8, Nx); y = np.linspace(0.0, 0.7, Ny)
+    Gii = np.full((Ny, Nx), 3.0)
+    hist = [dict(Gii_max_cm3s=3.0 + 1e-6 * (k % 3), G_tot_cm1s=2.0, max_dphi_V=1e-5) for k in range(40)]
+    cont = dict(history=hist, Gii=Gii, x=x, y=y)
+    certified, status, detail, drift = aniso._certify(obs, cont)
+    assert status in ("CERTIFIED", "UNRESOLVED")
+    assert isinstance(drift["cont_R_phi_band"], list) and len(drift["cont_R_phi_band"]) == 2
+    assert all(np.isfinite(float(v)) for v in drift["cont_R_phi_band"])
+
+
 if __name__ == "__main__":
     import traceback
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]

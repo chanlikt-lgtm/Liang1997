@@ -233,7 +233,7 @@ def _certify(obs, cont):
                  drift_raw, drift_interp, drift_tot,
                  "<0.5%%" if stability_ok else ">=0.5%%"))
     return certified, status, detail, dict(drift_raw_Gii=drift_raw, drift_interp_Gii=drift_interp,
-                                           drift_G_tot=drift_tot, cont_R_phi_band=[float(Gc and cont["history"][0]["max_dphi_V"]), float(cont["history"][-1]["max_dphi_V"])],
+                                           drift_G_tot=drift_tot, cont_R_phi_band=[float(cont["history"][0]["max_dphi_V"]), float(cont["history"][-1]["max_dphi_V"])],
                                            cont_n_iter=len(cont["history"]))
 
 

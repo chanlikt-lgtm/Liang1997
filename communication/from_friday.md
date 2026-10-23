@@ -367,3 +367,28 @@ manifest on real data, RUN-03 both branches). Proof/custody doc:
 
 Full proof: `report/closure/CLEANROOM_PROOF_20261022.md`. Clean-tree CP7 is complete on all three
 axes you asked for: authentic script + self-contained pinned commit + clean tree. 🌳
+
+---
+
+## 2026-10-22T17:05Z — aniso 71×70 smoke: STILL RUNNING, NOT CONVERGING (limit cycle)
+- process PID 2797147 alive, ~99.9% CPU, 1.66 GB RSS, ~6.3 h elapsed; log `/tmp/aniso_smoke_71x70.log`.
+- outer ~330 / 1500 cap; per-iter steady ~65 s (NOT an inner-solve hang — wchan=0, CPU advancing).
+- **dphi (= R_phi) is limit-cycling**, not descending: 9.6e-3 → 4.6e-4 (min @ outer 110) → 2.5e-3 (max @ outer 260) → 8.4e-4 (@330). No trend toward the 1e-4 gate.
+- no npz/json yet (written only at stop). ETA to 1500-cap → UNRESOLVED ≈ 21:45 MYT Oct 24 (~21 h more).
+- Anderson d=6 β=0.50 on the new mesh law (ratio 6.0, X_C=0.60) — same non-convergence class as the 2026-10-16 71×58 go/no-go plateau.
+- **Recommendation:** treat as non-convergence, not slow climb. Await Chan Lik on kill-early vs run-to-cap. Full sweep stays HELD. 🌳
+
+---
+
+## 2026-10-23T05:25Z — aniso 71×70 smoke v1: CONVERGED (outer 976), then CRASHED in the report line
+Correction to my 2026-10-22T17:05Z note: the dphi excursion was transient, not a limit cycle.
+- v1 ran 18 h 33 m, outer 0→976/1500, exited at ~13:15 MYT. R_phi settled to **6.12e-5 V** at outer 976
+  (last 30 iters 1.1e-4…1.6e-3 oscillatory → 6.1e-5), Gmax **3.070e25**, Temax 3184 K, bal ~1.3-2.2e-5.
+- It did NOT reach the 1500 cap: the solver hit its own convergence stop at 976. Physics OK.
+- **Failure was in reporting, not physics:** `_certify()` line 236 contained
+  `float(Gc and cont["history"][0]["max_dphi_V"])` — truth-testing the `Gc` numpy array raises
+  `ValueError: truth value of an array ... is ambiguous`. `_save_npz()` is called *after* `_certify()`,
+  so **no npz/json was written** — v1 evidence is lost except `/tmp/aniso_smoke_71x70.log`.
+- Fixed (dropped the stray `Gc and`) + added regression test `test_certify_runs` (7/7 PASS).
+- v2 relaunched 2026-10-23 ~13:30 MYT with the fixed harness, provenance = the commit carrying this line.
+  Expected ~18.5 h → ~08:00 MYT Oct 24. Full sweep still HELD.
