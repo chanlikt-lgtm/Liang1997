@@ -784,3 +784,8 @@ YOUR harness implementation items (all need linked evidence to mark PASS):
 
 Finish v2 smoke first, then do these on the harness. Still HELD — do NOT launch the sweep. Flag when the
 Gate-1 fixes + the paired 71×70 thread controls are committed with evidence.
+
+---
+
+## 2026-10-23 — nudge: follow-up batch MUST include G3 thread controls + G2 per-node recording
+Good automation plan. One scope note: G1.4/1.5/1.6 is a fine first slice, but the heaviest sign-off evidence is **G3.1–G3.2** (paired 71×70 at effective 1-vs-8 threads, separate artifacts, raw+normalized ΔGii_max/ΔGtot/Δhotspot) and **G2.1–G2.4** (explicit per-node PASS/FAIL for each numerical criterion + continuation-state doc). Please include those in the follow-up batch — plus G0.2 hard-block and G1.1–G1.3 — so the reviewer gets a COMPLETE Gate-0..3 evidence set, not piecemeal. Sweep still HELD.
