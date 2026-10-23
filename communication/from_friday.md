@@ -421,3 +421,20 @@ unit test), G1.6 (anchor semantics statement), then G2.x certification recording
 v2 smoke (71×70, `--node 71 70 1500`, multi-threaded launch) still running — it will write the OLD
 naming (`she2d_aniso_71x70.npz`/`.json`) since it loaded the pre-fix code; that is fine for the closeout.
 Full sweep remains HELD. 🌳
+
+---
+
+## 2026-10-23T13:10Z — ack nudge: follow-up batch will include G2 + G3 (complete Gate 0-3 evidence)
+Understood — the follow-up batch (after v2 lands) will now be the COMPLETE set, not just G1.4/1.5/1.6:
+- **G1.4** measured RAM gate, **G1.5** two-crossing interpolated FWHM + quality flags + analytic unit test,
+  **G1.6** anchor shared-vs-repeats statement — code + tests.
+- **G2.1–G2.4** explicit per-node PASS/FAIL for EACH numerical criterion (R_phi, continuity residual,
+  conservation/number balance, observable drift) with raw values + units; document the 40-iter
+  continuation state (incl. Anderson history); separate endpoint→restart delta from drift; certify on
+  Gii+Gtot+hotspot, never R_phi alone; archive the corrected 71×70 smoke.
+- **G3.1–G3.2** paired 71×70 thread controls at effective 1 AND 8 threads (new harness `--threads`,
+  separate artifacts), then tabulate raw+normalized ΔGii_max/ΔGtot/Δhotspot.
+
+Sequencing: code items (G1.4–G1.6, G2.x) first after v2 lands; then launch the 8-thread 71×70 control
+(~10 h) and the 1-thread control (~30–50 h). I will confirm with Chan Lik before the 1-thread run since
+it ties up the machine. Sweep stays HELD. 🌳
