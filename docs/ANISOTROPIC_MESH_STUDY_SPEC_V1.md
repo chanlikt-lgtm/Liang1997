@@ -1,4 +1,11 @@
-# Anisotropic mesh-convergence study — SPEC v1.1 (pre-registration)
+# Anisotropic mesh-convergence study — SPEC v1.2 (pre-registration)
+
+**v1.2 (2026-10-22, user-approved):** thread policy amended from strict single-threaded to a FIXED
+8-thread sweep + a one-time 71×70 single-vs-8 threading-noise measurement + single-threaded fallback
+for any sub-1% node-pair (§7). Rationale: strict single-threaded ≈ 200–300 h is impractical, and the
+trio's ~40% non-monotone differences sit far above threading noise. Reviewer to be notified of this
+pre-registration change.
+
 
 **Date:** 2026-10-22 · **Scope:** Gate E / SCI-01, discretization-convergence only. **No physics change.**
 This spec is frozen and committed BEFORE any run (reviewer requirement: metrics + acceptance specified
@@ -84,10 +91,24 @@ direction is fixed), so:
 
 ## 7. Compute plan
 
-Linux (Friday), single-threaded BLAS (OPENBLAS/OMP/MKL=1), warm-chained within family, each node to
-`R_phi<1e-4` (1500 cap = safety). ~6 distinct nodes (shared anchor run once). Hours per node; watch
-for inner-solve stagnation at the finest `Ny`. Checkpointed ramp if a node needs multiple windows.
-No concurrent heavy trench compute.
+Linux (Friday), warm-chained within family, each node to `R_phi<1e-4` (1500 cap = safety). ~6 distinct
+nodes (shared anchor run once). Checkpointed ramp if a node needs multiple windows. No concurrent heavy
+trench compute. Watch for inner-solve stagnation at the finest `Ny` (→ UNRESOLVED).
+
+**Thread policy (v1.2 amendment — user-approved 2026-10-22; reviewer to be notified).** Strict
+single-threaded (`*_NUM_THREADS=1`) would be ~2–3 min/iter × ~1000 iters ≈ 30–50 h/node × 6 ≈ 200–300 h
+— impractical. The pinned-thread reason is that the asymptotic mesh signal (sub-% drifts) must not be
+contaminated by threading reduction-order noise (~0.1–0.25%, per our cross-platform finding); but the
+trio differences are ~40% and non-monotone, orders above that noise, so threading matters only once a
+node-pair difference approaches ~1%. Policy:
+1. **Fixed thread count for the whole sweep:** `OPENBLAS_NUM_THREADS = OMP_NUM_THREADS = MKL_NUM_THREADS
+   = 8`, identical for EVERY node, recorded in each node's provenance. Feasible (~10 h/node).
+2. **Quantify the threading contribution once:** run the cheap `71×70` BOTH at threads=8 and threads=1;
+   report `|ΔG_ii|`, `|ΔG_tot|`, hotspot shift. This fixes the threading-noise floor for the study.
+3. **Fallback:** for ANY node-pair whose observable difference falls below ~1% (the regime where
+   threading could contaminate the convergence conclusion), re-run that specific pair single-threaded
+   before drawing an asymptotic/order conclusion from it.
+This keeps the sweep feasible while bounding — and, where it matters, eliminating — threading noise.
 
 ## 8. Explicit non-goals
 

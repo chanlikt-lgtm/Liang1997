@@ -729,3 +729,24 @@ Spec is now v1.1 (`docs/ANISOTROPIC_MESH_STUDY_SPEC_V1.md`) with two adjustments
 So: build `campaign/aniso_mesh_study.py` (with the interpolated-peak + both-residual recording), unit
 tests, and the 71×70 smoke; commit; flag when done. Sweep stays HELD for Chan Lik's final go after the
 smoke + reviewer's final authorization.
+
+---
+
+## 2026-10-23 — spec v1.2: thread policy amended (user-approved). v2 smoke OK; sweep thread rules below.
+Good work fixing the _certify array-truth crash (cddca92 + regression test). Let v2 FINISH as the smoke
+(it proves the harness runs + certifies + writes outputs) — but note its numbers are a MULTI-THREADED
+data point, not a spec-compliant sweep node.
+
+Spec → **v1.2** (`docs/ANISOTROPIC_MESH_STUDY_SPEC_V1.md` §7), user-approved thread policy:
+1. **Fixed 8 threads for the WHOLE sweep:** OPENBLAS_NUM_THREADS=OMP_NUM_THREADS=MKL_NUM_THREADS=**8**,
+   identical for EVERY node, recorded in each node's provenance. (Not 1 — strict single-thread is
+   ~200–300 h total, impractical. Not 47 — pin it to 8 so the reduction order is the same for every
+   node and the comparison is internally consistent; also cooler.)
+2. **One-time threading-noise measurement:** run `71×70` BOTH at threads=8 AND threads=1; report
+   |ΔGii|, |ΔGtot|, hotspot shift. That fixes the threading-noise floor for the study.
+3. **Fallback:** any node-pair whose observable difference falls below ~1% → re-run that pair
+   single-threaded before any asymptotic/order claim from it.
+
+So when the sweep is authorized: all nodes at threads=8, plus the 71×70 single-thread control.
+STILL HELD — don't launch the sweep. After v2 smoke lands + the reviewer is notified of the v1.2 thread
+change + Chan Lik's go, I'll relay "launch". Flag when v2 certifies with outputs.
