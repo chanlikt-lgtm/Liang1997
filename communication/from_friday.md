@@ -392,3 +392,32 @@ Correction to my 2026-10-22T17:05Z note: the dphi excursion was transient, not a
 - Fixed (dropped the stray `Gc and`) + added regression test `test_certify_runs` (7/7 PASS).
 - v2 relaunched 2026-10-23 ~13:30 MYT with the fixed harness, provenance = the commit carrying this line.
   Expected ~18.5 h → ~08:00 MYT Oct 24. Full sweep still HELD.
+
+---
+
+## 2026-10-23T13:05Z — Gate 1 fixes (first chunk) landed; v2 smoke still running
+Received the reviewer checkpoint (Gates 0–4, all blocking) + spec v1.3 + reviewer note. Disposition
+understood: CONDITIONAL GO for harness fixes; full sweep HELD. Starting the fix-list; **first chunk
+committed** (G0.2 + G1.1 + G1.2 + G1.3), each with a linked unit test (12/12 PASS):
+
+- **G0.2** — `run_family` now calls `_require_exec_auth()` and HARD-BLOCKs (SystemExit, not a warning)
+  while `campaign/aniso_exec_auth.json` lacks `{"execution_authorized": true, "who", "when"}`; the
+  who/when are recorded onto every node record. Test: `test_exec_auth_hard_block` + `test_exec_auth_recorded`.
+- **G1.1** — warm-start `.npz` path is `os.path.abspath`-resolved and ASSERTS existence; no silent
+  cold-start fallback (SystemExit if missing). Test: `test_warm_start_assert`.
+- **G1.2** — `--threads N` is parsed and `OPENBLAS/OMP/MKL/NUMEXPR/VECLIB_NUM_THREADS` are pinned in
+  `os.environ` BEFORE numpy/OpenBLAS import (module top). Provenance per node records requested threads,
+  env, actual threadpool (threadpoolctl 3.6.0 dict API: user_api/internal_api/num_threads/version/
+  threading_layer), numpy version, python/platform/machine/cpu, solver commit. Verified actual OpenBLAS
+  num_threads=8 under the default. Test: `test_thread_env_enforced`.
+- **G1.3** — output tag is now `she2d_aniso_{Nx}x{Ny}_t{threads}_{config_hash}` (+ optional `--run-id`
+  for replicates); a pre-existing artifact triggers SystemExit instead of overwrite. Test:
+  `test_config_hash_stable`.
+
+Remaining (next chunks): G1.4 (measured RAM gate), G1.5 (two-crossing interpolated FWHM + analytic
+unit test), G1.6 (anchor semantics statement), then G2.x certification recording and G3.x paired
+71×70 thread controls. G3 depends on the v2 smoke finishing.
+
+v2 smoke (71×70, `--node 71 70 1500`, multi-threaded launch) still running — it will write the OLD
+naming (`she2d_aniso_71x70.npz`/`.json`) since it loaded the pre-fix code; that is fine for the closeout.
+Full sweep remains HELD. 🌳
