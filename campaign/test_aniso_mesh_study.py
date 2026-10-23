@@ -160,17 +160,83 @@ def test_npz_schema_written():
 
 
 def test_certify_runs():
-    """_certify must not crash on a converged-looking node (regression: 'Gc and' array-truth bug)."""
-    obs = dict(R_phi=1e-5, Gii_interp=3.0)
+    """_certify must not crash on a converged-looking node (regression: 'Gc and' array-truth bug),
+    and must emit a full per-criterion PASS/FAIL report (G2.1)."""
+    obs = dict(R_phi=1e-5, Gii_interp=3.0, history_Gii=np.array([3.0, 3.0]),
+               history_Gtot=np.array([2.0, 2.0]), xy_Gii_max_interp=[0.4, 0.05],
+               h_rep=0.005, continuity_residual=1e-9, relative_number_balance=1e-5)
     Ny, Nx = 70, 71
     x = np.linspace(0.0, 0.8, Nx); y = np.linspace(0.0, 0.7, Ny)
     Gii = np.full((Ny, Nx), 3.0)
     hist = [dict(Gii_max_cm3s=3.0 + 1e-6 * (k % 3), G_tot_cm1s=2.0, max_dphi_V=1e-5) for k in range(40)]
     cont = dict(history=hist, Gii=Gii, x=x, y=y)
-    certified, status, detail, drift = aniso._certify(obs, cont)
+    certified, status, detail, report = aniso._certify(obs, cont)
     assert status in ("CERTIFIED", "UNRESOLVED")
-    assert isinstance(drift["cont_R_phi_band"], list) and len(drift["cont_R_phi_band"]) == 2
-    assert all(np.isfinite(float(v)) for v in drift["cont_R_phi_band"])
+    assert isinstance(report["cont_R_phi_band"], list) and len(report["cont_R_phi_band"]) == 2
+    assert all(np.isfinite(float(v)) for v in report["cont_R_phi_band"])
+    # G2.1: explicit PASS/FAIL for every numerical criterion, with raw value + unit + gate
+    assert len(report["criteria"]) == 7
+    names = {c["name"] for c in report["criteria"]}
+    assert names == {"R_phi", "continuity_residual", "number_balance", "drift_raw_Gii",
+                     "drift_interp_Gii", "drift_G_tot", "hotspot_drift"}
+    for c in report["criteria"]:
+        assert isinstance(c["passed"], bool) and "value" in c and "unit" in c and "gate" in c
+    # G2.2: restart delta and continuation-state doc are present
+    assert "restart_delta_raw_Gii" in report and "continuation_state" in report
+
+
+def test_certify_not_rphi_alone():
+    """G2.3: a node that passes R_phi but fails another criterion must NOT be CERTIFIED."""
+    obs = dict(R_phi=1e-6, Gii_interp=3.0, history_Gii=np.array([3.0, 3.0]),
+               history_Gtot=np.array([2.0, 2.0]), xy_Gii_max_interp=[0.4, 0.05],
+               h_rep=0.005, continuity_residual=1e-3,   # FAILS the 1e-6 continuity gate
+               relative_number_balance=1e-5)
+    Ny, Nx = 70, 71
+    x = np.linspace(0.0, 0.8, Nx); y = np.linspace(0.0, 0.7, Ny)
+    Gii = np.full((Ny, Nx), 3.0)
+    hist = [dict(Gii_max_cm3s=3.0, G_tot_cm1s=2.0, max_dphi_V=1e-6) for _ in range(40)]
+    cont = dict(history=hist, Gii=Gii, x=x, y=y)
+    certified, status, detail, report = aniso._certify(obs, cont)
+    assert status == "UNRESOLVED" and certified is False
+    ccont = [c for c in report["criteria"] if c["name"] == "continuity_residual"][0]
+    assert ccont["passed"] is False
+
+
+def test_fwhm_2cross_gaussian():
+    """G1.5: two-crossing FWHM recovers 2.3548*sigma for a well-resolved Gaussian within 5%."""
+    x = np.linspace(0.0, 1.0, 201)
+    x0, sigma = 0.5, 0.08
+    profile = np.exp(-((x - x0) ** 2) / (2 * sigma ** 2))
+    info = aniso._profile_fwhm_2cross(profile, x)
+    expected = 2.3548200450309493 * sigma
+    assert info["fwhm"] is not None
+    assert abs(info["fwhm"] - expected) / expected < 0.05
+    assert not info["boundary_truncated"] and not info["unresolved"] and not info["multi_peak"]
+    assert x[0] <= info["left_x"] < info["right_x"] <= x[-1]
+
+
+def test_fwhm_2cross_flags():
+    """G1.5: quality flags -- boundary-truncated, multi-peak, and unresolved profiles."""
+    x = np.linspace(0.0, 1.0, 101)
+    # boundary-truncated: peak at the left edge, monotonically decreasing rightward
+    mono = np.exp(-((x - x[0]) ** 2) / (2 * 0.05 ** 2))
+    assert aniso._profile_fwhm_2cross(mono, x)["boundary_truncated"]
+    # multi-peak: two separated Gaussians above half-max
+    two = (np.exp(-((x - 0.3) ** 2) / (2 * 0.04 ** 2))
+           + np.exp(-((x - 0.7) ** 2) / (2 * 0.04 ** 2)))
+    assert aniso._profile_fwhm_2cross(two, x)["multi_peak"]
+    # unresolved: a single-cell spike
+    spike = np.zeros_like(x); spike[50] = 1.0
+    assert aniso._profile_fwhm_2cross(spike, x)["unresolved"]
+
+
+def test_resource_gate():
+    """G1.4: resource gate blocks an infeasible case and approves a feasible one."""
+    ok, d_ok = aniso.resource_gate(1e8, (141, 70), (200, 70))   # ~142 MB predicted -> fits
+    assert ok is True and d_ok["approved"] is True
+    no, d_no = aniso.resource_gate(1e15, (141, 70), (200, 70))  # absurd -> must block
+    assert no is False and d_no["approved"] is False
+    assert "reason" in d_ok and "reason" in d_no and "cell_ratio" in d_ok
 
 
 def test_config_hash_stable():

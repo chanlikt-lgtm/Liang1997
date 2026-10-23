@@ -1,4 +1,35 @@
-# Anisotropic mesh-convergence study — SPEC v1.3 (pre-registration)
+# Anisotropic mesh-convergence study — SPEC v1.4 (pre-registration)
+
+**v1.4 (2026-10-24):** Phase-A gate-evidence implementation — harness code only, **no physics / solver /
+mesh-law change**. Pre-registered additions (before the thread controls / sweep run):
+
+1. **G1.4 RAM gate** — the 4th level runs iff (a) the 3rd level is CERTIFIED and (b) the predicted
+   4th-level peak working set fits available physical RAM with no swap-thrash:
+   `predicted_4th_rss = measured_3rd_peak_rss × (Nx4·Ny4)/(Nx3·Ny3)`, approved iff
+   `predicted_4th_rss × 1.5 < MemAvailable`. Resource/convergence-based only (never outcome-based).
+2. **G1.5 hotspot FWHM** — physical width from TWO interpolated (linear) half-max crossings, with
+   explicit quality flags: `boundary_truncated` (profile does not return to half-max on ≥1 side),
+   `unresolved` (FWHM ≤ one peak cell), `multi_peak` (≥2 local maxima above half-max).
+3. **G1.6 anchor semantics** — `(100,70)` is computed **independently once per family** (X warm-chain
+   from 71×70; Y from 100×58), retained as **separate family-tagged artifacts**, and compared as a
+   reproducibility / warm-path cross-check (`compare_anchor`). It is NOT one shared computation.
+4. **G2.1/G2.3 full certification** — a node is CERTIFIED only if EVERY criterion below passes
+   (never `R_phi` alone):
+
+   | criterion | gate | unit | normalization |
+   |---|---|---|---|
+   | `R_phi` | < 1e-4 | V | absolute |
+   | `continuity_residual` | < 1e-6 | 1 | scaled by max(\|bs\|,1) |
+   | `number_balance` | < 1e-2 | 1 | \|balance\|/scale (absolute) |
+   | `drift_raw_Gii` / `drift_interp_Gii` / `drift_G_tot` | < 0.5% | 1 | 40-iter continuation spread / endpoint delta |
+   | `hotspot_drift` | < 0.5 | cell | \|cont−main hotspot\| / h_rep |
+
+5. **G2.2 restart diagnostic** — the endpoint→restart delta (a fresh `solve_coupled` call resets the
+   Anderson history) is reported SEPARATELY from the subsequent 40-iter continuation drift; the
+   continuation state (warm-start source, preconditioner reuse, `used_x0`) is recorded per node.
+6. **G2.4 smoke archive** — the corrected 71×70 smoke log, `.json`/`.npz`, convergence trace, and
+   certification decision are committed (`campaign/logs/`, `data/she2d_aniso_71x70.*`,
+   `campaign/ANISO_SMOKE_71x70_RESULT.md`).
 
 **v1.3 (2026-10-23):** adopts the reviewer gating checkpoint
 (`docs/ANISO_STUDY_REVIEW_CHECKPOINT_20261023.md`, Gates 0–4, all blocking before full-sweep

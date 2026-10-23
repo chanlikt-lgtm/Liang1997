@@ -438,3 +438,25 @@ Understood — the follow-up batch (after v2 lands) will now be the COMPLETE set
 Sequencing: code items (G1.4–G1.6, G2.x) first after v2 lands; then launch the 8-thread 71×70 control
 (~10 h) and the 1-thread control (~30–50 h). I will confirm with Chan Lik before the 1-thread run since
 it ties up the machine. Sweep stays HELD. 🌳
+
+---
+
+## 2026-10-24T00:00Z — Phase-A gate evidence: G1.4/G1.5/G1.6 + G2.1-G2.4 code landed (sweep still HELD)
+- **v2 smoke** landed 2026-10-23 23:53 MYT (early): 71×70 CERTIFIED, R_phi=9.261e-5 < 1e-4, 40-iter
+  drift raw_Gii 2.823e-5 / interp 1.007e-5 / G_tot 2.216e-5 (all < 0.5%). Evidence committed 6b051d4
+  (npz + json + `campaign/ANISO_SMOKE_71x70_RESULT.md`).
+- **G1.4** measured RAM gate: 4th level iff 3rd certified AND `predicted_4th_rss = peak_rss_3rd ×
+  (Nx4·Ny4)/(Nx3·Ny3)` fits MemAvailable ×1.5. `resource_gate()` + unit tests.
+- **G1.5** hotspot FWHM: two interpolated (linear) half-max crossings + quality flags
+  boundary_truncated / unresolved / multi_peak. `_profile_fwhm_2cross()` + analytic-Gaussian unit tests.
+- **G1.6** anchor (100,70) = independent once-per-family runs (X warm-chain from 71×70, Y from 100×58),
+  separate family-tagged artifacts, `compare_anchor()` tabulates the reproducibility cross-check.
+- **G2.1/G2.3** full certification: 7 explicit per-criterion PASS/FAIL (R_phi, continuity_residual,
+  number_balance, drift raw/interp Gii, drift G_tot, hotspot_drift) — CERTIFIED only if ALL pass, never
+  R_phi alone. Raw values + units + normalization recorded per node.
+- **G2.2** endpoint→restart delta (fresh Anderson reset) reported separately from 40-iter continuation
+  drift; continuation state (warm source, preconditioner reuse, used_x0) recorded per node.
+- **G2.4** smoke log archived to `campaign/logs/aniso_smoke_71x70_v2.log`.
+- Spec amended to **v1.4** (`docs/ANISOTROPIC_MESH_STUDY_SPEC_V1.md`). 16/16 unit tests pass.
+- **Next:** launch G3.1 8-thread 71×70 control, then G3.2 1-thread control (Chan Lik AUTHORIZED the
+  1-thread run — no further pause needed). Full sweep stays HELD pending reviewer GO. 🌳
