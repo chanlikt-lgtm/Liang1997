@@ -1,0 +1,46 @@
+{
+  "Nx": 71,
+  "Ny": 70,
+  "family": null,
+  "direction": null,
+  "level": null,
+  "warm_source": "",
+  "status": "CERTIFIED",
+  "certified": true,
+  "certification": "R_phi=9.261e-05 <tol; drift raw_Gii=2.823e-05 interp_Gii=1.007e-05 G_tot=2.216e-05 <0.5%%",
+  "git_commit": "cddca92",
+  "git_dirty": "clean",
+  "H_hash": "b4319bb03303",
+  "drain_dx": 0.003803151376701064,
+  "surface_dy": 0.0003429017303743266,
+  "dy_depth": 0.0037375668764014595,
+  "ref_depth": 0.02,
+  "Gii_max": 3.0774778412125066e+25,
+  "Gii_interp": 2.690411673465976e+25,
+  "xy_Gii_max": [
+    0.5893835478389261,
+    0.0
+  ],
+  "xy_Gii_max_interp": [
+    0.5891224249044011,
+    0.0003429017303743266
+  ],
+  "avalanche_y_fwhm": 0.002477353235138752,
+  "G_tot": 91834116468820.11,
+  "drain_current_A_per_um": 0.00029969943713332173,
+  "R_phi": 9.261080123534882e-05,
+  "dGii_tail": 5.509217068709267e-06,
+  "relative_number_balance": 2.0393901197709413e-05,
+  "continuity_residual": 3.437450178101798e-09,
+  "n_iter": 574,
+  "drift_raw_Gii": 2.8231236302846307e-05,
+  "drift_interp_Gii": 1.0065356940677525e-05,
+  "drift_G_tot": 2.215846710600767e-05,
+  "cont_R_phi_band": [
+    9.261080123534882e-05,
+    7.051040413763587e-07
+  ],
+  "cont_n_iter": 40,
+  "npz": "she2d_aniso_71x70.npz",
+  "json_path": "she2d_aniso_71x70.json"
+}
