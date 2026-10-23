@@ -676,6 +676,23 @@ def compare_anchor(outdir=None, families=("X", "Y")):
     )
 
 
+def _parse_node_rest(rest):
+    """Parse the trailing args of `--node Nx Ny ...` -> (max_outer, run_id). Skips the --threads
+    value token (already consumed at import by _threads_from_argv)."""
+    maxo, run_id = MAX_OUTER_CAP, None
+    i = 0
+    while i < len(rest):
+        tok = rest[i]
+        if tok == "--threads" and i + 1 < len(rest):
+            i += 2; continue
+        if tok.isdigit():
+            maxo = int(tok)
+        elif tok == "--run-id" and i + 1 < len(rest):
+            run_id = rest[i + 1]; i += 1
+        i += 1
+    return maxo, run_id
+
+
 if __name__ == "__main__":
     argv = sys.argv[1:]
     if not argv or argv[0] == "--list":
@@ -688,15 +705,7 @@ if __name__ == "__main__":
         sys.exit(0)
     if argv[0] == "--node":
         Nx, Ny = int(argv[1]), int(argv[2])
-        rest = argv[3:]
-        maxo, run_id = MAX_OUTER_CAP, None
-        i = 0
-        while i < len(rest):
-            if rest[i].isdigit():
-                maxo = int(rest[i])
-            elif rest[i] == "--run-id" and i + 1 < len(rest):
-                run_id = rest[i + 1]; i += 1
-            i += 1
+        maxo, run_id = _parse_node_rest(argv[3:])
         run_node(Nx, Ny, max_outer=maxo, run_id=run_id)
     elif argv[0] == "--family":
         name = argv[1].upper()

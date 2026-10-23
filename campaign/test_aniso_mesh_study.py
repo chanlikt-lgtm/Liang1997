@@ -239,6 +239,14 @@ def test_resource_gate():
     assert "reason" in d_ok and "reason" in d_no and "cell_ratio" in d_ok
 
 
+def test_parse_node_rest_threads():
+    """Regression: `--threads N` after `--node` must NOT corrupt the max_outer parse (G3 launch path)."""
+    assert aniso._parse_node_rest(["1500"]) == (1500, None)
+    assert aniso._parse_node_rest(["1500", "--threads", "8"]) == (1500, None)
+    assert aniso._parse_node_rest(["1500", "--threads", "1"]) == (1500, None)
+    assert aniso._parse_node_rest(["300", "--run-id", "rep2", "--threads", "1"]) == (300, "rep2")
+
+
 def test_config_hash_stable():
     """G1.3: config hash is deterministic (same frozen config -> same 12-char hash)."""
     h1, h2 = aniso._config_hash(), aniso._config_hash()
