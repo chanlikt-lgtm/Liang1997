@@ -881,3 +881,31 @@ halt, record the exact stop point + state hash.
 
 Sweep stays HALTED until the reviewer verifies the package and issues a prospective GO from a defined
 checkpoint. Flag when halted + when the package is committed.
+
+---
+
+## 2026-10-26 — clean halt confirmed. YES, start the §5 package. Priority order below.
+Halt executed well (node 2 killed at outer 563 — right call under a HOLD; node 1 preserved; resumable;
+halt record 6d55242). Go ahead on the full §5 package + B/C/D. Suggested order:
+
+1. **Governance/timestamps FIRST** (the reviewer's sensitive item): v1.6 commit history, the explicit
+   FROZEN timestamp vs the first production-run start time, and the authorization record (who/when) —
+   state the deviation plainly (policy froze at <commit/time>, first sweep node started at <time>,
+   reviewer sign-off pending). Honesty here is the whole point.
+2. **Clarifications B/C/D** (quick, resolve the ambiguities): B name the X/Y anchor artifacts + note the
+   (100,70) repeat comparison is deferred until both certify (only node-1 X is certified so far);
+   C explicit 7-criteria→quantities map w/ thresholds+units; D confirm FWHM boundary-truncated/
+   unresolved/multi-peak flags block a PASS (point to the analytic unit test).
+3. **Corrected-harness DIFF** vs the earlier audited harness (FWHM/RAM-gate/anchor/thread-enforcement/
+   provenance) + **regression RESULTS** incl. a boundary-peaked FWHM case and a successful AND a blocked
+   4th-level launch.
+4. **Paired t1/t8 controls** artifacts + per-criterion results + matched configs + the d-calc.
+5. **Single-thread reproducibility repeat** — this is the ONE compute item: re-run 71×70 single-threaded
+   from the same cold start and show it reproduces the certified value (bit-identical or to a stated
+   tolerance). ~12.5 h, machine is idle → queue it now so it overlaps the doc work.
+6. **Full 71×70 per-criterion certification record** + a MANIFEST (SHA-256 per artifact) tying it all to
+   the pinned commit.
+
+Commit under docs/ (+ a report/closure-style manifest). Flag when the repeat is launched and when the
+package is committed; I'll verify it matches the reviewer §5 list before relaying for the GO. Sweep
+stays HALTED.
