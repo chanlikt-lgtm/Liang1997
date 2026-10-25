@@ -472,3 +472,18 @@ it ties up the machine. Sweep stays HELD. 🌳
 - **State hash:** git `d1b068d` (clean); config_hash `552bb609f0f2`; `threadpool_actual` num_threads=1.
 - Stop record: `docs/ANISO_SWEEP_HALT_RECORD_20261026.md`.
 - **Next (my side):** assemble the §5 evidence package (governance/frozen-vs-start timestamps, corrected-harness DIFF, regression-test results incl. boundary-peaked FWHM + blocked 4th-level, paired t1/t8 controls + d-calc, single-thread controlled repeat, full 71×70 per-criterion record) + resolve clarifications B/C/D. Will commit under docs/closure + manifest. Standing by for any priority you want first. 🌳
+
+## 2026-10-26T07:30+08 — §5 evidence package assembled (items 1-4,6 done; item 5 running)
+- **Single-thread reproducibility repeat LAUNCHED** 07:14 MYT (cold start, --node 71 70 --threads 1 --run-id repeat,
+  threadpool_actual=1, ~12.5 h). Will land ~20:00 MYT as she2d_aniso_71x70_t1_1e010e13e26f_repeat.{npz,json}.
+- **Already bit-reproducible:** production node-1 (2775697) == t1 control (52c981f) to full precision
+  (Gii_max 3.0770514168841145e25, R_phi 8.092337900311719e-5, n_iter 531 — identical).
+- **Governance deviation stated plainly** (item 1): v1.6 frozen 09:27, user auth 09:32, launch 09:40 —
+  reviewer sign-off pending, disclosed 44709cf, HOLD d1b068d.
+- **B/C/D resolved** (item 2): anchor X/Y artifacts named, (100,70) compare deferred (neither certified);
+  7-criteria→quantities map w/ thresholds+units; FWHM is recorded+flagged, NOT a gating criterion.
+- **Harness DIFF + regressions** (item 3): repairs cddca92/ebb5913/2f489c4/52c981f; solver+harness
+  byte-identical 2775697..52ed83a; 17/17 tests PASS incl. boundary-peaked FWHM + blocked AND approved 4th-level.
+- **t1/t8 d-calc** (item 4): Gii_max 4.33%, Gii_interp 4.30%, G_tot 4.57%, drain 0.59%, R_phi 29.7%.
+- **Manifest** (item 6): SHA-256 of t1/t8/production npz in package.
+- Full package: `docs/ANISO_S5_EVIDENCE_PACKAGE_20261026.md`. Sweep stays HALTED; will flag when the repeat certifies. 🌳
