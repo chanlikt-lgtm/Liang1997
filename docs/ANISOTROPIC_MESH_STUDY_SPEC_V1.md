@@ -1,35 +1,17 @@
-# Anisotropic mesh-convergence study — SPEC v1.4 (pre-registration)
+# Anisotropic mesh-convergence study — SPEC v1.5 (pre-registration)
 
-**v1.4 (2026-10-24):** Phase-A gate-evidence implementation — harness code only, **no physics / solver /
-mesh-law change**. Pre-registered additions (before the thread controls / sweep run):
+**v1.5 (2026-10-25) — thread policy FINALIZED by the G3.2 measurement (not post-hoc tuning; this is
+the decision G3.2 was pre-registered to make).** The 71×70 1-vs-8-thread control
+(`campaign/ANISO_THREAD_CONTROL_G3_RESULT.md`) measured **~4.3% threading sensitivity on ALL Gii-family
+observables** — Gii_max 4.33%, Gii_interp 4.30%, **G_tot 4.57%** — a near-uniform ~4.4% amplitude scale
+(ratio 0.955±0.006, same peak cell), while well-conditioned quantities move <0.6% (Te_max 0.25%,
+drain-I 0.59%, hotspot x/y 0, FWHM ~0.1%). This is ~17× the 0.25% planning assumption. **Decision
+(user-approved 2026-10-25):** keep the FIXED-8-THREAD sweep for feasibility, but treat the Gii-family
+observables as **threading-limited at ±4.3% (71×70-measured; 71×70-only, may be worse on finer meshes
+per G3.5)**. See §7 for the finalized rules. v1.3/v1.4/v1.2 history retained below.
 
-1. **G1.4 RAM gate** — the 4th level runs iff (a) the 3rd level is CERTIFIED and (b) the predicted
-   4th-level peak working set fits available physical RAM with no swap-thrash:
-   `predicted_4th_rss = measured_3rd_peak_rss × (Nx4·Ny4)/(Nx3·Ny3)`, approved iff
-   `predicted_4th_rss × 1.5 < MemAvailable`. Resource/convergence-based only (never outcome-based).
-2. **G1.5 hotspot FWHM** — physical width from TWO interpolated (linear) half-max crossings, with
-   explicit quality flags: `boundary_truncated` (profile does not return to half-max on ≥1 side),
-   `unresolved` (FWHM ≤ one peak cell), `multi_peak` (≥2 local maxima above half-max).
-3. **G1.6 anchor semantics** — `(100,70)` is computed **independently once per family** (X warm-chain
-   from 71×70; Y from 100×58), retained as **separate family-tagged artifacts**, and compared as a
-   reproducibility / warm-path cross-check (`compare_anchor`). It is NOT one shared computation.
-4. **G2.1/G2.3 full certification** — a node is CERTIFIED only if EVERY criterion below passes
-   (never `R_phi` alone):
-
-   | criterion | gate | unit | normalization |
-   |---|---|---|---|
-   | `R_phi` | < 1e-4 | V | absolute |
-   | `continuity_residual` | < 1e-6 | 1 | scaled by max(\|bs\|,1) |
-   | `number_balance` | < 1e-2 | 1 | \|balance\|/scale (absolute) |
-   | `drift_raw_Gii` / `drift_interp_Gii` / `drift_G_tot` | < 0.5% | 1 | 40-iter continuation spread / endpoint delta |
-   | `hotspot_drift` | < 0.5 | cell | \|cont−main hotspot\| / h_rep |
-
-5. **G2.2 restart diagnostic** — the endpoint→restart delta (a fresh `solve_coupled` call resets the
-   Anderson history) is reported SEPARATELY from the subsequent 40-iter continuation drift; the
-   continuation state (warm-start source, preconditioner reuse, `used_x0`) is recorded per node.
-6. **G2.4 smoke archive** — the corrected 71×70 smoke log, `.json`/`.npz`, convergence trace, and
-   certification decision are committed (`campaign/logs/`, `data/she2d_aniso_71x70.*`,
-   `campaign/ANISO_SMOKE_71x70_RESULT.md`).
+(Original header text from v1.3 follows.)
+# Anisotropic mesh-convergence study — SPEC v1.3 (pre-registration)
 
 **v1.3 (2026-10-23):** adopts the reviewer gating checkpoint
 (`docs/ANISO_STUDY_REVIEW_CHECKPOINT_20261023.md`, Gates 0–4, all blocking before full-sweep
@@ -161,6 +143,23 @@ node-pair difference approaches ~1%. Policy:
    single-threaded** and compare the inferred mesh trend before drawing the conclusion (G3.4).
 This keeps the sweep feasible while controlling threading exactly where a convergence conclusion depends
 on it — without overclaiming a universal noise bound.
+
+**v1.5 FINALIZED policy (after the G3.2 measurement returned ~4.3%):**
+1. **Sweep runs at fixed 8 threads** (feasibility, ~10 h/node), identical config per node, recorded.
+2. **Gii-family observables (Gii_max, Gii_interp, G_tot) are reported with an explicit ±4.3%
+   threading-limitation flag.** No quantitative peak/integrated-Gii *amplitude* convergence conclusion
+   is drawn from the 8-thread sweep alone — that question is threading-limited at 8 threads.
+3. **Quantitative convergence conclusions come from the well-conditioned observables** — hotspot
+   location (µm), avalanche FWHM (µm), drain current, Te_max — which are threading-robust (<0.6%). The
+   headline grid-feature test (does the hotspot depth stop tracking Δy?) rests on these.
+4. **Mandatory single-thread resolution (G3.4):** for ANY observable used in a near-convergence /
+   asymptotic-order claim where an adjacent node-pair relative difference `d=2|a−b|/(|a|+|b|)` is of
+   order the threading noise (i.e. `< ~4.3%` for Gii-family, `< 0.01` for the well-conditioned set),
+   BOTH members of that pair are re-run single-threaded before the claim. In practice a definitive
+   peak-Gii convergence statement requires single-thread for the decision-critical pairs; the 8-thread
+   sweep provides the map and the well-conditioned conclusions.
+5. The ±4.3% is the **71×70 figure only**; finer meshes are not assumed to share it and are re-measured
+   if a conclusion depends on it.
 
 ## 8. Explicit non-goals
 

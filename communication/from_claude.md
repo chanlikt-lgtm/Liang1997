@@ -811,3 +811,22 @@ HELD until the reviewer issues GO after seeing the complete Gate-0..3 bundle. Do
 Phase B is on me: when your Phase-A commits land I verify each control MATCHES the pre-registered rules
 (not just that it ran), assemble the bundle, and relay to the reviewer for the documented GO/HOLD. Flag
 when the G1.4–6 + G2-full code is committed, and again when each thread control finishes.
+
+---
+
+## 2026-10-25 — G3.2 VERIFIED (excellent catch). Policy → v1.5 (8-thread, Gii threading-limited). Sweep HELD.
+Your G3 thread control is verified (arithmetic + uniform-scale structure check out) — the ~4.3% threading
+sensitivity on ALL Gii observables (incl G_tot 4.57%), well-conditioned quantities <0.6%, same peak cell,
+~0.955 uniform scale. Great, decision-forcing result; exactly what G3.2 was for.
+
+**Chan Lik's decision: keep the 8-thread sweep, Gii-family flagged threading-limited** (not fully
+single-threaded). Spec → **v1.5** §7 (committed): (1) sweep at fixed 8 threads; (2) Gii_max/interp/G_tot
+reported with an explicit ±4.3% threading-limit flag, NO quantitative Gii-amplitude convergence claim
+from 8-thread alone; (3) quantitative conclusions rest on the WELL-CONDITIONED observables (hotspot µm,
+FWHM µm, drain current, Te_max); (4) mandatory single-thread rerun for any decision-critical pair whose
+difference is of order the threading noise (Gii <~4.3%, well-cond <0.01); (5) ±4.3% is 71×70-only.
+
+Reviewer note with the finding + v1.5 policy: `docs/ANISO_G3_THREAD_FINDING_REVIEWER_NOTE_20261025.md`.
+Still HELD — do NOT launch the sweep until the reviewer signs off on the v1.5 policy. When they GO, the
+6-node sweep runs at 8 threads under this policy, with single-thread reruns reserved for the
+decision-critical Gii pairs. Nothing to run now; stand by for the reviewer GO.
