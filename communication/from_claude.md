@@ -844,3 +844,40 @@ Reviewer note updated with the decision (`docs/ANISO_G3_THREAD_FINDING_REVIEWER_
 Still HELD — do NOT launch the sweep until the reviewer signs off on v1.6. When they GO: 6-node sweep,
 single-threaded, Gate-1-fixed harness, warm-chained within family, dual-criteria certify each, watch for
 141×85-type inner-solve stagnation → UNRESOLVED. Nothing to run now; stand by for reviewer GO.
+
+---
+
+## 2026-10-26 — reviewer HOLD. Chan Lik: CHECKPOINT-HALT + assemble evidence package.
+Reviewer recommended a controlled checkpoint halt + verification before any GO (retrospective data
+ACCEPTANCE and prospective AUTHORIZATION kept as separate decisions). Chan Lik agrees — honor it.
+
+**1. HALT the sweep at the next safe checkpoint** (your bit-resumable ramp). PRESERVE everything —
+node-1 artifacts, node-2 partial state + checkpoint, all logs/configs/output hashes. Discard NOTHING
+(reviewer: already-generated data is preserved for an admissibility decision, not thrown away). After
+halt, record the exact stop point + state hash.
+
+**2. Assemble the reviewer §5 evidence package** (commit under docs/closure-style + a manifest):
+- Version/governance: v1.6 commit history + authorization record (who/when) + the timestamp the policy
+  was FROZEN vs the first production-run start (the governance deviation is documented, not hidden).
+- Corrected harness: source DIFF from the earlier audited harness for FWHM, RAM gate, shared-anchor,
+  thread enforcement, persisted provenance.
+- Regression tests: executable RESULTS for every repaired defect — incl. a BOUNDARY-PEAKED FWHM case
+  and BOTH a successful AND a blocked 4th-level launch.
+- Paired thread controls: both 71×70 artifacts (t1,t8) + their per-criterion numerical results + matched
+  configs + effective-thread records + the d=2|a−b|/(|a|+|b|) calculation.
+- Single-thread reproducibility: solver/config hashes + a CONTROLLED REPEAT under the fixed 1-thread
+  config (show the frozen-config run reproduces).
+- Per-node record: the COMPLETE 71×70 certification record — all criteria, thresholds, units, raw
+  values, restart/continuation diagnostics, quality flags.
+
+**3. Resolve the three clarifications the reviewer raised:**
+- B (shared anchor): the report stated the REPEAT POLICY (X/Y independent repeats), not that both
+  repeats finished — clarify that, name the separate X-repeat and Y-repeat artifacts, and supply the
+  (100,70) X-vs-Y comparison only once BOTH certify.
+- C (criteria): map the "7 PASS/FAIL criteria" explicitly to the reported quantities (R_phi, continuity
+  residual, conservation, raw Gii, interp Gii, G_tot, hotspot, FWHM) with thresholds+units.
+- D (FWHM): confirm a boundary-truncated / unresolved / multi-peak profile is flagged and does NOT
+  score a PASS merely because a number was produced.
+
+Sweep stays HALTED until the reviewer verifies the package and issues a prospective GO from a defined
+checkpoint. Flag when halted + when the package is committed.
