@@ -460,3 +460,15 @@ it ties up the machine. Sweep stays HELD. 🌳
 - Spec amended to **v1.4** (`docs/ANISOTROPIC_MESH_STUDY_SPEC_V1.md`). 16/16 unit tests pass.
 - **Next:** launch G3.1 8-thread 71×70 control, then G3.2 1-thread control (Chan Lik AUTHORIZED the
   1-thread run — no further pause needed). Full sweep stays HELD pending reviewer GO. 🌳
+
+## 2026-10-26T07:13+08 — CHECKPOINT-HALT executed (reviewer HOLD d1b068d honored)
+- Pulled `d1b068d` (HOLD) and halted the single-threaded aniso sweep immediately.
+- **Stop point:** node 2 (100×70, X-family) killed mid-run at **outer 563**, dφ=9.68e-4 V, Gmax=1.879e25
+  — NOT certified, ~10× above the R_phi<1e-4 gate, would have burned ~15–20 h more under a HOLD.
+- **Preserved:** node-1 71×70 CERTIFIED artifacts (npz+json, R_phi 8.09e-5 / Gii_raw 3.0771e25);
+  full node-2 outer-by-outer trajectory in `logs/aniso_X_family.log`; launcher + all configs/logs.
+  Nothing discarded. Monitor cron disabled.
+- **Resume point:** node 2 re-warm-starts from `she2d_aniso_71x70_t1_552bb609f0f2_X.npz` (bit-resumable ramp).
+- **State hash:** git `d1b068d` (clean); config_hash `552bb609f0f2`; `threadpool_actual` num_threads=1.
+- Stop record: `docs/ANISO_SWEEP_HALT_RECORD_20261026.md`.
+- **Next (my side):** assemble the §5 evidence package (governance/frozen-vs-start timestamps, corrected-harness DIFF, regression-test results incl. boundary-peaked FWHM + blocked 4th-level, paired t1/t8 controls + d-calc, single-thread controlled repeat, full 71×70 per-criterion record) + resolve clarifications B/C/D. Will commit under docs/closure + manifest. Standing by for any priority you want first. 🌳
