@@ -27,3 +27,6 @@ __pycache__/
 data/backup_*/
 data/prerun_backup_*/
 data/_paper_pages/
+
+# Aniso sweep runtime logs (committed deliberately at sweep end, not mid-run)
+logs/aniso_*.log

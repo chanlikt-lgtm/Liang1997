@@ -1,0 +1,8 @@
+{
+  "execution_authorized": true,
+  "who": "Chan Lik Tan (user, Telegram)",
+  "when": "2026-10-25T09:32:00+08:00",
+  "policy": "spec v1.6 single-threaded sweep (OPENBLAS/OMP/MKL_NUM_THREADS=1)",
+  "scope": "aniso mesh study X-family (Nx 71/100/141 @ Ny=70) + Y-family (Ny 58/70/85 @ Nx=100), 4th level via resource/convergence gate",
+  "note": "Gates 0-3 evidence committed; Gate 4 rules frozen (v1.6). Reviewer v1.6 sign-off per last relay commit dd56686."
+}
