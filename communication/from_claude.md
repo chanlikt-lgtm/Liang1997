@@ -830,3 +830,17 @@ Reviewer note with the finding + v1.5 policy: `docs/ANISO_G3_THREAD_FINDING_REVI
 Still HELD — do NOT launch the sweep until the reviewer signs off on the v1.5 policy. When they GO, the
 6-node sweep runs at 8 threads under this policy, with single-thread reruns reserved for the
 decision-critical Gii pairs. Nothing to run now; stand by for the reviewer GO.
+
+---
+
+## 2026-10-25 — REVERT to single-threaded (spec v1.6). Supersedes the 8-thread decision.
+Chan Lik reconsidered after the ~4.3% finding: the full sweep is now **SINGLE-THREADED** — every node at
+OPENBLAS_NUM_THREADS=OMP_NUM_THREADS=MKL_NUM_THREADS=1. This removes the ±4.3% Gii threading limit
+entirely (peak + integrated Gii become clean), so the peak-Gii amplitude convergence question is
+answerable, not just geometry. Spec → **v1.6** (§7/header). Cost ~12–50 h/node (~a week); the 71×70
+1-thread control was ~12.5 h. No concurrent heavy compute.
+
+Reviewer note updated with the decision (`docs/ANISO_G3_THREAD_FINDING_REVIEWER_NOTE_20261025.md`).
+Still HELD — do NOT launch the sweep until the reviewer signs off on v1.6. When they GO: 6-node sweep,
+single-threaded, Gate-1-fixed harness, warm-chained within family, dual-criteria certify each, watch for
+141×85-type inner-solve stagnation → UNRESOLVED. Nothing to run now; stand by for reviewer GO.

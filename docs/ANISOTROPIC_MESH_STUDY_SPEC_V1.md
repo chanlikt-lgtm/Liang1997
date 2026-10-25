@@ -1,3 +1,17 @@
+# Anisotropic mesh-convergence study — SPEC v1.6 (pre-registration)
+
+**v1.6 (2026-10-25) — SUPERSEDES v1.5: full sweep is SINGLE-THREADED.** After reviewing *why* G3.2
+returned ~4.3% (G_ii is near-null-space ill-conditioned, so the 8-thread reduction-order seed is
+amplified into a %-level amplitude drift on all G_ii-family observables incl. integrated G_tot), the
+user elected (2026-10-25) the **fully single-threaded sweep** — `OPENBLAS_NUM_THREADS = OMP_NUM_THREADS
+= MKL_NUM_THREADS = 1` for EVERY node. This REMOVES the ±4.3% G_ii threading limitation entirely: all
+observables (including peak and integrated G_ii) are then clean, and the peak-G_ii *amplitude*
+convergence question is answerable, not just the well-conditioned geometry. Cost: ~12–50 h/node (the
+71×70 1-thread control ran ~12.5 h), ~a week total; no concurrent heavy compute. The v1.5 8-thread
+policy and the v1.2–v1.4 history are retained below as superseded record. The G3.2 measurement stands
+as the justification for requiring single-thread.
+
+(Superseded v1.5 header follows.)
 # Anisotropic mesh-convergence study — SPEC v1.5 (pre-registration)
 
 **v1.5 (2026-10-25) — thread policy FINALIZED by the G3.2 measurement (not post-hoc tuning; this is

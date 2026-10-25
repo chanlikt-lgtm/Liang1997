@@ -63,3 +63,14 @@ Sign-off on the v1.5 thread policy (or direct us to the fully single-threaded al
 0–2 evidence + the G3 controls are now committed; on your GO we run the 6-node sweep under the
 finalized policy. Scope remains discretization-only; Liang-1997 physics validation (Gate E pt2) is
 separate and open.
+
+---
+
+## DECISION UPDATE (2026-10-25): single-threaded sweep elected (spec v1.6)
+
+After reviewing the mechanism, the user elected the **fully single-threaded alternative** (§4), not the
+8-thread-limited policy of §3. Spec is now **v1.6**: every sweep node runs at `*_NUM_THREADS = 1`. This
+**removes the ±4.3% G_ii threading limitation entirely** — peak and integrated G_ii become clean, so the
+peak-G_ii amplitude convergence question is answerable (not just the well-conditioned geometry). Cost
+~12–50 h/node (~a week total). The ask is simplified: **sign-off on the v1.6 single-threaded policy**;
+on GO we run the 6-node single-threaded sweep. Scope unchanged (discretization only).
