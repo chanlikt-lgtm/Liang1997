@@ -1,0 +1,167 @@
+{
+  "Nx": 71,
+  "Ny": 70,
+  "family": "X",
+  "direction": null,
+  "level": null,
+  "warm_source": "",
+  "status": "CERTIFIED",
+  "certified": true,
+  "certification": "R_phi=8.092e-05; continuity_residual=3.451e-09; number_balance=2.080e-05; drift_raw_Gii=1.100e-04; drift_interp_Gii=9.962e-05; drift_G_tot=1.136e-04; hotspot_drift=5.743e-05",
+  "git_commit": "2775697",
+  "git_dirty": "clean",
+  "H_hash": "b4319bb03303",
+  "config_hash": "552bb609f0f2",
+  "provenance": {
+    "threads_requested": 1,
+    "threads_env": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    },
+    "numpy_version": "2.2.6",
+    "python": "3.10.12",
+    "platform": "Linux-6.8.0-124-generic-x86_64-with-glibc2.35",
+    "machine": "x86_64",
+    "cpu": "x86_64",
+    "git_commit": "2775697",
+    "git_dirty": "clean",
+    "threadpool_actual": [
+      {
+        "library": "blas",
+        "internal_api": "openblas",
+        "num_threads": 1,
+        "prefix": "libscipy_openblas",
+        "version": "0.3.29",
+        "threading_layer": "pthreads"
+      },
+      {
+        "library": "blas",
+        "internal_api": "openblas",
+        "num_threads": 1,
+        "prefix": "libscipy_openblas",
+        "version": "0.3.28",
+        "threading_layer": "pthreads"
+      }
+    ]
+  },
+  "drain_dx": 0.003803151376701064,
+  "surface_dy": 0.0003429017303743266,
+  "dy_depth": 0.0037375668764014595,
+  "ref_depth": 0.02,
+  "Gii_max": 3.0770514168841145e+25,
+  "Gii_interp": 2.690056703473506e+25,
+  "xy_Gii_max": [
+    0.5893835478389261,
+    0.0
+  ],
+  "xy_Gii_max_interp": [
+    0.5891214927220607,
+    0.0003429017303743266
+  ],
+  "avalanche_y_fwhm": 0.0021418404021870223,
+  "G_tot": 91820491422435.28,
+  "drain_current_A_per_um": 0.00029969866692889984,
+  "R_phi": 8.092337900311719e-05,
+  "dGii_tail": 1.569716427483741e-05,
+  "relative_number_balance": 2.0797993955832524e-05,
+  "continuity_residual": 3.4513821253506166e-09,
+  "n_iter": 531,
+  "h_rep": 0.0011419751258001625,
+  "fwhm_flags": {
+    "boundary_truncated": true,
+    "unresolved": false,
+    "multi_peak": false,
+    "left_x": 0.0,
+    "right_x": 0.0021418404021870223,
+    "peak_idx": 0
+  },
+  "criteria": [
+    {
+      "name": "R_phi",
+      "value": 8.092337900311719e-05,
+      "gate": 0.0001,
+      "op": "<",
+      "unit": "V",
+      "norm": "absolute",
+      "passed": true
+    },
+    {
+      "name": "continuity_residual",
+      "value": 3.4513821253506166e-09,
+      "gate": 1e-06,
+      "op": "<",
+      "unit": "1",
+      "norm": "scaled by max(|bs|,1)",
+      "passed": true
+    },
+    {
+      "name": "number_balance",
+      "value": 2.0797993955832524e-05,
+      "gate": 0.01,
+      "op": "<",
+      "unit": "1",
+      "norm": "|balance|/scale (absolute)",
+      "passed": true
+    },
+    {
+      "name": "drift_raw_Gii",
+      "value": 0.00010997463242625958,
+      "gate": 0.005,
+      "op": "<",
+      "unit": "1",
+      "norm": "40-iter continuation spread",
+      "passed": true
+    },
+    {
+      "name": "drift_interp_Gii",
+      "value": 9.961997039504975e-05,
+      "gate": 0.005,
+      "op": "<",
+      "unit": "1",
+      "norm": "40-iter continuation endpoint delta",
+      "passed": true
+    },
+    {
+      "name": "drift_G_tot",
+      "value": 0.00011359729980848199,
+      "gate": 0.005,
+      "op": "<",
+      "unit": "1",
+      "norm": "40-iter continuation spread",
+      "passed": true
+    },
+    {
+      "name": "hotspot_drift",
+      "value": 5.7427947934349435e-05,
+      "gate": 0.5,
+      "op": "<",
+      "unit": "cell",
+      "norm": "|cont hotspot - main hotspot| / h_rep",
+      "passed": true
+    }
+  ],
+  "restart_delta_raw_Gii": 0.0,
+  "restart_delta_G_tot": 0.0,
+  "hotspot_drift_um": 6.558128806677388e-08,
+  "hotspot_drift_cells": 5.7427947934349435e-05,
+  "continuation_state": {
+    "warm_started_from": "converged (phi,p) of main run",
+    "anderson_history_reset": true,
+    "cont_first_used_x0": false,
+    "cont_first_preconditioner_reused": false,
+    "cont_first_krylov_iters": 8
+  },
+  "drift_raw_Gii": 0.00010997463242625958,
+  "drift_interp_Gii": 9.961997039504975e-05,
+  "drift_G_tot": 0.00011359729980848199,
+  "cont_n_iter": 40,
+  "cont_R_phi_band": [
+    8.092337900311719e-05,
+    4.799553096290765e-06
+  ],
+  "npz": "/home/chanlik/.openclaw/workspace/Liang1997/campaign/../data/she2d_aniso_71x70_t1_552bb609f0f2_X.npz",
+  "npz_rel": "she2d_aniso_71x70_t1_552bb609f0f2_X.npz",
+  "json_path": "/home/chanlik/.openclaw/workspace/Liang1997/campaign/../data/she2d_aniso_71x70_t1_552bb609f0f2_X.json",
+  "json_rel": "she2d_aniso_71x70_t1_552bb609f0f2_X.json"
+}

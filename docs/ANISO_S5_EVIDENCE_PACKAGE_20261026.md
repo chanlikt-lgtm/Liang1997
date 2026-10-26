@@ -119,7 +119,15 @@ documented in the reproducibility report (§4).
 
 ## 5. Single-thread reproducibility repeat (the one compute item)
 
-- Launched **2026-10-26 07:14 MYT**, running: `campaign/aniso_mesh_study.py --node 71 70 --threads 1 --run-id repeat`
+**RESULT (2026-10-26 15:58 MYT): CERTIFIED, bit-identical.** The cold-start single-thread repeat
+reproduces the control **exactly at bit level**: Gii_max = 3.0770514168841145e25, Gii_interp =
+2.690056703473506e25, G_tot = 91820491422435.28, R_phi = 8.092337900311719e-5, n_iter = 531 — every
+observable identical to the t1 control and to production node-1. Artifact
+`she2d_aniso_71x70_t1_1e010e13e26f_repeat.{npz,json}`. (npz SHA-256 differs from production node-1 only
+because the file embeds provenance metadata — git_commit `52ed83a` vs `2775697`, config_hash
+`1e010e13e26f` vs `552bb609f0f2` — while the physics observables are bit-identical.)
+
+- Launched **2026-10-26 07:14 MYT**, finished **15:58 MYT** (~8.7 h, faster than the 12.5 h estimate): `campaign/aniso_mesh_study.py --node 71 70 --threads 1 --run-id repeat`
   (cold start, single-threaded, `threadpool_actual` num_threads=1, ~12.5 h).
 - Artifact on completion: `she2d_aniso_71x70_t1_1e010e13e26f_repeat.npz` (+ `.json`).
 - **Already-available bit-reproducibility datum:** the production X-family node-1
@@ -148,6 +156,7 @@ documented in the reproducibility report (§4).
 | `data/she2d_aniso_71x70_t1_47e3c9ec574b.npz` (t1 control) | c8a2b56cfa651fa1f13f3056a7d8126b6da5823954e4df9f16483b15aa57c7b4 |
 | `data/she2d_aniso_71x70_t8_47e3c9ec574b.npz` (t8 control) | f3cdd45ef8d6ccfa6e7acd4c54deaad5e4a744213d8b56a6498739fb5f989edd |
 | `data/she2d_aniso_71x70_t1_552bb609f0f2_X.npz` (production node-1) | 6596ae26d356cf3e52af8e1195a8fc9d6d2b125a246ad0dfa6959163e714312d |
+| `data/she2d_aniso_71x70_t1_1e010e13e26f_repeat.npz` (S5 repeat) | 6cf32be40ebbe2cf5c454d0b3d55d49297f84e40df5f07fc1fe9621bda927156 |
 
 **Sweep stop point:** node 2 (100×70, X) killed at **outer 563**, dφ=9.68e-4 V, Gmax=1.879e25 (not
 certified) — see `docs/ANISO_SWEEP_HALT_RECORD_20261026.md`. Node 1 preserved; full node-2 trajectory in

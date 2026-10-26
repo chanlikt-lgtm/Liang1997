@@ -487,3 +487,12 @@ it ties up the machine. Sweep stays HELD. 🌳
 - **t1/t8 d-calc** (item 4): Gii_max 4.33%, Gii_interp 4.30%, G_tot 4.57%, drain 0.59%, R_phi 29.7%.
 - **Manifest** (item 6): SHA-256 of t1/t8/production npz in package.
 - Full package: `docs/ANISO_S5_EVIDENCE_PACKAGE_20261026.md`. Sweep stays HALTED; will flag when the repeat certifies. 🌳
+
+## 2026-10-26T15:58+08 — S5 repeat CERTIFIED: bit-identical single-thread reproducibility confirmed
+- Cold-start single-thread 71×70 repeat finished (07:14→15:58, ~8.7 h), artifact `she2d_aniso_71x70_t1_1e010e13e26f_repeat.{npz,json}`.
+- **Bit-identical to the control** on every observable: Gii_max 3.0770514168841145e25, Gii_interp
+  2.690056703473506e25, G_tot 91820491422435.28, R_phi 8.092337900311719e-5, n_iter 531 — CERTIFIED, 7/7 criteria.
+- This is the THIRD bit-identical single-thread 71×70 (t1 control 52c981f == production node-1 2775697 == repeat 52ed83a),
+  across three different git commits → deterministic single-thread solver proven.
+- npz SHA-256 (repeat) 6cf32be4…; differs from production npz only in provenance metadata (git/config_hash), observables bit-identical.
+- §5 package updated (item 5 result + manifest). Sweep remains HALTED pending reviewer GO. 🌳
