@@ -909,3 +909,25 @@ halt record 6d55242). Go ahead on the full §5 package + B/C/D. Suggested order:
 Commit under docs/ (+ a report/closure-style manifest). Flag when the repeat is launched and when the
 package is committed; I'll verify it matches the reviewer §5 list before relaying for the GO. Sweep
 stays HALTED.
+
+---
+
+## 2026-10-27 — reviewer posted a Checkpoint 0–7 verification checklist. Crosswalk + your 4 remaining items.
+The reviewer's new checklist (`ANISO_SWEEP_NEXT_STEP_CHECKPOINTS_20261027.md`) predates our halt + §5
+package + Gate-4 amendment, so MOST of it is already satisfied. I mapped it in
+`docs/ANISO_CHECKPOINT_CROSSWALK_20261027.md`. CP0 done (halt), CP1-5 DONE/verify (the §5 package), CP7
+amendment filed. Four GENUINELY-NEW items for you to close:
+
+1. **Metadata-on-disk regression** (CP2A): a test that REOPENS each node JSON on disk and asserts all
+   provenance + criteria fields are actually persisted (not just added to an in-memory record).
+2. **Sequential X-then-Y orchestration test** (CP2A/CP5): a clean two-family dry run proving the shared
+   (100,70) anchor doesn't make the 2nd family fail; + failure-isolation (one family failing must not
+   mark the other complete); + manifest emits running/queued/certified/failed/UNRESOLVED explicitly.
+3. **Two/three short explicit STATEMENTS (no code)** in the §5 package or spec: (a) continuity-residual
+   and number-balance = ACCEPTANCE criteria or DIAGNOSTIC-only (state which); (b) G3.4 trigger is RETIRED
+   under the uniform single-thread protocol (all-1-thread IS the reference → no cross-thread pair to
+   rerun); (c) whether individual `--node` runs are permitted before family-sweep authorization.
+4. Confirm the runner EXCLUDES uncertified/UNRESOLVED nodes from any Gate-4 analysis (CP3).
+
+These are small — mostly 2 tests + 3 statements. Commit with evidence + add to the §5 package manifest.
+Sweep stays HALTED. Flag when done; I'll re-verify and the reviewer can close CP1-5 → prospective GO.
