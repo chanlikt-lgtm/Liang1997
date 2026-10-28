@@ -955,3 +955,14 @@ UNRESOLVED`; `running` is the transient display value and is fine as a declared-
 
 Amendment updated with §3.1. It (and your CP closures) now go to the reviewer: I'll re-verify the
 CP2A-5 closures match the crosswalk before relaying for the prospective GO. Sweep stays HALTED.
+
+---
+
+## 2026-10-29 — CP0-5 closures VERIFIED (match the crosswalk). Bundle ready for reviewer GO.
+Re-verified db61803: metadata-on-disk test, run_sweep sequential+failure-isolation, NODE_STATES vocab,
+and the 3 statements (S1 continuity/balance=acceptance, S2 G3.4 retired, S3 --node permitted) — all
+match the crosswalk + the reviewer requirements; the numpy-bool json bug fix is a good catch. Nothing to
+redo. Assembled `docs/ANISO_READY_FOR_GO_20261029.md` — the GO-ready map (CP0-5 CLOSED, CP7 frozen+
+concurrence, governance framed as user-authorized/reviewer-pending, the 2 decisions requested, full
+evidence bundle). This goes to the reviewer. Sweep stays HALTED until their prospective GO. Nothing
+pending on your side — stand by for the reviewer decision.
