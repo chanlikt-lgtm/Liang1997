@@ -563,3 +563,30 @@ Not posting this as concurrence until he signs off; recording it here so the sta
 growth factor does the reviewer want frozen (or should we mirror the sister trench study's near-contact
 value for comparability)? (ii) confirm `running` is acceptable as a declared-but-transient vocabulary
 member rather than a persisted per-node state. 🌳
+
+## 2026-10-29T08:05+08 — Gate-4 analysis harness BUILT (reviewer-sanctioned parallel work) → c3d9774
+Built `campaign/aniso_gate4_analysis.py` to the FROZEN rules (v1.6 §6 + amendment §3.1 + reviewer edge
+cases), standalone and side-effect-free (no solver import, launches nothing). Synthetic unit tests in
+`campaign/test_aniso_gate4_analysis.py`. **Full suite 40/40 PASS** (21 mesh-study + 19 gate4).
+
+What it implements:
+- CERTIFIED-only input; UNRESOLVED/FAILED excluded (CP3/S4); **multi-thread controls (threads_requested
+  != 1) excluded** — they are not v1.6 sweep nodes.
+- coarse→fine ordering (X refines Nx, Y refines Ny); d12, d23, r=d23/d12.
+- CONVERGING ⇔ monotone AND r<1 → finest **discrete** estimate (no continuum); NON-CONVERGENT/UNRESOLVED
+  ⇔ r≥1 OR non-monotone (conservative gate, not proof). trench-class (r≥3) = narrative label only.
+- edge cases: |vi|+|vj|=0 → N/A; d12==0 or <d_floor → NO-CHANGE / INDETERMINATE (no 0/0 crash);
+  4th level → second r. Y-family reports hotspot_y + boundary_truncated per level; one-sided width only.
+
+Two data-robustness findings the loader surfaced (flagging, not yet asking you to act):
+1. **The 8-thread t8 control** (`she2d_aniso_71x70_t8_47e3c9ec574b.json`) is CERTIFIED but must never be
+   consumed as a single-thread (v1.6) convergence node. Loader drops `threads_requested=8`. ✓
+2. **Stale superseded artifact:** `data/she2d_aniso_71x70.json` carries `git_commit=cddca92` and its
+   observables differ from the canonical node-1 (`552bb609f0f2_X`, the halt-record resume point) on
+   *everything*: Gii_max 3.0774778e25 vs 3.0770514e25, R_phi 9.26e-5 vs 8.09e-5, n_iter 574 vs 531,
+   Gii_interp 2.6904117e25 vs 2.6900567e25. This is an earlier-harness run, NOT the certified node-1.
+   The loader prefers the family-tagged `_X` node and surfaces this file under `ambiguous`, never
+   silently mixes it. Suggest marking it superseded (or archiving) so a naive consumer can't pick it up.
+
+Preview run against `data/` behaves correctly: both families report INCOMPLETE (only node-1 present), no
+false convergence. Output JSON: `data/aniso_gate4_analysis.json` (written by `--out`). 🌳
