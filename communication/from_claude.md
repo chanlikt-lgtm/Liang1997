@@ -966,3 +966,22 @@ redo. Assembled `docs/ANISO_READY_FOR_GO_20261029.md` — the GO-ready map (CP0-
 concurrence, governance framed as user-authorized/reviewer-pending, the 2 decisions requested, full
 evidence bundle). This goes to the reviewer. Sweep stays HALTED until their prospective GO. Nothing
 pending on your side — stand by for the reviewer decision.
+
+---
+
+## 2026-10-29 — reviewer audit = CONDITIONAL READINESS / MAINTAIN HOLD. Made the refinements; 3 decisions theirs.
+Reviewer audit (10-28, read our 10-29 docs): prep accepted, HOLD maintained; the 3 DECISION gates stay
+PENDING (prospective GO, node-1 admissibility, Gate-4 concurrence) — ours to request, theirs to grant.
+I made the maintainer-side refinements they flagged:
+- READY_FOR_GO heading corrected: CP0–5 PREP closed; CP6 not authorized, CP7 frozen-pending-concurrence
+  (not "0–7 closed"). Honest.
+- Gate-4 amendment §3.1: added the EDGE CASES they asked for (zero/near-zero denom, d12<d_floor →
+  indeterminate, noise floor = run-to-run reproducibility, consistent µm coordinates, non-equal spacing)
+  + tightened language: r<1 = CONSISTENT-WITH-convergence not proof of a continuum; r≥1 = conservative
+  UNRESOLVED gate not proof of divergence.
+- S3 ↔ HOLD clarified: the explicit HOLD SUPERSEDES the general --node permission — under HOLD, NOTHING
+  runs (no --node, no sweep) until a recorded GO.
+
+No action for you on the sweep (stays HALTED). FOR THE REVIEWER'S DECISION RECORD, pin these SHAs:
+code/spec at the sweep commit, and the doc bundle at the current main tip (give them the SHA, not
+floating main). Flag if the reviewer issues the GO + admissibility + concurrence; I'll relay "resume".

@@ -60,6 +60,27 @@ reference for narrative, NOT the divergence threshold** (so the verdict is never
 factor). With 3 levels there is one `r`; a 4th level (if the resource gate permits) gives a second `r`
 and a stronger monotonicity check. This criterion is frozen here, before any Y node runs.
 
+**Strength of claim (conservative, per reviewer 2026-10-28).** `r < 1` is evidence *consistent with*
+convergence — it is **not** mathematical proof of a continuum limit; we report only a finest-grid
+*discrete* estimate, never a continuum value. `r ≥ 1` across three nonuniform meshes is enough for a
+conservative **UNRESOLVED gate** — it is **not** proof of divergence. The "trench-class" label is
+narrative comparison only.
+
+**Pre-specified edge cases (frozen, per reviewer 2026-10-28).**
+- **Zero/near-zero denominator:** if `|v_i|+|v_j| = 0` the pair is reported `N/A (both zero)`; if
+  `d12 < d_floor` the ratio `r` is reported `indeterminate (coarse pair below noise)` and the pair is
+  judged by the absolute successive change against a pre-declared observable noise floor, not by `r`.
+- **Noise floor:** `d_floor` = the measured single-thread run-to-run reproducibility for that observable
+  (here ~0 for G_ii-family, bit-identical across 3 runs; a small positive floor is used only if a future
+  observable shows nonzero repeat spread). A difference at or below `d_floor` is "no resolvable change",
+  not convergence or divergence.
+- **Consistent coordinates/definitions:** surface peak value, one-sided width, and `G_tot` are compared
+  across levels at *identical physical definitions* (same µm-referenced locus / same integration
+  domain), never at mesh-index positions; `hotspot_y` and `boundary_truncated` reported every level.
+- **Non-equal spacing:** the X and Y families are deliberately non-self-similar, so effective local
+  spacings are reported per level and `r` is read as a difference-contraction screen, not an order
+  estimate that presumes a fixed refinement ratio.
+
 ## 4. What does not change
 
 - The X-family (drain-x) tests: peak x-location and value convergence — unchanged.

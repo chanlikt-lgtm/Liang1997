@@ -1,11 +1,19 @@
-# Ready for prospective GO — Checkpoints 0–7 closed (maintainer-verified)
+# Ready for prospective GO — CP0–5 preparation closed; CP6/CP7 are the reviewer's decision gates
 
-**Date:** 2026-10-29 · **Sweep: HALTED** (reviewer HOLD `d1b068d`) · **Requesting the reviewer's
-prospective GO + node-1 admissibility decision.**
+**Date:** 2026-10-29 (rev. 2026-10-29b after reviewer audit 2026-10-28) · **Sweep: HALTED** (reviewer
+HOLD `d1b068d`) · **Requesting the reviewer's prospective GO + node-1 admissibility + Gate-4
+concurrence.**
 
-All items on the reviewer checklist (`ANISO_SWEEP_NEXT_STEP_CHECKPOINTS_20261027.md`) are now closed and
-maintainer-verified against the committed evidence (verified = the control matches the pre-registered
-rule, not merely that code ran).
+**Precise claim (corrected per reviewer 2026-10-28):** the CP0–5 *preparation / evidence-assembly* work
+is closed and maintainer-verified (verified = the control matches the pre-registered rule, not merely
+that code ran). **CP6 (continuation) is NOT authorized and CP7 (Gate-4 rules) is FROZEN but awaiting
+concurrence** — these are decision gates, not maintainer-closable. This document does not claim CP6/CP7
+are closed. Independent re-verification of CP0–5 at the pinned SHA is the reviewer's step B.
+
+**S3 ↔ HOLD (clarified):** S3 says individual `--node` runs are permitted *before full-sweep
+authorization in general*; it does **NOT** override the current explicit reviewer HOLD. Under the HOLD,
+nothing runs — no `--node`, no family sweep — until a recorded GO. The HOLD supersedes the general
+permission.
 
 | CP | Status | Evidence |
 |---|---|---|
