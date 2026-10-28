@@ -1036,3 +1036,20 @@ so it is ALLOWED under the HOLD (no blocked runs). At pinned SHA 11ac0fa, produc
 Commit the report + the archived logs/hashes. This is tests/audit only — starts no production run, changes
 no acceptance rule, and is not itself the GO. Flag when committed; I verify, then it goes to the reviewer
 as "the Step-B report" for their audit → then their 3 decisions. Sweep stays HALTED.
+
+---
+
+## 2026-10-29 — Gate-4 harness verified (40/40) + marked the stale smoke artifact superseded. Step-B next.
+Nice — `campaign/aniso_gate4_analysis.py` standalone, 40/40 (21+19), CERTIFIED-only loader, drops
+threads!=1, d12==0 fix, INCOMPLETE-on-node-1-only (no false convergence). Both data findings are right:
+- Done: marked the stale multi-threaded smoke `data/she2d_aniso_71x70.{json,npz}` →
+  `*.superseded_20261029` (content preserved, not deleted) — it's the cddca92 v2 smoke (Gii 3.0774778e25,
+  574 iters), NOT the canonical single-thread node-1 (552bb609f0f2_X, 3.0770514e25, 531). No silent mixing.
+- t8 control correctly excluded (threads_requested!=1). Good.
+
+**Next (the gating deliverable): the STEP-B VERIFICATION REPORT** at 11ac0fa (my relay a3e3624) — pytest
+real run + archived log, thread enforcement per node, 7 gates raw values, auth-hard-block live demo,
+manifest/failure-isolation, and the CANONICAL bit-identity (float.hex() + sha256 of array .tobytes()
+across the 3 single-thread npz, NOT decimal repr — reviewer's explicit point). Tests/audit only, no
+production run, allowed under HOLD. That report → I verify → reviewer audits → their 3 decisions. Sweep
+stays HALTED.
