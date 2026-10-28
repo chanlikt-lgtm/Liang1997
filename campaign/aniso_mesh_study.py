@@ -93,6 +93,9 @@ FAMILIES = {
 }
 ANCHOR = (100, 70)            # shared by both families
 
+# ---- Manifest state vocabulary (CP5) -- the ONLY states a family/sweep manifest may emit ----
+NODE_STATES = ("queued", "running", "certified", "failed", "UNRESOLVED")
+
 
 def _git(*a):
     try:
@@ -332,7 +335,7 @@ def _profile_fwhm_2cross(profile, coords):
 
     cell_lo = float(coords[max(pk - 1, 0)])
     cell_hi = float(coords[min(pk + 1, n - 1)])
-    unresolved = (not boundary_truncated) and (right_x - left_x) <= (cell_hi - cell_lo)
+    unresolved = bool((not boundary_truncated) and (right_x - left_x) <= (cell_hi - cell_lo))
     return dict(fwhm=float(right_x - left_x), left_x=float(left_x), right_x=float(right_x),
                 peak_idx=pk, boundary_truncated=boundary_truncated,
                 unresolved=unresolved, multi_peak=multi_peak)
@@ -526,6 +529,39 @@ def _save_npz(path, r, x, y, Nx, Ny, dx_drain, dy_surf, dy_depth, warm_name, obs
     return H_hash
 
 
+def _build_node_record(Nx, Ny, family, warm_name, status, certified, detail, cfg, prov, H_hash,
+                       dx_drain, dy_surf, dy_depth, obs, report, npz_path, json_path, outdir):
+    """Assemble the per-node provenance + certification record (single source of truth for the JSON).
+
+    Kept separate from run_node so the on-disk JSON schema is testable without a solver run (CP2A)."""
+    return dict(Nx=Nx, Ny=Ny, family=family, direction=None, level=None, warm_source=warm_name,
+                status=status, certified=certified, certification=detail,
+                git_commit=_git_commit, git_dirty=_git_dirty, H_hash=H_hash,
+                config_hash=cfg, provenance=prov,
+                drain_dx=dx_drain, surface_dy=dy_surf, dy_depth=dy_depth, ref_depth=REF_DEPTH,
+                **{k: obs[k] for k in ("Gii_max", "Gii_interp", "xy_Gii_max", "xy_Gii_max_interp",
+                                       "avalanche_y_fwhm", "G_tot", "drain_current_A_per_um", "R_phi",
+                                       "dGii_tail", "relative_number_balance", "continuity_residual",
+                                       "n_iter", "h_rep", "fwhm_flags")},
+                criteria=report["criteria"], restart_delta_raw_Gii=report["restart_delta_raw_Gii"],
+                restart_delta_G_tot=report["restart_delta_G_tot"],
+                hotspot_drift_um=report["hotspot_drift_um"],
+                hotspot_drift_cells=report["hotspot_drift_cells"],
+                continuation_state=report["continuation_state"],
+                drift_raw_Gii=report["drift_raw_Gii"], drift_interp_Gii=report["drift_interp_Gii"],
+                drift_G_tot=report["drift_G_tot"], cont_n_iter=report["cont_n_iter"],
+                cont_R_phi_band=report["cont_R_phi_band"],
+                npz=npz_path, npz_rel=os.path.relpath(npz_path, outdir),
+                json_path=json_path, json_rel=os.path.relpath(json_path, outdir))
+
+
+def _write_node_json(rec, json_path):
+    """Persist the node record to disk (CP2A: the JSON is the on-disk source of truth)."""
+    with open(json_path, "w") as fh:
+        json.dump(rec, fh, indent=2)
+    return rec
+
+
 def run_node(Nx, Ny, max_outer=MAX_OUTER_CAP, warm_npz=None, verbose=True, outdir=None, run_id=None,
              family=None):
     outdir = outdir or os.path.join(os.path.dirname(__file__), "..", "data")
@@ -578,27 +614,10 @@ def run_node(Nx, Ny, max_outer=MAX_OUTER_CAP, warm_npz=None, verbose=True, outdi
                  numpy_version=prov["numpy_version"], platform=prov["platform"])
     H_hash = _save_npz(npz_path, r, x, y, Nx, Ny, dx_drain, dy_surf, dy_depth, warm_name, obs, extra)
 
-    rec = dict(Nx=Nx, Ny=Ny, family=family, direction=None, level=None, warm_source=warm_name,
-               status=status, certified=certified, certification=detail,
-               git_commit=_git_commit, git_dirty=_git_dirty, H_hash=H_hash,
-               config_hash=cfg, provenance=prov,
-               drain_dx=dx_drain, surface_dy=dy_surf, dy_depth=dy_depth, ref_depth=REF_DEPTH,
-               **{k: obs[k] for k in ("Gii_max", "Gii_interp", "xy_Gii_max", "xy_Gii_max_interp",
-                                      "avalanche_y_fwhm", "G_tot", "drain_current_A_per_um", "R_phi",
-                                      "dGii_tail", "relative_number_balance", "continuity_residual",
-                                      "n_iter", "h_rep", "fwhm_flags")},
-               criteria=report["criteria"], restart_delta_raw_Gii=report["restart_delta_raw_Gii"],
-               restart_delta_G_tot=report["restart_delta_G_tot"],
-               hotspot_drift_um=report["hotspot_drift_um"],
-               hotspot_drift_cells=report["hotspot_drift_cells"],
-               continuation_state=report["continuation_state"],
-               drift_raw_Gii=report["drift_raw_Gii"], drift_interp_Gii=report["drift_interp_Gii"],
-               drift_G_tot=report["drift_G_tot"], cont_n_iter=report["cont_n_iter"],
-               cont_R_phi_band=report["cont_R_phi_band"],
-               npz=npz_path, npz_rel=os.path.relpath(npz_path, outdir),
-               json_path=json_path, json_rel=os.path.relpath(json_path, outdir))
-    with open(json_path, "w") as fh:
-        json.dump(rec, fh, indent=2)
+    rec = _build_node_record(Nx, Ny, family, warm_name, status, certified, detail, cfg, prov,
+                             H_hash, dx_drain, dy_surf, dy_depth, obs, report,
+                             npz_path, json_path, outdir)
+    _write_node_json(rec, json_path)
     print("\n=== NODE %dx%d -> %s  (R_phi=%.3e, Gii_raw=%.4e, Gii_interp=%.4e, G_tot=%.4e) ==="
           % (Nx, Ny, status, obs["R_phi"], obs["Gii_max"], obs["Gii_interp"], obs["G_tot"]))
     print("    %s" % detail)
@@ -613,8 +632,21 @@ def run_family(name, include_fourth=False):
     records = []
     warm = None
     peak_rss = None
+    stopped = False
     for i, (Nx, Ny) in enumerate(levels):
-        rec = run_node(Nx, Ny, warm_npz=warm, verbose=True, family=name)
+        try:
+            rec = run_node(Nx, Ny, warm_npz=warm, verbose=True, family=name)
+        except SystemExit as e:
+            records.append(dict(Nx=Nx, Ny=Ny, family=name, direction=fam["direction"], level=i,
+                                status="FAILED", certified=False, error=str(e)))
+            stopped = True
+            break
+        except Exception as e:
+            records.append(dict(Nx=Nx, Ny=Ny, family=name, direction=fam["direction"], level=i,
+                                status="FAILED", certified=False,
+                                error="%s: %s" % (type(e).__name__, e)))
+            stopped = True
+            break
         rec["family"] = name; rec["direction"] = fam["direction"]; rec["level"] = i
         rec["authorized_by"] = auth.get("who"); rec["authorized_when"] = auth.get("when")
         records.append(rec)
@@ -622,7 +654,7 @@ def run_family(name, include_fourth=False):
             warm = rec["npz"]
         peak_rss = _peak_rss_bytes()     # G1.4: measured peak working set (cumulative max to date)
     # 4th level -- pre-committed resource/convergence gate (reviewer adj. 1 / G1.4)
-    if include_fourth:
+    if include_fourth and not stopped:
         third = records[-1] if records else None
         third_certified = bool(third["certified"]) if third else False
         Nx4, Ny4 = fam["fourth"]
@@ -642,6 +674,70 @@ def run_family(name, include_fourth=False):
                                 fourth_skipped=True, third_certified=third_certified,
                                 resource_gate=decision))
     return records
+
+
+def _node_state(rec):
+    """Map a node record to the frozen manifest state vocabulary (CP5)."""
+    if rec is None:
+        return "failed"
+    st = rec.get("status")
+    if st == "CERTIFIED":
+        return "certified"
+    if st == "UNRESOLVED":
+        return "UNRESOLVED"
+    return "failed"
+
+
+def gate4_nodes(records):
+    """CP3: Gate-4 analysis consumes ONLY certified nodes. Uncertified / UNRESOLVED / FAILED nodes are
+    excluded (never compared as converged values)."""
+    return [r for r in records if r.get("status") == "CERTIFIED" and r.get("certified") is True]
+
+
+def run_sweep(include_fourth=False, outdir=None):
+    """Run X then Y sequentially with failure isolation (CP2A/CP5).
+
+    The shared (100,70) anchor is produced once per family as a distinct family-tagged artifact, so the
+    second family cannot collide with or be failed by the first.  One family failing does NOT mark the
+    other complete -- each family's outcome is recorded independently in the sweep manifest, which emits
+    the frozen state vocabulary (queued/running/certified/failed/UNRESOLVED).
+
+    Returns (sweep_manifest, results).
+    """
+    outdir = outdir or os.path.join(os.path.dirname(__file__), "..", "data")
+    auth = _require_exec_auth()          # G0.2: HARD-BLOCK without execution authorization
+    manifest = dict(schema="aniso_sweep_manifest", version=1,
+                    authorized_by=auth.get("who"), authorized_when=auth.get("when"),
+                    git_commit=_git_commit, git_dirty=_git_dirty,
+                    vocabulary=list(NODE_STATES), families={})
+    results = {}
+    for name in ("X", "Y"):
+        fam = FAMILIES[name]
+        levels = [list(lv) for lv in fam["levels"]]
+        fam_rec = dict(family=name, direction=fam["direction"], levels=levels, nodes=[], error=None)
+        records = []
+        try:
+            records = run_family(name, include_fourth=include_fourth)
+        except SystemExit as e:
+            fam_rec["error"] = str(e)
+        except Exception as e:
+            fam_rec["error"] = "%s: %s" % (type(e).__name__, e)
+        failed = bool(fam_rec["error"]) or any(r.get("status") == "FAILED" for r in records)
+        fam_rec["status"] = "FAILED" if failed else "COMPLETE"
+        for idx, lv in enumerate(levels):
+            if idx < len(records):
+                fam_rec["nodes"].append(dict(node=lv, state=_node_state(records[idx]),
+                                             certified=bool(records[idx].get("certified"))))
+            else:
+                fam_rec["nodes"].append(dict(node=lv, state="queued", certified=False))
+        manifest["families"][name] = fam_rec
+        results[name] = fam_rec
+    os.makedirs(outdir, exist_ok=True)
+    mpath = os.path.join(outdir, "aniso_sweep_manifest.json")
+    with open(mpath, "w") as fh:
+        json.dump(manifest, fh, indent=2)
+    manifest["_path"] = mpath
+    return manifest, results
 
 
 def compare_anchor(outdir=None, families=("X", "Y")):
@@ -710,5 +806,7 @@ if __name__ == "__main__":
     elif argv[0] == "--family":
         name = argv[1].upper()
         run_family(name, include_fourth=("--include-4th" in argv))
+    elif argv[0] == "--sweep":
+        run_sweep(include_fourth=("--include-4th" in argv))
     else:
-        sys.exit("usage: --list | --node Nx Ny [maxouter] | --family X|Y [--include-4th]")
+        sys.exit("usage: --list | --node Nx Ny [maxouter] | --family X|Y [--include-4th] | --sweep")

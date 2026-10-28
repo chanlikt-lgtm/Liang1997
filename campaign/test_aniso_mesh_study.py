@@ -290,6 +290,133 @@ def test_exec_auth_recorded():
         aniso.AUTH_FILE = saved
 
 
+def _build_full_record(Nx=71, Ny=70, family="X", status="CERTIFIED", certified=True):
+    """Build a realistic node record via the real _build_node_record path (no solver run)."""
+    r = _mock_r(Ny, Nx)
+    x, y, dx, dys, dyd = aniso.build_mesh(Nx, Ny)
+    obs = aniso._extract_observables(r, x, y)
+    hist = [dict(Gii_max_cm3s=1.0 + 1e-6 * (k % 3), G_tot_cm1s=2.0, max_dphi_V=1e-5) for k in range(40)]
+    cont = dict(history=hist, Gii=r["Gii"], x=x, y=y)
+    _c, _s, detail, report = aniso._certify(obs, cont)
+    prov = aniso._provenance()
+    cfg = aniso._config_hash()
+    npz_path = "/tmp/nonexistent_%dx%d_%s.npz" % (Nx, Ny, family)
+    json_path = "/tmp/nonexistent_%dx%d_%s.json" % (Nx, Ny, family)
+    rec = aniso._build_node_record(Nx, Ny, family, "", status, certified, detail, cfg, prov,
+                                   "0123456789ab", dx, dys, dyd, obs, report,
+                                   npz_path, json_path, "/tmp")
+    return rec, json_path
+
+
+def test_metadata_persisted_on_disk():
+    """CP2A: a node record written to disk and REOPENED must retain every provenance + criteria field
+    (the JSON, not the in-memory dict, is what a third party reads)."""
+    import shutil
+    rec, json_path = _build_full_record()
+    # overwrite into a temp dir so we actually persist + reload a real file
+    td = tempfile.mkdtemp()
+    try:
+        json_path = os.path.join(td, "node.json")
+        aniso._write_node_json(rec, json_path)
+        assert os.path.exists(json_path)
+        with open(json_path) as fh:
+            reopened = json.load(fh)
+        # provenance block persisted (not just in memory)
+        prov = reopened["provenance"]
+        for k in ("threads_requested", "threads_env", "numpy_version", "python", "platform",
+                  "machine", "cpu", "git_commit", "git_dirty", "threadpool_actual"):
+            assert k in prov, "provenance key missing on disk: %s" % k
+        # all 7 criteria persisted with their value/unit/gate/passed
+        assert len(reopened["criteria"]) == 7
+        names = {c["name"] for c in reopened["criteria"]}
+        assert names == {"R_phi", "continuity_residual", "number_balance", "drift_raw_Gii",
+                         "drift_interp_Gii", "drift_G_tot", "hotspot_drift"}
+        for c in reopened["criteria"]:
+            assert isinstance(c["passed"], bool) and "value" in c and "unit" in c and "gate" in c
+        # certification / status / identity fields persisted
+        for k in ("status", "certified", "certification", "git_commit", "git_dirty", "H_hash",
+                  "config_hash", "warm_source", "drain_dx", "surface_dy", "dy_depth", "ref_depth",
+                  "Gii_max", "Gii_interp", "G_tot", "xy_Gii_max", "xy_Gii_max_interp",
+                  "avalanche_y_fwhm", "drain_current_A_per_um", "R_phi", "dGii_tail",
+                  "relative_number_balance", "continuity_residual", "n_iter", "h_rep",
+                  "fwhm_flags", "restart_delta_raw_Gii", "restart_delta_G_tot",
+                  "hotspot_drift_um", "hotspot_drift_cells", "continuation_state",
+                  "drift_raw_Gii", "drift_interp_Gii", "drift_G_tot", "cont_n_iter",
+                  "cont_R_phi_band"):
+            assert k in reopened, "node field missing on disk: %s" % k
+        # a boundary-truncated fwhm flag survives serialization as a dict, not a string
+        assert isinstance(reopened["fwhm_flags"], dict)
+        assert "boundary_truncated" in reopened["fwhm_flags"]
+    finally:
+        shutil.rmtree(td, ignore_errors=True)
+
+
+def test_gate4_excludes_uncertified():
+    """CP3: Gate-4 analysis input must EXCLUDE uncertified/UNRESOLVED/failed nodes."""
+    records = [
+        dict(status="CERTIFIED", certified=True),
+        dict(status="UNRESOLVED", certified=False),
+        dict(status="FAILED", certified=False),
+        dict(status="CERTIFIED", certified=True),
+    ]
+    kept = aniso.gate4_nodes(records)
+    assert len(kept) == 2 and all(r["status"] == "CERTIFIED" for r in kept)
+
+
+def test_node_state_vocabulary():
+    """CP5: _node_state maps records onto the frozen manifest vocabulary only."""
+    assert aniso._node_state(dict(status="CERTIFIED")) == "certified"
+    assert aniso._node_state(dict(status="UNRESOLVED")) == "UNRESOLVED"
+    assert aniso._node_state(dict(status="FAILED")) == "failed"
+    assert aniso._node_state(None) == "failed"
+    assert set(aniso.NODE_STATES) == {"queued", "running", "certified", "failed", "UNRESOLVED"}
+
+
+def test_run_sweep_sequential_failure_isolation():
+    """CP2A/CP5: a clean sequential X-then-Y dry run -- the shared (100,70) anchor does not make the
+    2nd family fail, and one family failing must NOT mark the other complete."""
+    import shutil
+    calls = []
+    def _fake_run_node(Nx, Ny, max_outer=1500, warm_npz=None, verbose=True, outdir=None, run_id=None,
+                       family=None):
+        calls.append((Nx, Ny, family))
+        if family == "X" and (Nx, Ny) == (100, 70):
+            raise SystemExit("synthetic X-family mid-chain failure")
+        return dict(Nx=Nx, Ny=Ny, family=family, status="CERTIFIED", certified=True,
+                    npz="/tmp/fake_%dx%d_%s.npz" % (Nx, Ny, family))
+    saved_node = aniso.run_node
+    saved_auth = aniso.AUTH_FILE
+    aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_sweep_%d.json" % os.getpid())
+    with open(aniso.AUTH_FILE, "w") as fh:
+        json.dump({"execution_authorized": True, "who": "Chan Lik", "when": "2026-10-29T00:00:00Z"}, fh)
+    aniso.run_node = _fake_run_node
+    td = tempfile.mkdtemp()
+    try:
+        manifest, results = aniso.run_sweep(outdir=td)
+        # X-family: (71,70) ran, then (100,70) failed -> X is FAILED
+        assert results["X"]["status"] == "FAILED"
+        # Y-family ran independently to completion despite X failing (failure isolation)
+        assert results["Y"]["status"] == "COMPLETE"
+        y_nodes = results["Y"]["nodes"]
+        assert all(n["state"] == "certified" for n in y_nodes)
+        # the shared (100,70) anchor ran in BOTH families as separate calls
+        anchor = [(nx, ny, f) for (nx, ny, f) in calls if (nx, ny) == (100, 70)]
+        assert len(anchor) == 2 and {a[2] for a in anchor} == {"X", "Y"}
+        # manifest emits the full state vocabulary + per-family status
+        assert set(manifest["vocabulary"]) == {"queued", "running", "certified", "failed", "UNRESOLVED"}
+        assert manifest["families"]["X"]["status"] == "FAILED"
+        assert manifest["families"]["Y"]["status"] == "COMPLETE"
+        # X-family node states: certified (71,70), failed (100,70), queued (141,70)
+        x_states = [n["state"] for n in manifest["families"]["X"]["nodes"]]
+        assert x_states == ["certified", "failed", "queued"]
+        # manifest file actually written to disk
+        assert os.path.exists(manifest["_path"])
+    finally:
+        aniso.run_node = saved_node
+        aniso.AUTH_FILE = saved_auth
+        shutil.rmtree(td, ignore_errors=True)
+
+
 def test_warm_start_assert():
     """G1.1: a missing warm-start npz must raise, never silently cold-start."""
     missing = os.path.join(tempfile.gettempdir(), "does_not_exist_%d.npz" % os.getpid())
