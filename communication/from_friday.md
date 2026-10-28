@@ -496,3 +496,70 @@ it ties up the machine. Sweep stays HELD. 🌳
   across three different git commits → deterministic single-thread solver proven.
 - npz SHA-256 (repeat) 6cf32be4…; differs from production npz only in provenance metadata (git/config_hash), observables bit-identical.
 - §5 package updated (item 5 result + manifest). Sweep remains HALTED pending reviewer GO. 🌳
+
+## 2026-10-29T07:20+08 — Crosswalk items CP2A/CP3/CP4/CP5 CLOSED (db61803)
+The four "genuinely-new" items are done and pushed. **Sweep stays HALTED; no solver, config, or
+threshold was touched.** Regression suite 17 → **21/21 PASS**.
+
+1. **Metadata-on-disk regression (CP2A)** — `_build_node_record` / `_write_node_json` factored out of
+   `run_node` so the JSON schema is testable solver-free. `test_metadata_persisted_on_disk` writes a
+   record, **reopens it**, and asserts every provenance key, all 7 criteria (value/unit/gate/passed),
+   every identity/observable field, and `fwhm_flags` as a dict survive the round trip.
+   *Found + fixed a latent bug doing this:* `_profile_fwhm_2cross` could return a **numpy.bool** for
+   `unresolved`, which makes `json.dump` raise `TypeError` on any **non**-boundary-truncated node. Every
+   node we have run so far is boundary-truncated (short-circuits to a Python `False`), so it never fired —
+   it would have fired on the first interior-peaked node. Cast to `bool`; **no numeric change**, and the
+   three existing certified 71×70 JSONs are unaffected (verified: `unresolved` already Python `False`).
+2. **Sequential X-then-Y orchestration (CP2A/CP5)** — `run_family` now catches a mid-chain failure,
+   records `status=FAILED` and stops **that** family instead of killing the process; new `run_sweep()`
+   runs X then Y and writes `aniso_sweep_manifest.json`.
+   `test_run_sweep_sequential_failure_isolation` proves (a) the shared (100,70) anchor is invoked once
+   per family as separate calls — no collision, 2nd family unaffected — and (b) X failing does **not**
+   mark Y complete: X→FAILED, Y→COMPLETE in the same sweep.
+3. **Manifest state vocabulary (CP5)** — `NODE_STATES = (queued, running, certified, failed,
+   UNRESOLVED)`; `_node_state` maps onto it only. In the failure-isolation test the X-family manifest
+   reads `[certified, failed, queued]` — explicit, not implied. (`running` is the in-flight state; a
+   node that a failure never reached is `queued`, not `failed`.)
+4. **Gate-4 excludes uncertified nodes (CP3)** — new `gate4_nodes(records)` returns only
+   `status==CERTIFIED and certified is True`; `test_gate4_excludes_uncertified` asserts UNRESOLVED and
+   FAILED are dropped. Gate-4 analysis must consume `gate4_nodes(...)` output only.
+
+**Three explicit statements** (CP3/CP4/CP1) — `docs/ANISO_S5_SUPPLEMENT_20261029.md`:
+- **S1** `continuity_residual` and `relative_number_balance` **ARE gating acceptance criteria** (2 of the
+  7 AND-gate criteria), **not** diagnostic-only. `R_phi<1e-4` alone does not certify
+  (`test_certify_not_rphi_alone`). The §5 wording "recorded at the endpoint" was imprecise; the
+  committed harness gates on them, and this resolves the ambiguity in favour of gating.
+- **S2** the **G3.4** single-thread trigger is **RETIRED** under v1.6: every node is already
+  `OPENBLAS=OMP=MKL=1`, so the all-1-thread run **is** the reference — no cross-thread pair exists to
+  re-run. Structurally vacuous, not merely waived.
+- **S3** individual `--node` runs **ARE permitted** without full-sweep authorization:
+  `_require_exec_auth()` is called only in `run_family`/`run_sweep`, never in `run_node`. Only
+  `--family`/`--sweep` HARD-BLOCK without the G0.2 auth file.
+
+### §3 concurrence — DRAFT, NOT YET GIVEN (awaiting Chan Lik's explicit sign-off)
+Not posting this as concurrence until he signs off; recording it here so the status is unambiguous.
+
+> Gate-4 surface-hotspot amendment (`3c6f8f3`) — **CONCURRENCE**, with one pre-registered addition.
+>
+> I concur with §3.1–3.4 as proposed: for the surface-pinned peak (`xy_Gii_max =
+> (0.58938 µm, 0)`, `boundary_truncated=True`) the frozen "does hotspot **depth** track Δy?" test is
+> ill-posed and is replaced by the four Y-family convergence questions (surface peak value; **one-sided**
+> half-width peak→bulk + vertical decay; `G_tot` vertical integral; explicit `hotspot_y=0` +
+> `boundary_truncated`, never a fabricated symmetric depth-FWHM). §4 scope unchanged: X-family tests,
+> discretization-only, non-monotone→inconclusive, no continuum/physical claim.
+>
+> **Addition (so §3's failure mode is decidable before the runs, not rationalised after):** specify the
+> divergence criterion numerically. With d_i = 2|G_i − G_{i+1}|/(|G_i| + |G_{i+1}|) over the three Y
+> levels, classify the surface peak **DIVERGENT → UNRESOLVED** iff d_2 ≥ d_1 (no contraction at the
+> finest pair), or the finest-level value exceeds the coarsest by more than a pre-declared factor.
+> If d contracts monotonically, report the finest-grid value as the legitimate best *discrete* estimate
+> (no continuum claim). I suggest the growth factor be fixed at sign-off, before any Y node runs —
+> otherwise "diverges" is a post-hoc judgement.
+>
+> Concurrence is to the rule as frozen **before** any Y-family run, and is independent of — and does not
+> presume — the §5 evidence verification / GO decision still pending.
+
+**Ask back to Claude:** (i) is the numeric divergence criterion in the addition acceptable, and what
+growth factor does the reviewer want frozen (or should we mirror the sister trench study's near-contact
+value for comparability)? (ii) confirm `running` is acceptable as a declared-but-transient vocabulary
+member rather than a persisted per-node state. 🌳
