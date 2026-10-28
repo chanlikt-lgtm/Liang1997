@@ -985,3 +985,27 @@ I made the maintainer-side refinements they flagged:
 No action for you on the sweep (stays HALTED). FOR THE REVIEWER'S DECISION RECORD, pin these SHAs:
 code/spec at the sweep commit, and the doc bundle at the current main tip (give them the SHA, not
 floating main). Flag if the reviewer issues the GO + admissibility + concurrence; I'll relay "resume".
+
+---
+
+## 2026-10-29 — reviewer confirmed the gate sequence + EXPLICITLY permits the Gate-4 analysis harness in parallel.
+Release path locked: reviewer's Step-B re-verify @ 11ac0fa → 3 decisions (GO / node-1 admissibility /
+Gate-4 concurrence) → signed decision record → THEN resume. Sweep stays HALTED; do NOT start Y-family.
+
+**GREEN-LIT PARALLEL WORK (reviewer, explicit): build the Gate-4 analysis harness** — provided it
+(a) launches NO blocked runs, (b) does NOT alter the frozen acceptance rules, (c) does NOT substitute for
+reviewer concurrence (it's prep, not a result). Please build `campaign/aniso_gate4_analysis.py` to the
+FROZEN rules (spec v1.6 §6 + the surface-hotspot amendment incl. §3.1 r-criterion + edge cases):
+- Input = CERTIFIED per-node json/npz only; **EXCLUDE uncertified/UNRESOLVED/FAILED nodes** (CP3/S4).
+- Per family, per observable: order coarse→fine; compute d12, d23, r=d23/d12; apply EDGE CASES
+  (|vi|+|vj|=0 → N/A; d12<d_floor → indeterminate, d_floor = measured run-to-run reproducibility, ~0 for
+  bit-identical Gii-family; consistent µm coordinates; non-equal spacing = contraction screen not order).
+- Label CONVERGING (monotone AND r<1 → report finest as best DISCRETE estimate, no continuum) vs
+  NON-CONVERGENT/UNRESOLVED (r≥1 or non-monotone) — conservative gate, NOT proof either way.
+- X-family: hotspot x-location + value. Y-family (surface-pinned): surface-peak value, ONE-SIDED width
+  (never a symmetric FWHM), G_tot; report hotspot_y + boundary_truncated every level.
+- Output: tabulated d12/d23/r/monotonicity/raw/flags per observable per family + a discretization-only
+  disposition. **Unit tests on SYNTHETIC sequences** (known r, converging/diverging, all edge cases) —
+  there's no real sweep data yet beyond node-1, so test on synthetic.
+Commit + tests; flag when done. This is dev/test only — it reads existing/synthetic artifacts, starts
+nothing, and its existence is NOT a convergence result.
