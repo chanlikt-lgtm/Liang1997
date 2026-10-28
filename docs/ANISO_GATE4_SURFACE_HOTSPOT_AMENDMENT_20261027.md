@@ -42,6 +42,24 @@ injection-layer non-convergence already documented in the sister trench study (i
 contact → unbounded gradient as spacing→0), so we flag the possibility in advance rather than discover
 it and rationalize it afterward.
 
+## 3.1 Frozen numeric convergence/divergence criterion (pre-registered before any Y-run)
+
+So "diverges" is objective, not a post-hoc judgement. Y-family levels `Ny ∈ {58, 70, 85}` (coarse→fine)
+give values `v1,v2,v3` for each observable, with adjacent relative differences
+`d12 = 2|v1−v2|/(|v1|+|v2|)`, `d23 = 2|v2−v3|/(|v2|+|v3|)`, and **contraction ratio `r = d23/d12`**.
+
+- **CONVERGING** ⇔ the sequence is monotone AND `r < 1` (successive differences shrink). Report the
+  finest-grid value as the legitimate best **discrete** estimate — no continuum claim.
+- **NON-CONVERGENT / UNRESOLVED** ⇔ `r ≥ 1` (the finer step moves at least as much as the coarser — no
+  approach to a limit), or non-monotone. Report UNRESOLVED, not a converged value.
+
+The **gate is `r ≥ 1`** — parameter-free, nothing arbitrary to tune. We also **report `r` itself**, and
+if `r ≳ 3` (comparable to the sister trench near-contact study's measured increment ratio ≈ 3.4–3.5)
+additionally label it *"strong near-surface divergence (trench-class)"* — this is a **comparison
+reference for narrative, NOT the divergence threshold** (so the verdict is never hostage to a chosen
+factor). With 3 levels there is one `r`; a 4th level (if the resource gate permits) gives a second `r`
+and a stronger monotonicity check. This criterion is frozen here, before any Y node runs.
+
 ## 4. What does not change
 
 - The X-family (drain-x) tests: peak x-location and value convergence — unchanged.

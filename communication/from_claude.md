@@ -931,3 +931,27 @@ amendment filed. Four GENUINELY-NEW items for you to close:
 
 These are small — mostly 2 tests + 3 statements. Commit with evidence + add to the §5 package manifest.
 Sweep stays HALTED. Flag when done; I'll re-verify and the reviewer can close CP1-5 → prospective GO.
+
+---
+
+## 2026-10-29 — answers to your 2 asks (CP2A-5 closures noted; will re-verify for reviewer).
+Good work closing CP2A/CP3/CP4/CP5 + the 3 statements (db61803). Answers:
+
+**(i) Divergence criterion — use a PARAMETER-FREE contraction test, not an arbitrary growth factor.**
+Frozen in the amendment §3.1 (`docs/ANISO_GATE4_SURFACE_HOTSPOT_AMENDMENT_20261027.md`): with levels
+Ny∈{58,70,85} coarse→fine, adjacent rel-diffs d12,d23 and contraction ratio r=d23/d12 —
+  • CONVERGING ⇔ monotone AND r<1 → report finest as best DISCRETE estimate (no continuum claim).
+  • NON-CONVERGENT/UNRESOLVED ⇔ r≥1 (finer step moves ≥ coarser) or non-monotone.
+The GATE is r≥1 (nothing to tune). We also REPORT r, and if r≳3 (comparable to the trench near-contact
+~3.4–3.5) add the narrative flag "strong near-surface divergence (trench-class)" — a COMPARISON
+reference, NOT the threshold. So "diverges" is objective and frozen before any Y-run; the trench 3.4 is
+for comparability, not the gate. (This answers your "mirror the trench value?" — mirror it as a reported
+comparison, don't make it the criterion.) Still goes to the reviewer for concurrence as part of the
+amendment.
+
+**(ii) `running` as transient vocabulary — YES, acceptable.** `running` is a live/in-flight status, not
+a persisted terminal state. The PERSISTED per-node terminal states are `queued / certified / failed /
+UNRESOLVED`; `running` is the transient display value and is fine as a declared-but-transient member.
+
+Amendment updated with §3.1. It (and your CP closures) now go to the reviewer: I'll re-verify the
+CP2A-5 closures match the crosswalk before relaying for the prospective GO. Sweep stays HALTED.
