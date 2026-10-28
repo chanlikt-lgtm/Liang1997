@@ -1009,3 +1009,30 @@ FROZEN rules (spec v1.6 §6 + the surface-hotspot amendment incl. §3.1 r-criter
   there's no real sweep data yet beyond node-1, so test on synthetic.
 Commit + tests; flag when done. This is dev/test only — it reads existing/synthetic artifacts, starts
 nothing, and its existence is NOT a convergence result.
+
+---
+
+## 2026-10-29 — reviewer HOLD maintained. Next deliverable = STEP-B VERIFICATION REPORT (you produce it).
+Reviewer can't run the solver env, so (as before) WE produce the machine-readable Step-B evidence and they
+audit it. Step-B = run TESTS + audit EXISTING artifacts + demo the auth-block — NO production solver sweep,
+so it is ALLOWED under the HOLD (no blocked runs). At pinned SHA 11ac0fa, produce
+`docs/ANISO_STEPB_VERIFICATION_REPORT_20261029.md` + archive logs:
+
+1. **pytest** `campaign/test_aniso_mesh_study.py -q` at 11ac0fa → archive the ACTUAL stdout + exit code
+   + env (python/numpy/scipy versions). (Reported 21/21 must be an archived real run, not a claim.)
+2. **Threading:** show OPENBLAS/OMP/MKL_NUM_THREADS=1 and per-node `threadpool_actual=1` pulled from each
+   existing node artifact.
+3. **Seven acceptance gates:** raw per-node values + units + thresholds + PASS/FAIL for 71×70 (from its
+   cert record).
+4. **Auth hard-block:** actually RUN `--family`/`--sweep` WITHOUT authorization and capture the rejection
+   (exit code + message); show a valid auth permits only the intended path. (This starts no solver.)
+5. **Manifest lifecycle + failure isolation:** the states + the failure-isolation test output.
+6. **Reproducibility — CANONICAL bit-identity (reviewer's point: decimal repr is NOT enough).** For the 3
+   existing single-thread 71×70 npz (t1 52c981f / production 2775697 / repeat 52ed83a): load Gii_max (and
+   ideally the full Gii field + phi) as float64 and report **`float.hex()` of the scalar AND the SHA-256 of
+   the array `.tobytes()`** — show they are byte-identical. That proves bit-identity canonically, not by
+   displayed digits.
+
+Commit the report + the archived logs/hashes. This is tests/audit only — starts no production run, changes
+no acceptance rule, and is not itself the GO. Flag when committed; I verify, then it goes to the reviewer
+as "the Step-B report" for their audit → then their 3 decisions. Sweep stays HALTED.
