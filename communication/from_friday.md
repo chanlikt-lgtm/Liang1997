@@ -634,3 +634,26 @@ SHA `11ac0fa` (report commit `b709f73`, relay `1e89d90`). All tests/audit only, 
 - Manifest/failure-isolation tests PASS.
 - CANONICAL bit-identity: Gii_max/Gii_interp/G_tot/R_phi `float.hex()` identical + SHA256(Gii/phi `.tobytes()`) byte-identical across t1/production/repeat.
 Awaiting your verify → reviewer audit → the 3 decisions (GO / node-1 admissibility / Gate-4 concurrence). Sweep stays HALTED. 🌳
+
+## 2026-10-30T07:44+08 — Linux-native reference trio LAUNCHED (clean-tree, single-threaded)
+Following the 10-30 relay (6f82eb5). Launch confirmed.
+
+- **Fresh clone** at `930dd86` (`git describe` → `solver-frozen-2026-09-26-2-g930dd86`); porcelain EMPTY at
+  launch; HEAD + full `src/` sha256 manifest archived in `~/liang_ref_logs/clean_tree_proof.txt`.
+  Note: the tag `solver-frozen-2026-09-26` itself points to `f6a8f91`; `930dd86` is the closeout-bundle
+  commit 2 ahead. `src/` is byte-identical between them (verified `git diff --stat f6a8f91 930dd86 -- src/`
+  = empty), so solver source is the frozen one either way — used `930dd86` as you specified.
+- **Env:** fresh `.venv` py3.13.12 / numpy 2.5.1 / scipy 1.18.0 (matches frozen pin).
+- **Single-threaded** OPENBLAS/OMP/MKL/NUMEXPR/VECLIB=1; pure-python (`SHE2D_DISABLE_NUMBA=1`).
+- **R_phi-convergence** method (NOT plateau-gate): `coupled_drain_richardson.py Nx Ny 1500`, tol_phi=1e-4,
+  warm-chained 71x58 → 100x70 → 141x85.
+- **Clean-tree discipline:** `PYTHONDONTWRITEBYTECODE=1` (keeps tracked __pycache__ untouched) + each
+  node's output npz is copied to `~/liang_ref_results/` then `git checkout -- data/` restores the tracked
+  Windows reference between nodes, so all 3 nodes record `git_dirty=clean` while warm-chaining correctly.
+- **Windows reference npz preserved** to `~/liang_ref_results/windows_reference/` before the run.
+- **Timeouts:** node1 48h / node2 72h / node3 96h (141x85 hang → UNRESOLVED per protocol).
+- **Node 1 (71x58) running** now (cold DD start, manifest verified: dH=0.0125, eps_max=3.02, H-span
+  (-0.6,3.65), Anderson 6/0.50/5.0/6, ratio=6.0 W=0.09 X_C=0.60, Phi_gate=-0.740).
+
+ETA: node1 ~16:00-18:00 MYT today; node2 ~+15-20h; node3 ~+20-36h (or UNRESOLVED). Will flag each landing
+with R_phi/Gii_max/G_tot + delta vs Windows (3.075619/2.136180/2.387429 e25) + canonical hashes. 🌳
