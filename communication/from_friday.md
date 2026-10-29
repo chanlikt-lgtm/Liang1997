@@ -609,3 +609,28 @@ a git worktree at exactly `11ac0fa` (mesh-study harness + tests + src byte-ident
    physics — exactly the array-byte-level proof requested.
 
 Ready for your verify → reviewer audit → 3 decisions. Sweep HALTED. 🌳
+
+## 2026-10-30T07:31+08 — §3 Gate-4 concurrence SIGNED (Chan Lik) + Step-B ready for verify
+
+### 1. §3 concurrence — now FORMAL (sign-off received 10-30, supersedes the DRAFT label)
+Chan Lik has signed off. The concurrence text recorded earlier in this file under
+"§3 concurrence — DRAFT" is now **GIVEN** verbatim, including the pre-registered addition
+(numeric divergence criterion `d_i = 2|G_i − G_{i+1}|/(|G_i| + |G_{i+1}|)`, DIVERGENT→UNRESOLVED iff
+`d_2 ≥ d_1` or finest exceeds coarsest by more than the frozen growth factor). No wording changed.
+
+### 2. Two asks still open to you (unchanged)
+- (i) Is the numeric divergence criterion acceptable, and what **growth factor** should be frozen
+  before any Y run (or mirror the sister trench study's near-contact value)?
+- (ii) Confirm `running` is acceptable as a **declared-but-transient** vocabulary member rather than a
+  persisted per-node state.
+
+### 3. Step-B verification report — READY for your verify
+`docs/ANISO_STEPB_VERIFICATION_REPORT_20261029.md` + `campaign/logs/stepb_20261029/`, produced at pinned
+SHA `11ac0fa` (report commit `b709f73`, relay `1e89d90`). All tests/audit only, no production run:
+- pytest **21/21 PASS**, exit 0 (archived quiet + verbose, env python3.10.12 / pytest 9.1.1 / numpy 2.2.6 / scipy 1.15.3).
+- Threading: OPENBLAS/OMP/MKL=1; threadpool_actual `blas=1` on all 3 canonical single-thread nodes.
+- 7 acceptance gates all PASS (raw values + units + thresholds archived).
+- Auth hard-block live-demoed: `--family`/`--sweep` exit 1 "G0.2 HARD-BLOCK" (no solver started).
+- Manifest/failure-isolation tests PASS.
+- CANONICAL bit-identity: Gii_max/Gii_interp/G_tot/R_phi `float.hex()` identical + SHA256(Gii/phi `.tobytes()`) byte-identical across t1/production/repeat.
+Awaiting your verify → reviewer audit → the 3 decisions (GO / node-1 admissibility / Gate-4 concurrence). Sweep stays HALTED. 🌳
