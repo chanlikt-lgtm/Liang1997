@@ -1,0 +1,31 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.1.1, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /tmp/liang_stepb
+plugins: langsmith-0.7.23, anyio-4.12.1
+collecting ... collected 21 items
+
+campaign/test_aniso_mesh_study.py::test_mesh_law_unchanged_vs_driver PASSED [  4%]
+campaign/test_aniso_mesh_study.py::test_dy_at_unchanged_vs_driver PASSED [  9%]
+campaign/test_aniso_mesh_study.py::test_refuses_nothing PASSED           [ 14%]
+campaign/test_aniso_mesh_study.py::test_interpolated_peak_subcell PASSED [ 19%]
+campaign/test_aniso_mesh_study.py::test_interpolated_peak_degenerate PASSED [ 23%]
+campaign/test_aniso_mesh_study.py::test_npz_schema_written PASSED        [ 28%]
+campaign/test_aniso_mesh_study.py::test_certify_runs PASSED              [ 33%]
+campaign/test_aniso_mesh_study.py::test_certify_not_rphi_alone PASSED    [ 38%]
+campaign/test_aniso_mesh_study.py::test_fwhm_2cross_gaussian PASSED      [ 42%]
+campaign/test_aniso_mesh_study.py::test_fwhm_2cross_flags PASSED         [ 47%]
+campaign/test_aniso_mesh_study.py::test_resource_gate PASSED             [ 52%]
+campaign/test_aniso_mesh_study.py::test_parse_node_rest_threads PASSED   [ 57%]
+campaign/test_aniso_mesh_study.py::test_config_hash_stable PASSED        [ 61%]
+campaign/test_aniso_mesh_study.py::test_thread_env_enforced PASSED       [ 66%]
+campaign/test_aniso_mesh_study.py::test_exec_auth_hard_block PASSED      [ 71%]
+campaign/test_aniso_mesh_study.py::test_exec_auth_recorded PASSED        [ 76%]
+campaign/test_aniso_mesh_study.py::test_metadata_persisted_on_disk PASSED [ 80%]
+campaign/test_aniso_mesh_study.py::test_gate4_excludes_uncertified PASSED [ 85%]
+campaign/test_aniso_mesh_study.py::test_node_state_vocabulary PASSED     [ 90%]
+campaign/test_aniso_mesh_study.py::test_run_sweep_sequential_failure_isolation PASSED [ 95%]
+campaign/test_aniso_mesh_study.py::test_warm_start_assert PASSED         [100%]
+
+============================== 21 passed in 0.25s ==============================
+EXIT_CODE=0

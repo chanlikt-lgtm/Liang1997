@@ -1,0 +1,36 @@
+=== t1 control (52c981f)  (she2d_aniso_71x70_t1_47e3c9ec574b.npz) ===
+  Gii_max      hex=0x1.973e8ea5f5dd7p+84
+  Gii_max      dec=3.0770514168841145e+25
+  Gii_interp   hex=0x1.6406aa937cb07p+84
+  G_tot        hex=0x1.4e0a7f18eb8d2p+46
+  R_phi        hex=0x1.536ad10b10000p-14
+  n_iter       =531
+  SHA256(Gii)  =c6a906cd82ce2bee91a1d0b4720d5a8ec5ae5656d00f4210e6190a781170013d
+  SHA256(phi)  =be38607b69b5f32b1cb2a8a9380eac0aa2db05fc5078e5f305296ac9be624198
+  SHA256(file) =c8a2b56cfa651fa1f13f3056a7d8126b6da5823954e4df9f16483b15aa57c7b4
+  Gii shape=(70, 71) dtype=float64 | phi shape=(70, 71) dtype=float64
+
+=== production node-1 (2775697)  (she2d_aniso_71x70_t1_552bb609f0f2_X.npz) ===
+  Gii_max      hex=0x1.973e8ea5f5dd7p+84
+  Gii_max      dec=3.0770514168841145e+25
+  Gii_interp   hex=0x1.6406aa937cb07p+84
+  G_tot        hex=0x1.4e0a7f18eb8d2p+46
+  R_phi        hex=0x1.536ad10b10000p-14
+  n_iter       =531
+  SHA256(Gii)  =c6a906cd82ce2bee91a1d0b4720d5a8ec5ae5656d00f4210e6190a781170013d
+  SHA256(phi)  =be38607b69b5f32b1cb2a8a9380eac0aa2db05fc5078e5f305296ac9be624198
+  SHA256(file) =6596ae26d356cf3e52af8e1195a8fc9d6d2b125a246ad0dfa6959163e714312d
+  Gii shape=(70, 71) dtype=float64 | phi shape=(70, 71) dtype=float64
+
+=== repeat (52ed83a)  (she2d_aniso_71x70_t1_1e010e13e26f_repeat.npz) ===
+  Gii_max      hex=0x1.973e8ea5f5dd7p+84
+  Gii_max      dec=3.0770514168841145e+25
+  Gii_interp   hex=0x1.6406aa937cb07p+84
+  G_tot        hex=0x1.4e0a7f18eb8d2p+46
+  R_phi        hex=0x1.536ad10b10000p-14
+  n_iter       =531
+  SHA256(Gii)  =c6a906cd82ce2bee91a1d0b4720d5a8ec5ae5656d00f4210e6190a781170013d
+  SHA256(phi)  =be38607b69b5f32b1cb2a8a9380eac0aa2db05fc5078e5f305296ac9be624198
+  SHA256(file) =6cf32be40ebbe2cf5c454d0b3d55d49297f84e40df5f07fc1fe9621bda927156
+  Gii shape=(70, 71) dtype=float64 | phi shape=(70, 71) dtype=float64
+

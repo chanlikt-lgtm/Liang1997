@@ -1,0 +1,1 @@
+G0.2 HARD-BLOCK: full-sweep execution is NOT authorized. The anisotropic sweep is HELD until Gates 0-3 PASS with evidence (docs/ANISO_STUDY_REVIEW_CHECKPOINT_20261023.md). To authorize, write /tmp/liang_stepb/campaign/aniso_exec_auth.json with {"execution_authorized": true, "who": ..., "when": ...}.

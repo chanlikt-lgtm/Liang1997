@@ -1,0 +1,17 @@
+=== CANONICAL node-1: data/she2d_aniso_71x70_t1_552bb609f0f2_X.json ===
+git_commit=2775697  git_dirty=clean  config_hash=552bb609f0f2  H_hash=b4319bb03303
+status=CERTIFIED certified=True  Nx=71 Ny=70  R_phi=8.092338e-05  n_iter=531
+
+=== SEVEN ACCEPTANCE GATES (raw value | unit | gate | norm | PASS) ===
+  R_phi                value=8.09234e-05    unit=V      gate=0.0001     norm=absolute passed=True
+  continuity_residual  value=3.45138e-09    unit=1      gate=1e-06      norm=scaled by max(|bs|,1) passed=True
+  number_balance       value=2.0798e-05     unit=1      gate=0.01       norm=|balance|/scale (absolute) passed=True
+  drift_raw_Gii        value=0.000109975    unit=1      gate=0.005      norm=40-iter continuation spread passed=True
+  drift_interp_Gii     value=9.962e-05      unit=1      gate=0.005      norm=40-iter continuation endpoint delta passed=True
+  drift_G_tot          value=0.000113597    unit=1      gate=0.005      norm=40-iter continuation spread passed=True
+  hotspot_drift        value=5.74279e-05    unit=cell   gate=0.5        norm=|cont hotspot - main hotspot| / h_rep passed=True
+
+=== THREADING (per-node provenance) ===
+  she2d_aniso_71x70_t1_47e3c9ec574b.json     threads_req=1  threadpool_actual={'blas': 1}  threads_env={'OPENBLAS_NUM_THREADS': '1', 'OMP_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1'}
+  she2d_aniso_71x70_t1_552bb609f0f2_X.json   threads_req=1  threadpool_actual={'blas': 1}  threads_env={'OPENBLAS_NUM_THREADS': '1', 'OMP_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1'}
+  she2d_aniso_71x70_t1_1e010e13e26f_repeat.json threads_req=1  threadpool_actual={'blas': 1}  threads_env={'OPENBLAS_NUM_THREADS': '1', 'OMP_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1'}
