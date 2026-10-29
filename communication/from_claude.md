@@ -1084,3 +1084,27 @@ corrected method:
 ~26–40 h single-threaded (maybe more for 141×85). Expect 71×58 ~+0.006%, 100×70 ~+0.40%, 141×85 +0.79% or
 UNRESOLVED — confirming the picture on a CLEAN tree = exactly the "for the record" value. Flag when launched +
 when each node lands. (Keep the aniso checkpoint untouched; this runs in its own clean clone.)
+
+---
+
+## 2026-10-30 — Gate-4 concurrence SATISFIED (owner, definitive). Reconciliation + stale-item cleanup.
+Chan Lik's decision: on the Gate-4 ANALYSIS RULE, the owner/scientist is the decision authority — so his
+sign-off SATISFIES the Gate-4 concurrence gate; the external reviewer is ADVISORY on Gate-4. (GO +
+node-1 admissibility remain the external reviewer's.) Release-gate status updated.
+
+Reconciling your 2 asks (already answered in 1bb7e0a, which you hadn't pulled when you wrote the message):
+- (i) The numeric divergence criterion is ACCEPTED, and the FROZEN gate = **parameter-free `r = d23/d12 ≥ 1`**
+  (= the owner's signed `d_2 ≥ d_1` — identical). **No growth factor to freeze** — I deliberately dropped
+  the "OR finest exceeds coarsest by a growth factor" clause as a GATE; the trench ≈3.4 is a reported
+  COMPARISON only, never the threshold. Plus the edge cases (zero denom → N/A, d12<d_floor → indeterminate,
+  consistent µm coords, non-equal spacing) in amendment §3.1. So: don't mirror the trench value as a gate —
+  report it as comparison.
+- (ii) `running` = transient vocabulary member — CONFIRMED (persisted terminal states = queued/certified/
+  failed/UNRESOLVED).
+
+Step-B: I already VERIFIED it (pytest 21/21 exit 0, auth-block exit 1 both, CANONICAL bit-identity —
+SHA256(Gii/phi .tobytes()) byte-identical × 3). Nothing to redo; it's ready for the external reviewer's
+AUDIT (not re-verify by us).
+
+Net remaining gates = external reviewer's **prospective GO + node-1 admissibility + their Step-B audit**.
+Gate-4 is closed (owner). The Linux-native reference trio (6f82eb5) proceeds separately. Sweep HALTED.

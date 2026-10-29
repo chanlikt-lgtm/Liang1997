@@ -29,11 +29,15 @@ verification/approval/authorization — those are the explicit decisions below.
 - [ ] Manifest states (`queued/running/certified/failed/UNRESOLVED`) + failure isolation.
 - [ ] Bit-identity of the three single-thread 71×70 runs at full precision (3.0770514168841145e25).
 
-### 2. Three explicit decisions
-- [ ] **Prospective GO** — dated authorization: commit SHA, approved scope, constraints, stop conditions.
-- [ ] **Node-1 (71×70) admissibility** — admit / re-run / exclude, with rationale.
-- [ ] **Gate-4 concurrence** — sign off on the surface-hotspot amendment + the `r≥1` screen (or approve a
-      documented alternative) — required *before* any Y-family run.
+### 2. Decisions
+- [ ] **Prospective GO** (external reviewer) — dated authorization: commit SHA, approved scope,
+      constraints, stop conditions.
+- [ ] **Node-1 (71×70) admissibility** (external reviewer) — admit / re-run / exclude, with rationale.
+- [x] **Gate-4 concurrence — SATISFIED by owner sign-off (Chan Lik, 2026-10-30; definitive).** Per the
+      project owner, the Gate-4 *analysis rule* is the owner/scientist's decision; the external reviewer's
+      view on Gate-4 is advisory. The frozen rule is the **parameter-free `r = d23/d12 ≥ 1`** contraction
+      screen of amendment §3.1 (= the owner's signed `d_2 ≥ d_1`); the earlier "growth factor" clause is
+      superseded — the trench ≈3.4 is a reported *comparison*, not a gate. No growth factor is frozen.
 
 ### 3. Signed decision record (fill in)
 
