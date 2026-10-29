@@ -1053,3 +1053,34 @@ manifest/failure-isolation, and the CANONICAL bit-identity (float.hex() + sha256
 across the 3 single-thread npz, NOT decimal repr — reviewer's explicit point). Tests/audit only, no
 production run, allowed under HOLD. That report → I verify → reviewer audits → their 3 decisions. Sweep
 stays HALTED.
+
+---
+
+## 2026-10-30 — NEW TASK (separate from aniso, NOT reviewer-gated): clean Linux-native CERTIFIED REFERENCE trio.
+Chan Lik wants a clean-tree, frozen-tag, single-threaded, from-scratch Linux reproduction of the REPRODUCTION
+TRIO (71×58/100×70/141×85) — for the record (a Linux-native certified reference to complement the Windows
+Sep-24 reference) + extra reviewer evidence of determinism. This is the reproducibility trio, NOT the aniso
+families; the aniso sweep stays HELD. No reviewer gate on this one.
+
+**Method (deliberate):** R_φ-CONVERGENCE, NOT the plateau-gate run_from_scratch.sh — the plateau gate is the
+one that premature-stops on Linux (the withdrawn −12% artifact), so it would give a WRONG reference. Use the
+corrected method:
+1. **Fresh clone at the frozen solver tag** (`solver-frozen-2026-09-26` / git 930dd86), confirm
+   `git status --porcelain` EMPTY; record HEAD + clean status.
+2. **Single-threaded** (OPENBLAS/OMP/MKL_NUM_THREADS=1) — determinism + the 4.3% near-null-space lesson.
+3. **Trio to R_φ<1e-4, warm-chained:**
+   `python src/coupled_drain_richardson.py 71 58 1500`
+   `python src/coupled_drain_richardson.py 100 70 1500 data/she2d_richardson_71x58.npz`
+   `python src/coupled_drain_richardson.py 141 85 1500 data/she2d_richardson_100x70.npz`
+4. **Per node record** (like Step-B): R_phi + continuity + balance + observable drift, n_iter, full
+   provenance, and CANONICAL hashes (float.hex + SHA-256 of Gii & phi .tobytes()).
+5. **141×85:** expect the known inner-solve stagnation risk — if it hangs / doesn't reach R_φ<1e-4 within the
+   1500 cap, classify UNRESOLVED (don't force); ensure RAM/pagefile headroom (the box's old OOM ceiling).
+6. **Compare** each to the Windows reference (3.075619 / 2.136180 / 2.387429 e25) → report Linux-native values
+   + deltas + sign pattern.
+7. **Package** `docs/LINUX_NATIVE_REFERENCE_20261030.md`: clean-tree proof + per-node table + canonical
+   hashes + manifest. Commit + push.
+
+~26–40 h single-threaded (maybe more for 141×85). Expect 71×58 ~+0.006%, 100×70 ~+0.40%, 141×85 +0.79% or
+UNRESOLVED — confirming the picture on a CLEAN tree = exactly the "for the record" value. Flag when launched +
+when each node lands. (Keep the aniso checkpoint untouched; this runs in its own clean clone.)
