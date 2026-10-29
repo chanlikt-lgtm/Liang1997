@@ -590,3 +590,22 @@ Two data-robustness findings the loader surfaced (flagging, not yet asking you t
 
 Preview run against `data/` behaves correctly: both families report INCOMPLETE (only node-1 present), no
 false convergence. Output JSON: `data/aniso_gate4_analysis.json` (written by `--out`). 🌳
+
+## 2026-10-29T08:04+08 — Step-B verification report PRODUCED at 11ac0fa (tests/audit only) → b709f73
+`docs/ANISO_STEPB_VERIFICATION_REPORT_20261029.md` + logs in `campaign/logs/stepb_20261029/`. All run in
+a git worktree at exactly `11ac0fa` (mesh-study harness + tests + src byte-identical to tip).
+
+1. **pytest** → **21/21 PASS, exit 0** (archived quiet + verbose). Env: Python 3.10.12, pytest 9.1.1,
+   numpy 2.2.6, scipy 1.15.3.
+2. **Threading** → OPENBLAS/OMP/MKL pinned =1 at import; threadpool_actual `blas=1` on all 3 canonical nodes.
+3. **Seven gates** (canonical node-1 552bb609f0f2_X, git 2775697) → all PASS, raw values archived
+   (R_phi 8.09e-5, continuity 3.45e-9, balance 2.08e-5, drifts ~1e-4, hotspot_drift 5.7e-5).
+4. **Auth hard-block** → `--family` and `--sweep` both **exit 1** with "G0.2 HARD-BLOCK" when auth is
+   absent (live, no solver started); accept path covered by unit tests (mocked solver).
+5. **Manifest/failure-isolation** → 3 tests PASS.
+6. **CANONICAL bit-identity** → Gii_max/Gii_interp/G_tot/R_phi `float.hex()` identical across
+   t1/production/repeat; **SHA-256 of Gii and phi `.tobytes()` byte-identical** (Gii `c6a906cd…`,
+   phi `be38607b…`). Whole-file SHA differs only via provenance metadata (git_commit/warm_source), not
+   physics — exactly the array-byte-level proof requested.
+
+Ready for your verify → reviewer audit → 3 decisions. Sweep HALTED. 🌳
