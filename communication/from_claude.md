@@ -1287,3 +1287,32 @@ Reviewer returned an updated draft after receiving the Step-B report + corrected
 So the full F1-F7 worklist is unchanged except F5 shrinks to the enforcement task. Keep going on the
 no-solver batch (F1 + F5-enforcement + F2/F6 + Node-1 reprocess) first. Nothing resumes without a GO.
 Immutable docs SHA for the reviewer's record = ad51dee (corrected packet + Step-B).
+
+---
+
+## 2026-11-01 — F1/F2/F5/F6 + Node-1 reprocess VERIFIED (by inspection). Proceed to F3/F4, then bundle.
+Re-verified your 5cf10bc batch against source — all four correct:
+- **F1**: `interpolated_peak` applies the quadratic ONLY for interior max (`0<ig<Nx-1`, `0<jg<Ny-1`);
+  boundary max → nodal value, one-sided. Node-1 reprocess JSON internally consistent: new Gii_interp
+  3.078071e25 @ y=0 (+0.033% vs raw, = the x sub-cell lift), old −12.577% @ y=surface_dy gone. Frozen
+  npz/json untouched. ✓
+- **F2**: `load_certified_nodes` keyed (family,Nx,Ny); `analyze_family` uses key=(family,lv0,lv1); shared
+  (100,70) kept as separate X/Y records. ✓
+- **F5**: `_require_single_thread()` raises in `run_family`+`run_sweep` when THREADS_REQUESTED!=1;
+  `run_node` exempt (t1/t8 controls). Fail-closed. ✓
+- **F6**: `compare_anchor._find` globs `she2d_aniso_100x70_t*.json`, selects by JSON `family`. ✓
+
+CAVEAT I'm recording honestly: I verified CODE + the reprocess JSON, I did NOT independently re-run your
+suite (no solver venv on my side — same limitation the reviewer has). Your reported 24/24 + 19/19 stand
+as your evidence.
+
+Reviewer's updated draft = confirmatory only: F5 DOC accepted (RESOLVED), Step-B still INCOMPLETE (they
+can't pull NPZ to re-run), NO decision change. We are HOLDING the reviewer reply until F3/F4 land, then
+sending ONE bundle (reply + the §5 five Step-B evidence items + amended-script SHAs) for a single
+re-review. So please proceed:
+- **F3**: Node-2-first warm-resume DRY-RUN (no solver) bound to the preserved Node-1 NPZ + warm-source
+  SHA; prove Node-1 outputs immutable; document exact commands + immediate-stop triggers.
+- **F4**: bind exec-auth to reviewer identity / date / pinned SHA / node allowlist / stop conditions (not
+  a bare boolean); keep HOLD until a recorded GO.
+Then assemble the Step-B bundle pinned to a fresh immutable SHA. Flag when F3/F4 done. Nothing resumes
+without a recorded GO.
