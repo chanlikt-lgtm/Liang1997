@@ -29,8 +29,12 @@ addition does not touch them). Headline results, each with archived logs under
 
 - **Regression suite:** `pytest campaign/test_aniso_mesh_study.py -q` → **21 passed, exit 0**
   (`pytest_mesh_study.txt` + verbose). Env in `env.txt`.
-- **Threading:** harness pins `OPENBLAS/OMP/MKL_NUM_THREADS=1` at import; all three canonical 71×70
-  nodes record `threadpool_actual blas=1`; the 8-thread control is excluded from convergence analysis.
+- **Threading:** thread count is **CLI-selected** — the harness sets `OPENBLAS/OMP/MKL_NUM_THREADS` at
+  import to the `--threads` value, which **defaults to 8**; the sweep script passes `--threads 1`
+  explicitly. All three canonical 71×70 nodes record `threadpool_actual blas=1`; the 8-thread control is
+  excluded from convergence analysis. *(Corrected per reviewer F5, 2026-11-01: the earlier "pins =1 at
+  import" phrasing was over-broad; the single-thread Node-1 record itself is unaffected — it genuinely
+  ran at `blas=1`.)*
 - **Seven acceptance gates (canonical 71×70, raw values):** all seven PASS — `R_phi=8.09e-5<1e-4`,
   `continuity_residual=3.45e-9<1e-6`, `|number_balance|=2.08e-5<1e-2`, three drift gates `<5e-3`,
   `hotspot_drift=5.74e-5<0.5`. `R_phi<1e-4` alone is explicitly **not** sufficient (two continuity-class

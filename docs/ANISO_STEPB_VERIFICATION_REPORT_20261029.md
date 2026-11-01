@@ -27,8 +27,17 @@ frozen solver.
 
 ## 2. Threading enforcement (per node)
 
-The harness pins `OPENBLAS_NUM_THREADS = OMP_NUM_THREADS = MKL_NUM_THREADS = 1` at import, and every
-single-thread node artifact records its *actual* BLAS threads. All three canonical 71×70 nodes:
+The thread count is **CLI-selected**: the harness sets `OPENBLAS_NUM_THREADS = OMP_NUM_THREADS =
+MKL_NUM_THREADS` at import to the `--threads` argument, which **defaults to 8** (`_threads_from_argv`);
+the sweep shell script passes `--threads 1` explicitly. Every single-thread node artifact records its
+*actual* BLAS threads, so the enforcement is verified per node, not assumed. All three canonical 71×70
+nodes:
+
+> **Correction (reviewer F5, 2026-11-01).** An earlier wording here said the harness "pins … = 1 at
+> import." That was over-broad — the pin is to the CLI `--threads` value, default 8. The single-thread
+> Node-1 record below is **not** affected: it genuinely ran at `blas=1` (the sweep passed `--threads 1`
+> and each node records `threadpool_actual`). Remediation to fail-closed on `threads≠1` is tracked under
+> F5.
 
 | artifact | threads_req | threadpool_actual | threads_env |
 |---|---|---|---|
