@@ -19,6 +19,16 @@ sys.path.insert(0, os.path.join(REPO, "src"))
 import aniso_mesh_study as aniso
 
 
+def _valid_auth(**overrides):
+    """A COMPLETE F4-signed exec authorization (bound to the current HEAD)."""
+    a = dict(execution_authorized=True, who="Chan Lik", when="2026-11-01T00:00:00Z",
+             bound_sha=aniso._git("rev-parse", "HEAD"), threads_required=1,
+             node_allowlist=[[71, 70], [100, 70], [141, 70], [100, 58], [100, 85]],
+             output_namespace="data", stop_on_unresolved=True, stop_on_failed=True)
+    a.update(overrides)
+    return a
+
+
 # ---------------------------------------------------------------------------
 # Extract the driver's build_mesh / dy_at / frozen constants via AST (the driver
 # parses sys.argv at module level, so it cannot be imported directly).
@@ -301,14 +311,52 @@ def test_exec_auth_hard_block():
 
 
 def test_exec_auth_recorded():
-    """G0.2: a valid auth file is accepted and its who/when is surfaced."""
+    """G0.2/F4: a COMPLETE signed auth (bound SHA + threads + allowlist + stop conditions) is accepted."""
     saved = aniso.AUTH_FILE
     aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_ok_%d.json" % os.getpid())
     with open(aniso.AUTH_FILE, "w") as fh:
-        json.dump({"execution_authorized": True, "who": "Chan Lik", "when": "2026-10-23T00:00:00Z"}, fh)
+        json.dump(_valid_auth(), fh)
     try:
         a = aniso._require_exec_auth()
         assert a["execution_authorized"] is True and a["who"] == "Chan Lik"
+        assert a["threads_required"] == 1 and a["bound_sha"] == aniso._git("rev-parse", "HEAD")
+    finally:
+        aniso.AUTH_FILE = saved
+
+
+def test_exec_auth_rejects_bare_boolean():
+    """F4: a bare execution_authorized:true (the old schema) is NO LONGER sufficient."""
+    saved = aniso.AUTH_FILE
+    aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_bare_%d.json" % os.getpid())
+    with open(aniso.AUTH_FILE, "w") as fh:
+        json.dump({"execution_authorized": True, "who": "Chan Lik",
+                   "when": "2026-10-25T09:32:00+08:00"}, fh)
+    try:
+        try:
+            aniso._require_exec_auth()
+            raised = False
+        except SystemExit as e:
+            raised = True
+            assert "incomplete" in str(e) or "Missing required" in str(e)
+        assert raised, "bare execution_authorized:true must be rejected (F4)"
+    finally:
+        aniso.AUTH_FILE = saved
+
+
+def test_exec_auth_rejects_wrong_bound_sha():
+    """F4: authorization bound to a different SHA must be rejected."""
+    saved = aniso.AUTH_FILE
+    aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_sha_%d.json" % os.getpid())
+    with open(aniso.AUTH_FILE, "w") as fh:
+        json.dump(_valid_auth(bound_sha="deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"), fh)
+    try:
+        try:
+            aniso._require_exec_auth()
+            raised = False
+        except SystemExit as e:
+            raised = True
+            assert "bound_sha" in str(e)
+        assert raised
     finally:
         aniso.AUTH_FILE = saved
 
@@ -320,7 +368,7 @@ def test_run_sweep_threads_fail_closed():
     saved_threads = aniso.THREADS_REQUESTED
     aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_t_%d.json" % os.getpid())
     with open(aniso.AUTH_FILE, "w") as fh:
-        json.dump({"execution_authorized": True, "who": "Chan Lik", "when": "2026-11-01T00:00:00Z"}, fh)
+        json.dump(_valid_auth(), fh)
     aniso.THREADS_REQUESTED = 8   # the default when --threads is omitted
     try:
         try:
@@ -417,9 +465,8 @@ def test_node_state_vocabulary():
     assert set(aniso.NODE_STATES) == {"queued", "running", "certified", "failed", "UNRESOLVED"}
 
 
-def test_run_sweep_sequential_failure_isolation():
-    """CP2A/CP5: a clean sequential X-then-Y dry run -- the shared (100,70) anchor does not make the
-    2nd family fail, and one family failing must NOT mark the other complete."""
+def test_run_sweep_stop_on_failed():
+    """F4: with stop_on_failed=true, a failed X-family node stops the sweep -- Y is HELD, not run."""
     import shutil
     calls = []
     def _fake_run_node(Nx, Ny, max_outer=1500, warm_npz=None, verbose=True, outdir=None, run_id=None,
@@ -434,35 +481,98 @@ def test_run_sweep_sequential_failure_isolation():
     saved_threads = aniso.THREADS_REQUESTED
     aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_sweep_%d.json" % os.getpid())
     with open(aniso.AUTH_FILE, "w") as fh:
-        json.dump({"execution_authorized": True, "who": "Chan Lik", "when": "2026-10-29T00:00:00Z"}, fh)
+        json.dump(_valid_auth(), fh)
     aniso.run_node = _fake_run_node
-    aniso.THREADS_REQUESTED = 1   # F5: the production sweep must be single-threaded
+    aniso.THREADS_REQUESTED = 1
     td = tempfile.mkdtemp()
     try:
         manifest, results = aniso.run_sweep(outdir=td)
-        # X-family: (71,70) ran, then (100,70) failed -> X is FAILED
         assert results["X"]["status"] == "FAILED"
-        # Y-family ran independently to completion despite X failing (failure isolation)
-        assert results["Y"]["status"] == "COMPLETE"
-        y_nodes = results["Y"]["nodes"]
-        assert all(n["state"] == "certified" for n in y_nodes)
-        # the shared (100,70) anchor ran in BOTH families as separate calls
+        assert results["Y"]["status"] == "HELD"
+        assert all(n["state"] == "queued" for n in results["Y"]["nodes"])
+        # the shared (100,70) anchor ran only in X (Y never ran its anchor)
         anchor = [(nx, ny, f) for (nx, ny, f) in calls if (nx, ny) == (100, 70)]
-        assert len(anchor) == 2 and {a[2] for a in anchor} == {"X", "Y"}
-        # manifest emits the full state vocabulary + per-family status
-        assert set(manifest["vocabulary"]) == {"queued", "running", "certified", "failed", "UNRESOLVED"}
+        assert len(anchor) == 1 and anchor[0][2] == "X"
         assert manifest["families"]["X"]["status"] == "FAILED"
-        assert manifest["families"]["Y"]["status"] == "COMPLETE"
-        # X-family node states: certified (71,70), failed (100,70), queued (141,70)
+        assert manifest["families"]["Y"]["status"] == "HELD"
         x_states = [n["state"] for n in manifest["families"]["X"]["nodes"]]
         assert x_states == ["certified", "failed", "queued"]
-        # manifest file actually written to disk
         assert os.path.exists(manifest["_path"])
     finally:
         aniso.run_node = saved_node
         aniso.AUTH_FILE = saved_auth
         aniso.THREADS_REQUESTED = saved_threads
         shutil.rmtree(td, ignore_errors=True)
+
+
+def test_run_sweep_isolation_when_stop_disabled():
+    """F4: with stop_on_failed=false, X failing does NOT stop Y (explicit opt-in to continue)."""
+    import shutil
+    def _fake_run_node(Nx, Ny, max_outer=1500, warm_npz=None, verbose=True, outdir=None, run_id=None,
+                       family=None):
+        if family == "X" and (Nx, Ny) == (100, 70):
+            raise SystemExit("synthetic X-family mid-chain failure")
+        return dict(Nx=Nx, Ny=Ny, family=family, status="CERTIFIED", certified=True,
+                    npz="/tmp/fake_%dx%d_%s.npz" % (Nx, Ny, family))
+    saved_node = aniso.run_node
+    saved_auth = aniso.AUTH_FILE
+    saved_threads = aniso.THREADS_REQUESTED
+    aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_iso_%d.json" % os.getpid())
+    with open(aniso.AUTH_FILE, "w") as fh:
+        json.dump(_valid_auth(stop_on_failed=False), fh)
+    aniso.run_node = _fake_run_node
+    aniso.THREADS_REQUESTED = 1
+    td = tempfile.mkdtemp()
+    try:
+        manifest, results = aniso.run_sweep(outdir=td)
+        assert results["X"]["status"] == "FAILED"
+        assert results["Y"]["status"] == "COMPLETE"   # isolation preserved under explicit opt-in
+    finally:
+        aniso.run_node = saved_node
+        aniso.AUTH_FILE = saved_auth
+        aniso.THREADS_REQUESTED = saved_threads
+        shutil.rmtree(td, ignore_errors=True)
+
+
+def test_resume_dry_run_records_warm_sha():
+    """F3: the dry-run resume binds to the warm-source npz, records its SHA, and does not mutate it."""
+    td = tempfile.mkdtemp()
+    warm = os.path.join(td, "she2d_aniso_71x70_t1_preserved.npz")
+    np.savez(warm, x=np.linspace(0, 0.8, 71), y=np.linspace(0, 0.7, 70))
+    before = aniso._file_sha256(warm)
+    rec = aniso.resume_node(100, 70, warm, dry_run=True)
+    assert rec["dry_run"] is True
+    assert rec["warm_source_sha256"] == before
+    assert aniso._file_sha256(warm) == before   # immutability: warm source untouched
+
+
+def test_resume_requires_auth():
+    """F3/F4: a non-dry-run resume must hard-block without a signed GO."""
+    saved = aniso.AUTH_FILE
+    aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_absent_resume_%d.json" % os.getpid())
+    if os.path.exists(aniso.AUTH_FILE):
+        os.remove(aniso.AUTH_FILE)
+    td = tempfile.mkdtemp()
+    warm = os.path.join(td, "w.npz")
+    np.savez(warm, x=np.arange(3.0), y=np.arange(3.0))
+    try:
+        try:
+            aniso.resume_node(100, 70, warm, dry_run=False)
+            raised = False
+        except SystemExit:
+            raised = True
+        assert raised, "resume_node (non-dry-run) must hard-block without a signed GO"
+    finally:
+        aniso.AUTH_FILE = saved
+
+
+def test_authorized_node_allowlist():
+    """F4: _authorized_node enforces the allowlist (in / out)."""
+    auth = _valid_auth()
+    assert aniso._authorized_node(auth, 71, 70) is True
+    assert aniso._authorized_node(auth, 100, 70) is True
+    assert aniso._authorized_node(auth, 200, 70) is False
+    assert aniso._authorized_node(auth, 100, 120) is False
 
 
 def test_warm_start_assert():

@@ -129,15 +129,50 @@ def _exec_auth():
         return None
 
 
+def _file_sha256(path):
+    with open(path, "rb") as fh:
+        return hashlib.sha256(fh.read()).hexdigest()
+
+
+# F4: hardened exec-auth schema.  A bare `execution_authorized: true` is NO LONGER sufficient -- the
+# authorization must be a signed/reviewer-issued instruction bound to an immutable git SHA, with an
+# explicit single-thread requirement, a node allowlist, an output namespace, and stop conditions.
+AUTH_REQUIRED_FIELDS = ("who", "when", "bound_sha", "threads_required", "node_allowlist",
+                        "output_namespace", "stop_on_unresolved", "stop_on_failed")
+
+
 def _require_exec_auth():
     a = _exec_auth()
     if not (a and a.get("execution_authorized") is True):
         raise SystemExit(
             "G0.2 HARD-BLOCK: full-sweep execution is NOT authorized. The anisotropic sweep is HELD "
-            "until Gates 0-3 PASS with evidence (docs/ANISO_STUDY_REVIEW_CHECKPOINT_20261023.md). "
-            "To authorize, write %s with {\"execution_authorized\": true, \"who\": ..., \"when\": ...}."
-            % AUTH_FILE)
+            "until a signed/reviewer-issued GO is recorded. To authorize, write %s with the F4 schema "
+            "(%s)." % (AUTH_FILE, ", ".join(AUTH_REQUIRED_FIELDS)))
+    missing = [k for k in AUTH_REQUIRED_FIELDS if a.get(k) in (None, "", [], {})]
+    if missing:
+        raise SystemExit(
+            "F4 HARD-BLOCK: exec authorization is incomplete. Missing required field(s): %s. A bare "
+            "execution_authorized:true is no longer sufficient (must be bound to a git SHA + reviewer "
+            "identity/date + threads_required + node_allowlist + output_namespace + stop conditions)."
+            % ", ".join(missing))
+    if int(a.get("threads_required", 0)) != 1:
+        raise SystemExit(
+            "F4 HARD-BLOCK: authorization requires single-thread (threads_required must be 1).")
+    bound = str(a["bound_sha"]).strip()
+    head = _git("rev-parse", "HEAD")
+    if not (bound == head or (len(bound) >= 7 and head.startswith(bound))):
+        raise SystemExit(
+            "F4 HARD-BLOCK: authorization bound_sha=%s does not match current HEAD=%s (re-issue the "
+            "GO against the immutable pinned SHA)." % (bound, head))
     return a
+
+
+def _authorized_node(auth, Nx, Ny):
+    """F4: node allowlist enforcement -- the authorization must explicitly list each node it permits."""
+    allow = auth.get("node_allowlist")
+    if allow is None:
+        return True
+    return [int(Nx), int(Ny)] in [[int(n[0]), int(n[1])] for n in allow]
 
 
 def _require_single_thread():
@@ -600,6 +635,13 @@ def run_node(Nx, Ny, max_outer=MAX_OUTER_CAP, warm_npz=None, verbose=True, outdi
     if os.path.exists(npz_path) or os.path.exists(json_path):
         raise SystemExit("G1.3 HARD-FAIL: output already exists for %s (refusing to overwrite a "
                          "control artifact); pass --run-id for a distinct replicate." % tag)
+    warm_sha = None
+    if warm_npz:
+        _wp = os.path.abspath(warm_npz)
+        if not os.path.exists(_wp):
+            raise SystemExit("G1.1 HARD-FAIL: warm-start npz not found: %s (no silent cold-start "
+                             "fallback)." % _wp)
+        warm_sha = _file_sha256(_wp)
 
     print("=" * 78)
     print("ANISO MESH-STUDY NODE: Nx=%d Ny=%d  (max_outer=%d, tol_phi=%.1e)" % (Nx, Ny, max_outer, TOL_PHI))
@@ -633,17 +675,59 @@ def run_node(Nx, Ny, max_outer=MAX_OUTER_CAP, warm_npz=None, verbose=True, outdi
                  hotspot_drift_um=report["hotspot_drift_um"],
                  hotspot_drift_cells=report["hotspot_drift_cells"],
                  config_hash=cfg, threads_requested=THREADS_REQUESTED,
-                 numpy_version=prov["numpy_version"], platform=prov["platform"])
+                 numpy_version=prov["numpy_version"], platform=prov["platform"],
+                 warm_source_sha=warm_sha)
     H_hash = _save_npz(npz_path, r, x, y, Nx, Ny, dx_drain, dy_surf, dy_depth, warm_name, obs, extra)
 
     rec = _build_node_record(Nx, Ny, family, warm_name, status, certified, detail, cfg, prov,
                              H_hash, dx_drain, dy_surf, dy_depth, obs, report,
                              npz_path, json_path, outdir)
+    rec["warm_source_sha"] = warm_sha
     _write_node_json(rec, json_path)
     print("\n=== NODE %dx%d -> %s  (R_phi=%.3e, Gii_raw=%.4e, Gii_interp=%.4e, G_tot=%.4e) ==="
           % (Nx, Ny, status, obs["R_phi"], obs["Gii_max"], obs["Gii_interp"], obs["G_tot"]))
     print("    %s" % detail)
     print("    saved %s + %s" % (npz_path, json_path))
+    return rec
+
+
+def resume_node(Nx, Ny, warm_npz, max_outer=MAX_OUTER_CAP, dry_run=False, outdir=None, run_id=None,
+                family=None):
+    """F3: checkpoint-only resume -- run a SINGLE node warm-started from a preserved prior-node npz,
+    without re-running the chain.  Bound explicitly to the warm-source npz and records its SHA-256 so
+    the resume is verifiably tied to the exact preserved state.  `dry_run=True` validates + prints the
+    plan WITHOUT invoking the solver (works under HOLD); the real run requires a signed F4 GO + single
+    thread + allowlist."""
+    outdir = outdir or os.path.join(os.path.dirname(__file__), "..", "data")
+    wp = os.path.abspath(warm_npz)
+    if not os.path.exists(wp):
+        raise SystemExit("G1.1 HARD-FAIL: resume warm-start npz not found: %s (no silent cold-start "
+                         "fallback)." % wp)
+    warm_sha = _file_sha256(wp)
+    if dry_run:
+        print("RESUME DRY-RUN (no solver) -- node %dx%d warm-started from %s" % (Nx, Ny, wp))
+        print("  warm_source_sha256 = %s" % warm_sha)
+        print("  threads = %d (real run requires --threads 1); family=%s run_id=%s"
+              % (THREADS_REQUESTED, family, run_id))
+        print("  real run requires: signed F4 GO (bound_sha + threads_required=1 + node_allowlist) "
+              "+ --threads 1")
+        print("  command: python campaign/aniso_mesh_study.py --resume %d %d --warm %s%s"
+              % (Nx, Ny, wp, (" --run-id %s" % run_id) if run_id else ""))
+        print("  immediate-stop triggers: R_phi>=1e-4 at 1500 cap -> UNRESOLVED; phi leaves "
+              "COMMON_PHI_SPAN -> ABORT; inner-solve hang -> manual kill (UNRESOLVED); "
+              "auth/threads/allowlist hard-block.")
+        print("  immutability: warm-source npz opened READ-ONLY (np.load); output is a NEW artifact; "
+              "Node-1 outputs untouched.")
+        return dict(Nx=Nx, Ny=Ny, family=family, warm_source=os.path.basename(wp),
+                    warm_source_sha256=warm_sha, dry_run=True, threads=THREADS_REQUESTED, target=wp)
+    _require_exec_auth()          # F4: resume is a production path -> requires a signed GO
+    _require_single_thread()      # F5/F4: resume must be single-threaded
+    if not _authorized_node(_exec_auth(), Nx, Ny):
+        raise SystemExit("F4 HARD-BLOCK: node %dx%d not in authorization allowlist" % (Nx, Ny))
+    rec = run_node(Nx, Ny, max_outer=max_outer, warm_npz=wp, verbose=True, outdir=outdir,
+                   run_id=run_id, family=family)
+    rec["warm_source_sha"] = warm_sha
+    _write_node_json(rec, rec["json_path"])
     return rec
 
 
@@ -657,6 +741,12 @@ def run_family(name, include_fourth=False):
     peak_rss = None
     stopped = False
     for i, (Nx, Ny) in enumerate(levels):
+        if not _authorized_node(auth, Nx, Ny):        # F4: node allowlist enforcement
+            records.append(dict(Nx=Nx, Ny=Ny, family=name, direction=fam["direction"], level=i,
+                                status="FAILED", certified=False,
+                                error="F4: node %dx%d not in authorization allowlist" % (Nx, Ny)))
+            stopped = True
+            break
         try:
             rec = run_node(Nx, Ny, warm_npz=warm, verbose=True, family=name)
         except SystemExit as e:
@@ -675,6 +765,9 @@ def run_family(name, include_fourth=False):
         records.append(rec)
         if rec["certified"]:
             warm = rec["npz"]
+        elif auth.get("stop_on_unresolved"):          # F4: UNRESOLVED stops the family
+            stopped = True
+            break
         peak_rss = _peak_rss_bytes()     # G1.4: measured peak working set (cumulative max to date)
     # 4th level -- pre-committed resource/convergence gate (reviewer adj. 1 / G1.4)
     if include_fourth and not stopped:
@@ -735,10 +828,20 @@ def run_sweep(include_fourth=False, outdir=None):
                     git_commit=_git_commit, git_dirty=_git_dirty,
                     vocabulary=list(NODE_STATES), families={})
     results = {}
+    hold_rest = False
     for name in ("X", "Y"):
         fam = FAMILIES[name]
         levels = [list(lv) for lv in fam["levels"]]
         fam_rec = dict(family=name, direction=fam["direction"], levels=levels, nodes=[], error=None)
+        if hold_rest:
+            # F4: a prior family hit a stop condition -> remaining family is HELD, not run
+            fam_rec["error"] = "HELD: prior family hit a stop condition (failure/UNRESOLVED)"
+            fam_rec["status"] = "HELD"
+            for lv in levels:
+                fam_rec["nodes"].append(dict(node=lv, state="queued", certified=False))
+            manifest["families"][name] = fam_rec
+            results[name] = fam_rec
+            continue
         records = []
         try:
             records = run_family(name, include_fourth=include_fourth)
@@ -747,7 +850,8 @@ def run_sweep(include_fourth=False, outdir=None):
         except Exception as e:
             fam_rec["error"] = "%s: %s" % (type(e).__name__, e)
         failed = bool(fam_rec["error"]) or any(r.get("status") == "FAILED" for r in records)
-        fam_rec["status"] = "FAILED" if failed else "COMPLETE"
+        unresolved = any(r.get("status") == "UNRESOLVED" for r in records)
+        fam_rec["status"] = "FAILED" if failed else ("UNRESOLVED" if unresolved else "COMPLETE")
         for idx, lv in enumerate(levels):
             if idx < len(records):
                 fam_rec["nodes"].append(dict(node=lv, state=_node_state(records[idx]),
@@ -756,6 +860,9 @@ def run_sweep(include_fourth=False, outdir=None):
                 fam_rec["nodes"].append(dict(node=lv, state="queued", certified=False))
         manifest["families"][name] = fam_rec
         results[name] = fam_rec
+        # F4: stop conditions propagate across families
+        if (failed and auth.get("stop_on_failed")) or (unresolved and auth.get("stop_on_unresolved")):
+            hold_rest = True
     os.makedirs(outdir, exist_ok=True)
     mpath = os.path.join(outdir, "aniso_sweep_manifest.json")
     with open(mpath, "w") as fh:
@@ -837,10 +944,31 @@ if __name__ == "__main__":
         Nx, Ny = int(argv[1]), int(argv[2])
         maxo, run_id = _parse_node_rest(argv[3:])
         run_node(Nx, Ny, max_outer=maxo, run_id=run_id)
+    elif argv[0] == "--resume":
+        Nx, Ny = int(argv[1]), int(argv[2])
+        warm, maxo, run_id, dry_run = None, MAX_OUTER_CAP, None, False
+        i = 3
+        while i < len(argv):
+            tok = argv[i]
+            if tok == "--warm" and i + 1 < len(argv):
+                warm = argv[i + 1]; i += 2; continue
+            if tok == "--run-id" and i + 1 < len(argv):
+                run_id = argv[i + 1]; i += 2; continue
+            if tok == "--threads" and i + 1 < len(argv):
+                i += 2; continue
+            if tok == "--dry-run":
+                dry_run = True
+            elif tok.isdigit():
+                maxo = int(tok)
+            i += 1
+        if not warm:
+            sys.exit("--resume requires --warm <npz>")
+        resume_node(Nx, Ny, warm, max_outer=maxo, dry_run=dry_run, run_id=run_id)
     elif argv[0] == "--family":
         name = argv[1].upper()
         run_family(name, include_fourth=("--include-4th" in argv))
     elif argv[0] == "--sweep":
         run_sweep(include_fourth=("--include-4th" in argv))
     else:
-        sys.exit("usage: --list | --node Nx Ny [maxouter] | --family X|Y [--include-4th] | --sweep")
+        sys.exit("usage: --list | --node Nx Ny [maxouter] | --resume Nx Ny --warm <npz> [--dry-run] | "
+                 "--family X|Y [--include-4th] | --sweep")

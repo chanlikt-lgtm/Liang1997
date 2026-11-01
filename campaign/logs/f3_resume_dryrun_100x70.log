@@ -1,0 +1,7 @@
+RESUME DRY-RUN (no solver) -- node 100x70 warm-started from /home/chanlik/.openclaw/workspace/Liang1997/data/she2d_aniso_71x70_t1_552bb609f0f2_X.npz
+  warm_source_sha256 = 6596ae26d356cf3e52af8e1195a8fc9d6d2b125a246ad0dfa6959163e714312d
+  threads = 8 (real run requires --threads 1); family=None run_id=None
+  real run requires: signed F4 GO (bound_sha + threads_required=1 + node_allowlist) + --threads 1
+  command: python campaign/aniso_mesh_study.py --resume 100 70 --warm /home/chanlik/.openclaw/workspace/Liang1997/data/she2d_aniso_71x70_t1_552bb609f0f2_X.npz
+  immediate-stop triggers: R_phi>=1e-4 at 1500 cap -> UNRESOLVED; phi leaves COMMON_PHI_SPAN -> ABORT; inner-solve hang -> manual kill (UNRESOLVED); auth/threads/allowlist hard-block.
+  immutability: warm-source npz opened READ-ONLY (np.load); output is a NEW artifact; Node-1 outputs untouched.

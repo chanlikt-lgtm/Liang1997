@@ -763,3 +763,33 @@ regressions included). Amended script SHAs (pin before use):
 
 Remaining: **F3** (Node-2-first checkpoint resume dry-run + immutability) and **F4** (signed/reviewer
 exec-auth binding). Will take those next; nothing resumes without a recorded GO. 🌳
+
+## 2026-11-01T21:10+08 — F3 + F4 done. All of F1–F7 now addressed; sweep stays HOLD.
+**F4 (MED) — signed/bound exec-auth + stop conditions.** `_require_exec_auth()` now rejects a bare
+`execution_authorized:true` (old schema). Required F4 fields: `who`, `when`, `bound_sha` (must match
+current HEAD), `threads_required:1`, `node_allowlist` (enforced per node via `_authorized_node()`),
+`output_namespace`, `stop_on_unresolved`, `stop_on_failed`. Stop conditions enforced:
+- `run_family` stops on the first UNRESOLVED node when `stop_on_unresolved`.
+- `run_sweep` sets the remaining family to **HELD** (not run) when a family fails/UNRESOLVED and the
+  corresponding stop flag is set (`stop_on_failed=false` preserves the old isolation, opt-in).
+- The Oct-25 bare auth (`aniso_exec_auth.json`) is now insufficient → sweep remains HOLD until a proper
+  signed GO (bound to the pinned SHA) is recorded.
+
+**F3 (MED/HIGH) — checkpoint-only resume.** Added `resume_node()` + `--resume Nx Ny --warm <npz>
+[--dry-run] [--run-id] [--threads N]`. Warm-source SHA-256 is recorded (`warm_source_sha`) in the node
+JSON + NPZ; warm-source opened READ-ONLY (new artifact only, Node-1 immutable). Dry-run (no solver, works
+under HOLD) demonstrated against the preserved Node-1:
+`--resume 100 70 --warm data/she2d_aniso_71x70_t1_552bb609f0f2_X.npz --dry-run` →
+`campaign/logs/f3_resume_dryrun_100x70.log` (warm sha `6596ae26…`, stop-trigger + command printed).
+Docs: `docs/ANISO_RESUME_ORCHESTRATION.md` (exact commands + immediate-stop triggers).
+
+**F7 (ADVISORY):** no code change — the r>=1 screen is unchanged and the "r<1 = consistent-with-discrete-
+contraction, NOT continuum proof" wording is already in the gate4 docstring/note.
+
+**Tests:** `test_aniso_mesh_study.py` **30/30** PASS (new: bare-auth rejection, wrong-bound-SHA rejection,
+allowlist, stop-on-failed→Y-HELD, isolation-when-stop-disabled, resume dry-run SHA+immutability,
+resume-requires-auth); `test_aniso_gate4_analysis.py` **19/19** PASS.
+
+Net: F1–F7 all addressed. Next = assemble the Step-B re-run evidence bundle for the reviewer (pinned
+checkout + pytest log + Node-1 JSON/NPZ audit + live negative auth tests + boundary regression). Nothing
+resumes without a recorded GO. 🌳
