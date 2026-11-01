@@ -35,11 +35,45 @@ Windows reference (`reference_sep24/`): 71×58 = 3.075619e25, 100×70 = 2.136180
 **Headline:** all three meshes reproduce the Windows reference to **< 0.6%** (target < 1%), and —
 notably — **141×85 converged cleanly this time** (R_phi = 7.46e-5 at 253 warm-chained iters), whereas
 the prior runs either hung at outer 281 (inner-solve stagnation → UNRESOLVED) or had to use an
-earlier-run (1893b9c) solver-equivalent result. On a clean frozen tree, single-threaded, the finest
-mesh certifies under R_φ<1e-4 without incident.
+earlier-run (1893b9c) solver-equivalent result. The prior 281-hang was **path-dependent, not a hard
+singularity**: on a clean frozen tree, single-threaded, the finest mesh certifies under R_φ<1e-4
+without incident.
 
-**Run-to-run spread (old Oct-20 full-trio vs this clean-tree run):** −0.257% / +0.182% / −0.250% —
-consistent with the documented near-null-space FP amplification (~0.1–0.25% drift even on one box).
+**Delta vs the Oct-20 Linux full-trio:** −0.257% / +0.182% / −0.250% (71×58 iter 465 vs 325;
+100×70 780 vs 929; 141×85 253 vs 717). See **Build provenance** below for why this is *not*
+cross-build FP and *not* run-to-run FP noise.
+
+## Build provenance (exact; the two Linux venvs are byte-identical)
+
+This clean-tree venv and the Oct-20 trio venv resolve to the **same** wheel from the shared uv cache —
+verified byte-identical, so the reference is build-pinned and rigorous:
+
+- **numpy 2.5.1** — wheel `cp313-cp313-manylinux_2_27_x86_64` / `manylinux_2_28_x86_64` (meson).
+- **scipy 1.18.0** — same wheel tags.
+- **OpenBLAS** (bundled in `numpy.libs/libscipy_openblas64_-017048f4.so`):
+  `OpenBLAS 0.3.33.112.0  USE64BITINT DYNAMIC_ARCH NO_AFFINITY Haswell MAX_THREADS=64`.
+- **threadpoolctl** (Oct-20 venv, 3.7.0): `version 0.3.33.112.0`, `threading_layer pthreads`,
+  `architecture Haswell`, `prefix libscipy_openblas`, `num_threads 24` (run-time single-thread enforced
+  via OPENBLAS/OMP/MKL/NUMEXPR/VECLIB = 1).
+- **Byte-identity check:** all 127 `.so` files under `numpy/`, `scipy/`, `numpy.libs/`, `scipy.libs/`
+  (incl. `_multiarray_umath`, `libgfortran`, `libquadmath`) are SHA256-identical across the two venvs;
+  `WHEEL` metadata identical. **The Oct-20 and Oct-30 runs used the identical build** (same cached wheel,
+  both timestamped 2026-10-16).
+
+### Why the Oct-20 delta is NOT cross-build FP (and not nondeterminism)
+
+Claude's framing correction (2026-11-01) predicted a different wheel/OpenBLAS build in the fresh venv.
+Measured: the builds are **byte-identical** (above). The decisive difference is instead **tree state**:
+- Oct-20 trio npz record `git_commit = 4e2374e / 1893b9c`, **`git_dirty = 'dirty'`** (uncommitted working tree).
+- This clean-tree trio records `git_commit = 930dd86`, **`git_dirty = 'clean'`**.
+
+`src/` is byte-identical at the *committed* level (`git diff 4e2374e 930dd86 -- src/` = empty), but the
+Oct-20 run executed from a dirty tree, so its effective code may have carried uncommitted differences.
+Single-thread on a fixed build+code is bit-deterministic (Step-B: 71×70 byte-identical ×3), so the
+325-vs-465 iter difference and the ~0.25% Gii shift are most plausibly explained by the dirty-tree code
+state of the Oct-20 baseline — **not** run-to-run FP noise and **not** a build change. (The exact
+uncommitted files are no longer recoverable.) This clean-tree run is therefore the first provably-clean,
+bit-reproducible Linux reference.
 
 ## Canonical hashes
 
@@ -89,3 +123,5 @@ Common provenance (all three npz): `Nx/Ny` as labeled, `ratio=6.0`, `W=0.09`, `X
   (3.067845 / 2.148721 / 2.400334 e25).
 - **Superseded in `data/`:** the Oct-20 Linux R_φ-converged full-trio
   (3.075752 / 2.144818 / 2.406344 e25), preserved in git history (`7e37100`, `4a9794b`) and quoted here.
+  Note: those npz record `git_dirty='dirty'` (run from an uncommitted working tree), which is the likely
+  source of their ~0.25% offset from this clean-tree reference.

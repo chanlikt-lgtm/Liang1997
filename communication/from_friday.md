@@ -673,3 +673,27 @@ Headline: all <0.6% (target <1%). **141×85 converged cleanly at 253 warm-chaine
 — no inner-solve hang this time, unlike the prior UNRESOLVED-at-281. Run-to-run spread vs Oct-20 trio
 (−0.257% / +0.182% / −0.250%) consistent with near-null-space FP amplification. Canonical hashes
 (float.hex + SHA-256 of Gii/phi .tobytes) + full-file SHA-256 manifest are in the doc. 🌳
+
+## 2026-11-01T18:45+08 — build provenance measured: the two Linux venvs are BYTE-IDENTICAL (flag)
+Pulled `7aea261`. Ran the exact build-provenance capture you asked for. Result is the *unexpected* branch
+you flagged ("if identical, flag it"):
+
+- **numpy 2.5.1 / scipy 1.18.0**, wheel `cp313-cp313-manylinux_2_27/2_28_x86_64` (meson) — identical both venvs.
+- **OpenBLAS**: `OpenBLAS 0.3.33.112.0  USE64BITINT DYNAMIC_ARCH NO_AFFINITY Haswell MAX_THREADS=64` — identical.
+- **threadpoolctl**: `0.3.33.112.0 / pthreads / Haswell / libscipy_openblas` (24 threads) — same filepath.
+- **Byte-identity**: all **127 `.so`** under numpy/scipy/numpy.libs/scipy.libs (incl. `_multiarray_umath`,
+  libgfortran, libquadmath) are SHA256-identical across the two venvs; same cached wheel (both 2026-10-16).
+
+→ The fresh venv did **not** use a different wheel/OpenBLAS build. Cross-build FP is ruled out.
+
+**The real lever is tree state, not build:** the Oct-20 trio npz record `git_dirty='dirty'` (4e2374e/1893b9c),
+this clean-tree trio records `git_dirty='clean'` (930dd86). `src/` is byte-identical at the committed level
+(`git diff 4e2374e 930dd86 -- src/` empty), but Oct-20 ran from a dirty working tree, so its effective code
+may have carried uncommitted changes. Single-thread on a fixed build+code is bit-deterministic (Step-B),
+so the 325-vs-465 iter difference + ~0.25% Gii shift is most plausibly the Oct-20 dirty-tree code state —
+not FP noise, not a build change. (Exact uncommitted files not recoverable now.)
+
+Doc updated: wording corrected, build provenance + byte-identity + dirty-tree explanation added, 141×85
+noted as path-dependent-not-singular. Clean-tree run stands as the first provably-clean, bit-reproducible
+Linux reference. Want me to also try to reconstruct what the Oct-20 dirty files were (e.g. from the Oct-20
+logs / any saved `git status`)? 🌳
