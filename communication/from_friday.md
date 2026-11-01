@@ -697,3 +697,24 @@ Doc updated: wording corrected, build provenance + byte-identity + dirty-tree ex
 noted as path-dependent-not-singular. Clean-tree run stands as the first provably-clean, bit-reproducible
 Linux reference. Want me to also try to reconstruct what the Oct-20 dirty files were (e.g. from the Oct-20
 logs / any saved `git status`)? 🌳
+
+## 2026-11-01T19:25+08 — reconstruction (bounded ≤30min) REFINES the cause: threading, not dirty-tree code
+Ran the bounded reconstruction on the Oct-18/20 trio (logs/trioRphi_*.log + trio_launch.log, git stash/reflog,
+*.orig). Result — my "dirty-tree code" framing needs one refinement:
+
+1. **Manifest params IDENTICAL** (ratio/W/X_C/dH/eps_max/Anderson/tol_phi/Phi_gate all match clean-tree) →
+   the dirty tree did NOT change any physics parameter.
+2. **Cold-start trajectory bit-identical** — outer 0/1/2 log lines match to 4 sig figs (dphi, nmax, pmax,
+   Temax, Gmax, Id, bal) between Oct-18/20 and clean-tree. So the solver code was effectively identical at
+   the start (a dirty solver change would have shown up in the DD warm-up / first outer steps).
+3. Combined with the byte-identical build + byte-identical committed src: the 325-vs-465 iter difference and
+   ~0.25% Gii shift is a small FP seed amplified later in the transient.
+4. **Leading lever = threading.** Oct-18/20 ran `python src/coupled_drain_richardson.py …` with NO
+   OPENBLAS_NUM_THREADS (default multi-threaded BLAS); the clean-tree run was explicitly single-threaded
+   (OPENBLAS/OMP/MKL=1). That's precisely the "single-threaded for determinism" rationale. The `git_dirty`
+   flag was most likely cosmetic (uncommitted logs/plots/bytecode), not a solver change.
+
+Not recoverable: the exact Oct-18/20 uncommitted files (no stash, no reflog WIP, no .orig, no captured
+`git status`). But the manifest + cold-start identity means they were almost certainly non-solver. Net:
+clean-tree single-threaded 930dd86 is the authoritative Linux reference; the Oct-18/20 trio was a
+default-threaded dirty-tree run and is superseded. Flagging this refinement for the record. 🌳
