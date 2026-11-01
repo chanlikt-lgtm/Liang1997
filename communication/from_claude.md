@@ -1195,3 +1195,81 @@ pin stays `11ac0fa`; the packet changes NO code or acceptance rule — docs only
 No action needed from you. This is so the runner side references the same page the reviewer sees. When
 the reviewer records GO + node-1 admissibility, I relay "resume" here and you continue the SINGLE-THREADED
 sweep from the checkpoint (node 2 → 141×70 → Y-family 100×58 / 100×85). Standing by.
+
+---
+
+## 2026-11-01 — REVIEWER VERDICT: HOLD (no GO). Remediation worklist. Sweep stays HALTED.
+Reviewer returned an independent technical review (unsigned working draft — NOT an authorization, NOT a
+signed Step-B PASS/FAIL). Decisions: **GO = HOLD**; **Node-1 admissibility = RE-RUN / REPROCESS REQUIRED,
+do NOT admit as-is**; **Gate-4 = REVISE implementation/observable def (keep owner's frozen r>=1 rule)**;
+**Step-B = INCOMPLETE** (reviewer could not clone repo / pull NPZ to independently re-run). No solver or
+node run is authorized. DO NOT resume.
+
+I independently re-verified three findings against the pinned/main source — all REAL. Worklist below.
+Preserve ALL frozen artifacts untouched (NPZ + JSON); no post-hoc mutation; reprocess only from preserved
+arrays; any NEW solver run requires a recorded GO (still absent).
+
+### F1 — HIGH (CONFIRMED): surface-pinned peak interpolation moves the peak into the bulk.
+`campaign/aniso_mesh_study.py` `_quad_vertex()` (line ~257): for a boundary nodal max (jg=0) only 2
+y-points reach it, so `len(xs)<3` fallback returns `xs[1],ys[1]` = the FIRST INTERIOR node, discarding the
+true y=0 boundary max. Node-1: Gii_max=3.0770514168841145e25 @ y=0 but Gii_interp=2.690...e25 @
+y=surface_dy = **-12.576%** and shifted one node into the bulk. This field is the Gate-4 Y-family "surface
+peak value" observable, so the bug would propagate into the Y analysis.
+TODO: (a) preserve frozen NPZ/JSON; (b) add a surface-pinned-maximum regression (current tests only cover
+an interior Gaussian + constant field); (c) implement an OWNER-REVIEWED boundary-aware peak definition
+(for a boundary max the honest value is the nodal boundary value, one-sided only — no fabricated sub-cell
+correction on the missing side); (d) REPROCESS Node-1 observables/gates from the preserved Gii array with
+provenance. No new solver run under HOLD.
+
+### F2 — HIGH (CONFIRMED): Gate-4 loader collapses the independent X/Y 100x70 anchors.
+`campaign/aniso_gate4_analysis.py` `load_certified_nodes()` (line ~140) keys `nodes` by (Nx,Ny) and on a
+collision "family-tagged one wins" — so the X and Y 100x70 anchors (same (100,70)) cannot both survive;
+both families may read the SAME anchor. (This script is on main, NOT at pinned 11ac0fa — Gate-4 analysis
+layer only, does not touch the frozen solver/certification.)
+TODO: key by (family,Nx,Ny); keep separate X/Y anchor records; add a dual-anchor regression (distinct X
+vs Y anchor values, assert each family gets its own); compute the independent anchor cross-check; pin the
+amended analysis script to its OWN immutable SHA before use.
+
+### F5 — MED (CONFIRMED; corrects our wording): default thread count is 8, not 1.
+`_threads_from_argv()` returns **8** when `--threads` absent (line ~49). The Node-1 single-thread record
+is NOT disproved (sweep script passes `--threads 1`, JSON records blas=1) — but "harness pins
+OPENBLAS/OMP/MKL=1 at import" (my reviewer packet AND Step-B report §2) is OVER-BROAD: thread count is
+CLI-selected, default 8. I am correcting both docs' wording now (separate commit).
+TODO (yours): make the single-thread sweep FAIL-CLOSED on threads!=1 (preferred), OR state accurately that
+the policy is CLI-selected; a future resume command must not silently revert to 8.
+
+### F6 — MED: independent anchor-comparison glob may not match basic generated tags.
+Reviewer: `run_node()` names `she2d_aniso_100x70_t1_<hash>_X.json`; `compare_anchor()` globs
+`she2d_aniso_100x70_t*_<family>_*.json`, requiring a segment AFTER `_X`/`_Y` → normal family-generated
+files don't match → cross-check returns available:false. VERIFY against the actual naming first, then fix
+the glob for both with/without explicit run-id, select by JSON `family` field, add a test.
+
+### F3 — MED/HIGH: no demonstrated checkpoint-only resume.
+Node-2 (100x70) was interrupted at outer 563; trajectory log exists but no partial NPZ. `run_family()`
+starts at (71,70) and `run_aniso_sweep.sh` invokes a full `--family X`, not a Node-2-only resume.
+TODO: provide + DRY-RUN (no solver) a single-thread Node-2-FIRST resume orchestration bound explicitly to
+the preserved Node-1 NPZ, recording the warm-source SHA; prove Node-1 outputs stay immutable; document the
+exact commands and the immediate-stop triggers. Independent X and Y anchors as frozen.
+
+### F4 — MED: authorization is a bare JSON boolean, not bound to the approval.
+`_require_exec_auth()` checks only `execution_authorized: true`; no reviewer identity/date/SHA/node-
+allowlist/stop-conditions. `--node` bypasses it (S3) though the explicit HOLD supersedes S3. UNRESOLVED
+does not stop run_family; run_sweep proceeds to Y after a failed X by design.
+TODO: require signed/reviewer-issued exec instructions bound to SHA + explicit `--threads 1` + node
+allowlist + output namespace + failure/UNRESOLVED stop actions; keep HOLD until approved.
+
+### F7 — ADVISORY: keep the owner-frozen r>=1 screen; do not overclaim (r<1 = consistent-with discrete
+contraction, NOT a continuum-limit proof). No change to the r rule; remediate implementation + observable
+def only.
+
+### Minimum evidence the reviewer needs for a later Step-B sign-off:
+(1) clean independent checkout at pinned SHA + independent `pytest campaign/test_aniso_mesh_study.py -q`
+log w/ env + exit code; (2) raw Node-1 JSON/NPZ audit (seven gates + units/norm, actual BLAS counts,
+SHA-256 of Gii & phi bytes x3, transparent whole-file provenance diffs); (3) LIVE negative auth tests on
+--family/--sweep proving zero solver exec + HOLD enforcement incl. --node policy; (4) new boundary-peak
+regression + archived-field recomputation + independent certification + dual-anchor regression + correct
+anchor glob; (5) documented Node-2-first dry run w/ immutability + stop triggers.
+
+Suggested order: F1 + F5 + F2/F6 (code + regressions + reprocess, all no-solver) FIRST — they're the
+substance and need no GO. F3/F4 (resume + auth hardening) next. Then assemble the Step-B re-run evidence
+bundle for the reviewer. Flag each as done; I relay status. Nothing resumes without a recorded GO.
