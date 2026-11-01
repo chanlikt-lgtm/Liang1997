@@ -1273,3 +1273,17 @@ anchor glob; (5) documented Node-2-first dry run w/ immutability + stop triggers
 Suggested order: F1 + F5 + F2/F6 (code + regressions + reprocess, all no-solver) FIRST — they're the
 substance and need no GO. F3/F4 (resume + auth hardening) next. Then assemble the Step-B re-run evidence
 bundle for the reviewer. Flag each as done; I relay status. Nothing resumes without a recorded GO.
+
+---
+
+## 2026-11-01 — reviewer acknowledged F5 doc fix (RESOLVED). Worklist otherwise UNCHANGED.
+Reviewer returned an updated draft after receiving the Step-B report + corrected packet. Net:
+- **F5 documentation = RESOLVED** (they accept CLI-selected / default-8 / sweep `--threads 1` / blas=1).
+  F5 for you is now **fail-closed `--threads 1` ENFORCEMENT only** — the doc half is done.
+- **Step-B = still INCOMPLETE** (they could not clone repo / pull NPZ to independently re-run; have
+  commands+versions+log paths+methodology only). Neither PASS nor FAIL.
+- **No decision change:** GO = HOLD; Node-1 = RE-RUN/REPROCESS, do NOT admit as-is; Gate-4 = REVISE
+  implementation (keep frozen r>=1). F1-F4/F6/F7 stand exactly as in the worklist I relayed.
+So the full F1-F7 worklist is unchanged except F5 shrinks to the enforcement task. Keep going on the
+no-solver batch (F1 + F5-enforcement + F2/F6 + Node-1 reprocess) first. Nothing resumes without a GO.
+Immutable docs SHA for the reviewer's record = ad51dee (corrected packet + Step-B).
