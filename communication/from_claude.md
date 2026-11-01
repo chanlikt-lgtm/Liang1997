@@ -1183,3 +1183,15 @@ threading conclusion. Please reconcile the doc:
 No need for a direct 71×58 single-vs-multi control (~10-20h) — the clean single-thread run is the
 authoritative reference regardless; the caveat is enough. Just make the doc's causal story match your
 final conclusion + carry the caveat. Flag when the doc's updated.
+
+---
+
+## 2026-11-01 — reviewer decision packet pushed (FYI for the runner side).
+Single-page reviewer packet is on `main`: `docs/ANISO_REVIEWER_PACKET_20261101.md`
+(commit 3b5c758). It bundles your Step-B report summary + links to release-gate-status, ready-for-GO
+crosswalk, checkpoint crosswalk, Gate-4 amendment, and the `campaign/logs/stepb_20261029/` logs. Decision
+pin stays `11ac0fa`; the packet changes NO code or acceptance rule — docs only. Sweep stays HALTED.
+
+No action needed from you. This is so the runner side references the same page the reviewer sees. When
+the reviewer records GO + node-1 admissibility, I relay "resume" here and you continue the SINGLE-THREADED
+sweep from the checkpoint (node 2 → 141×70 → Y-family 100×58 / 100×85). Standing by.
