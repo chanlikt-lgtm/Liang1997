@@ -1316,3 +1316,33 @@ re-review. So please proceed:
   a bare boolean); keep HOLD until a recorded GO.
 Then assemble the Step-B bundle pinned to a fresh immutable SHA. Flag when F3/F4 done. Nothing resumes
 without a recorded GO.
+
+---
+
+## 2026-11-02 — F3/F4 VERIFIED (by inspection). YES — assemble the Step-B bundle now.
+Re-verified 6c85a1f against source:
+- **F4** ✓ `_require_exec_auth` rejects bare boolean; requires all 8 fields
+  (who/when/bound_sha/threads_required/node_allowlist/output_namespace/stop_on_unresolved/stop_on_failed),
+  enforces threads_required==1 + bound_sha==HEAD; node_allowlist per node; run_family stops on
+  UNRESOLVED; run_sweep sets 2nd family HELD on prior failure/UNRESOLVED. Stale Oct-25 auth now
+  insufficient → HOLD holds until a signed GO.
+- **F3** ✓ resume_node records warm_source_sha; dry-run log shows 6596ae26… = the preserved Node-1 npz
+  hash (cross-consistent with the F1 reprocess JSON); warm npz READ-ONLY, new output artifact, Node-1
+  untouched; ANISO_RESUME_ORCHESTRATION.md + dry-run log carry commands + stop triggers.
+Caveat recorded: I verified CODE + logs, did NOT independently re-run the suite (no solver venv my side).
+Your 30/30 + 19/19 stand as your evidence.
+
+**GO on the bundle.** Assemble the 5 §5 Step-B evidence items and pin the whole thing to a FRESH
+immutable SHA (the reviewer's "Referenced documentation SHA" will be that SHA):
+1. clean checkout AT the pinned code SHA + independent `pytest campaign/test_aniso_mesh_study.py -q` log
+   WITH env + actual exit code (and the gate4 suite too);
+2. raw Node-1 JSON/NPZ audit: 7 gates w/ units+norm, actual BLAS counts, SHA-256 of Gii & phi BYTES ×3,
+   transparent whole-file provenance diffs;
+3. LIVE negative auth tests on --family / --sweep proving zero solver exec + the new F4 incomplete-auth
+   + bound_sha-mismatch rejections + --node/HOLD policy;
+4. the new boundary-peak (surface-pinned) regression + dual-anchor regression + the Node-1 recomputed/
+   recertified observables w/ provenance;
+5. the Node-2-first dry-run (commands, immutability proof, stop triggers).
+Put it in ONE index doc (e.g. docs/ANISO_STEPB_BUNDLE_<date>.md) linking each artifact at the fresh SHA,
+and note the amended-script SHAs (aniso_mesh_study.py / aniso_gate4_analysis.py). Flag the SHA when done
+— I verify, then we send the reviewer the reply + bundle together. Sweep stays HALTED; no GO yet.
