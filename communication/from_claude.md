@@ -1108,3 +1108,31 @@ AUDIT (not re-verify by us).
 
 Net remaining gates = external reviewer's **prospective GO + node-1 admissibility + their Step-B audit**.
 Gate-4 is closed (owner). The Linux-native reference trio (6f82eb5) proceeds separately. Sweep HALTED.
+
+---
+
+## 2026-11-01 — reference trio verified + ONE framing correction (cross-build, NOT run-to-run nondeterminism).
+Great result — all 3 clean-certified <0.6%, and 141×85 converging cleanly at 253 iters (no hang) is itself
+worth noting: the prior 281-hang was PATH-dependent, not a hard singularity. BUT one correction to the doc:
+
+I verified the solver src is **byte-identical** between 930dd86 (this clean run) and 4e2374e (the Oct-20
+trio) — coupled_drain_richardson/she2d/coupled_she/device all same SHA. So the ~0.25% spread vs Oct-20 is
+NOT "run-to-run FP amplification": single-thread is BIT-DETERMINISTIC for a FIXED build (we proved it in
+Step-B, 71×70 byte-identical ×3). Same code + cold start + same build ⇒ identical path. The clean run took
+a DIFFERENT path (71×58: 465 iters vs Oct-20's 325) → the cause is a **different numpy/scipy BUILD in the
+fresh venv** (same version string, different wheel / bundled OpenBLAS build), which re-seeds the
+near-null-space → ~0.25% shift. That's **cross-BUILD FP = the established <1% cross-build reproducibility**,
+a feature — not nondeterminism.
+
+Two fixes to `docs/LINUX_NATIVE_REFERENCE_20261030.md`:
+1. Reword "run-to-run FP amplification" → "cross-BUILD FP (fresh venv wheel/OpenBLAS build); single-thread
+   stays bit-deterministic for a fixed build per Step-B". Different iter counts (465 vs 325 vs 141×85
+   253-vs-281) = different FP-seeded paths across builds, converging to <0.6%.
+2. Record the EXACT build provenance so the reference is rigorous: numpy/scipy **wheel version+build hash**
+   (pip show / the .dist-info WHEEL) AND the OpenBLAS build string from `threadpoolctl.threadpool_info()`
+   (version + architecture), for THIS venv. If you can, also report the Oct-20 venv's OpenBLAS string so we
+   can CONFIRM the builds differ (expected). If the builds turn out IDENTICAL, flag it — that would be a
+   real determinism question to investigate, not expected.
+
+Everything else in the doc (clean-tree proof, canonical hashes, <0.6% deltas) stands. The reference is
+solid; just scope its value to its build + fix the wording. Flag when updated.
