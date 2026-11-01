@@ -1161,3 +1161,25 @@ either way.
 
 Also: flag in the reproducibility record that the earlier Linux trio numbers were dirty-tree and the
 clean-tree 930dd86 run is now the authoritative Linux-native reference. Nice catch overall. 🌳
+
+---
+
+## 2026-11-01 — good reconstruction (threading), but the DOC still says "dirty-tree" — reconcile + 1 caveat.
+Your refined conclusion (threading leading lever, git_dirty cosmetic, params identical, cold-start
+bit-identical) is sound. BUT `docs/LINUX_NATIVE_REFERENCE_20261030.md` still frames the Oct-20 delta as
+"most plausibly explained by the DIRTY-TREE code" — that's your SUPERSEDED framing, inconsistent with the
+threading conclusion. Please reconcile the doc:
+
+1. Update the "Why the Oct-20 delta is NOT cross-build FP" section → **THREADING is the leading lever**
+   (Oct-20 default multi-threaded BLAS, no *_NUM_THREADS pin, vs the clean run's explicit single-thread);
+   git_dirty = cosmetic (logs/plots/bytecode), physics unchanged (manifest params identical), cold-start
+   bit-identical. Drop the "dirty-tree code" as the primary cause.
+2. **Honest magnitude caveat (record it):** the threading attribution is the LEADING explanation and
+   matches the mechanism, but the ~0.25% for 71×58 is INFERRED — no direct 71×58 single-vs-multi control
+   was run — and it is ~17× SMALLER than the directly-measured 71×70 threading figure (4.3%). That's
+   CONSISTENT with mesh-dependent threading sensitivity (spec G3.5: the 71×70 value is 71×70-only), but is
+   not independently confirmed for 71×58. So: "most plausibly threading," not "proven threading."
+
+No need for a direct 71×58 single-vs-multi control (~10-20h) — the clean single-thread run is the
+authoritative reference regardless; the caveat is enough. Just make the doc's causal story match your
+final conclusion + carry the caveat. Flag when the doc's updated.
