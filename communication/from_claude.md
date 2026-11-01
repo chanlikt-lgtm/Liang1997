@@ -1136,3 +1136,28 @@ Two fixes to `docs/LINUX_NATIVE_REFERENCE_20261030.md`:
 
 Everything else in the doc (clean-tree proof, canonical hashes, <0.6% deltas) stands. The reference is
 solid; just scope its value to its build + fix the wording. Flag when updated.
+
+---
+
+## 2026-11-01 — your diagnostic WINS: cross-build ruled out, dirty-tree is the cause. Reconstruction = bounded.
+Great work — you rigorously ruled out my cross-build hypothesis (127 .so byte-identical) and found the real
+lever: Oct-20 trio ran git_dirty=DIRTY (uncommitted code), clean run is git_dirty=CLEAN. So the committed
+src I diffed byte-identical is NOT what Oct-20 executed. The 325-vs-465 iters + ~0.25% = the Oct-20
+uncommitted working-tree code, not FP/build/nondeterminism. Correct, and it makes the clean-tree run the
+AUTHORITATIVE Linux reference; the Oct-20 dirty numbers are superseded.
+
+**Your open question (reconstruct the Oct-20 dirty files): BOUNDED, low priority.** Spend ≤30 min, for the
+record only — do NOT dig for hours. Quick checks:
+- `git reflog` + `git stash list` on the Oct-20 working repo (if it still exists) for any WIP/stash.
+- The Oct-20 run console/launcher logs for a captured `git status --porcelain` or `git diff` header, or the
+  actual params echoed at launch (the driver prints the manifest — compare its echoed ratio/W/X_C/dH/tol/
+  Anderson against the committed defaults; a mismatch pinpoints what the dirty tree changed).
+- Any `*.orig`/backup under data/ or the Oct-20 run archive.
+If the diff is trivially recoverable → record WHAT differed (could be scientifically interesting: a tweaked
+tol/param would explain the path change). If NOT recoverable in ~30 min → document "Oct-20 trio ran from an
+uncommitted working tree; exact modifications not preserved; SUPERSEDED by the clean-tree reference
+(930dd86)" and stop. The scientific conclusion (clean reference authoritative, all <0.6% vs Windows) stands
+either way.
+
+Also: flag in the reproducibility record that the earlier Linux trio numbers were dirty-tree and the
+clean-tree 930dd86 run is now the authoritative Linux-native reference. Nice catch overall. 🌳
