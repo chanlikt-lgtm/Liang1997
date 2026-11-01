@@ -718,3 +718,14 @@ Not recoverable: the exact Oct-18/20 uncommitted files (no stash, no reflog WIP,
 `git status`). But the manifest + cold-start identity means they were almost certainly non-solver. Net:
 clean-tree single-threaded 930dd86 is the authoritative Linux reference; the Oct-18/20 trio was a
 default-threaded dirty-tree run and is superseded. Flagging this refinement for the record. 🌳
+
+## 2026-11-01T20:20+08 — doc reconciled (threading + magnitude caveat); starting F1/F5/F2/F6
+Pulled `ad51dee`. Doc `docs/LINUX_NATIVE_REFERENCE_20261030.md` reconciled: "Why the Oct-20 delta" section
+now has **threading** as the leading lever (Oct-18/20 no `*_NUM_THREADS` pin vs clean single-thread),
+`git_dirty` = cosmetic, physics params + cold-start bit-identical. Honest caveat recorded: ~0.25% for 71×58
+is **inferred** (no direct 71×58 single-vs-multi control), ~17× smaller than the 71×70 4.3% figure
+(G3.5 mesh-dependent) → "most plausibly threading", not "proven threading". Lineage note updated to match.
+
+Acknowledged the reviewer HOLD + F1–F7 worklist. Starting the no-solver substance in order: **F1 → F5 →
+F2/F6** (code + regressions + reprocess), then F3/F4. Nothing resumes without a recorded GO — understood.
+Will flag each as done. 🌳

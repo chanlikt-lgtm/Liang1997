@@ -41,7 +41,8 @@ without incident.
 
 **Delta vs the Oct-20 Linux full-trio:** −0.257% / +0.182% / −0.250% (71×58 iter 465 vs 325;
 100×70 780 vs 929; 141×85 253 vs 717). See **Build provenance** below for why this is *not*
-cross-build FP and *not* run-to-run FP noise.
+cross-build FP and *not* run-to-run FP noise — the leading lever is **threading** (Oct-18/20 default
+multi-threaded BLAS vs this explicitly single-threaded run).
 
 ## Build provenance (exact; the two Linux venvs are byte-identical)
 
@@ -60,20 +61,33 @@ verified byte-identical, so the reference is build-pinned and rigorous:
   `WHEEL` metadata identical. **The Oct-20 and Oct-30 runs used the identical build** (same cached wheel,
   both timestamped 2026-10-16).
 
-### Why the Oct-20 delta is NOT cross-build FP (and not nondeterminism)
+### Why the Oct-20 delta is NOT cross-build FP (leading lever: threading)
 
-Claude's framing correction (2026-11-01) predicted a different wheel/OpenBLAS build in the fresh venv.
-Measured: the builds are **byte-identical** (above). The decisive difference is instead **tree state**:
-- Oct-20 trio npz record `git_commit = 4e2374e / 1893b9c`, **`git_dirty = 'dirty'`** (uncommitted working tree).
-- This clean-tree trio records `git_commit = 930dd86`, **`git_dirty = 'clean'`**.
+Claude's framing correction (2026-11-01) first predicted a different wheel/OpenBLAS build, then — after the
+build was shown byte-identical — attributed the delta to the dirty tree. The bounded reconstruction refined
+this further:
 
-`src/` is byte-identical at the *committed* level (`git diff 4e2374e 930dd86 -- src/` = empty), but the
-Oct-20 run executed from a dirty tree, so its effective code may have carried uncommitted differences.
-Single-thread on a fixed build+code is bit-deterministic (Step-B: 71×70 byte-identical ×3), so the
-325-vs-465 iter difference and the ~0.25% Gii shift are most plausibly explained by the dirty-tree code
-state of the Oct-20 baseline — **not** run-to-run FP noise and **not** a build change. (The exact
-uncommitted files are no longer recoverable.) This clean-tree run is therefore the first provably-clean,
-bit-reproducible Linux reference.
+1. **Builds byte-identical** (above): all 127 `.so` files SHA-256-identical → cross-build FP ruled out.
+2. **Physics params identical**: the Oct-18/20 run's echoed manifest (ratio/W/X_C/dH/eps_max/Anderson/
+   tol_phi/Phi_gate) matches this clean-tree run exactly → the dirty tree did *not* change any physics.
+3. **Cold start bit-identical**: outer 0/1/2 log lines match to 4 sig figs (dphi, nmax, pmax, Temax,
+   Gmax, Id, bal) → the solver code was effectively identical at the start (a dirty solver change would
+   have shown up in the DD warm-up / first outer steps).
+
+→ **Leading lever = threading.** The Oct-18/20 trio ran `python src/coupled_drain_richardson.py …` with
+**no `*_NUM_THREADS` pin** (default multi-threaded BLAS), whereas this clean-tree run was explicitly
+single-threaded (OPENBLAS/OMP/MKL/NUMEXPR/VECLIB = 1). A different BLAS reduction order re-seeds the
+near-null-space → the ~0.25% Gii shift and 325-vs-465 iter difference. The Oct-20 `git_dirty` flag was
+most likely cosmetic (uncommitted logs/plots/bytecode), not a solver change.
+
+**Honest magnitude caveat (recorded):** this threading attribution is the *leading* explanation and
+matches the known mechanism, but the ~0.25% for 71×58 is **inferred**, not directly measured — no 71×58
+single-vs-multi control was run, and it is ~17× smaller than the directly-measured 71×70 threading figure
+(4.3%, spec G3.5 — that value is 71×70-only; threading sensitivity is mesh-dependent). So this is
+"most plausibly threading", not "proven threading". A direct 71×58 single-vs-multi control (~10–20 h) is
+not warranted: this clean single-thread run is the authoritative reference regardless.
+
+This clean-tree run is therefore the first provably-clean, bit-reproducible Linux reference.
 
 ## Canonical hashes
 
@@ -123,5 +137,6 @@ Common provenance (all three npz): `Nx/Ny` as labeled, `ratio=6.0`, `W=0.09`, `X
   (3.067845 / 2.148721 / 2.400334 e25).
 - **Superseded in `data/`:** the Oct-20 Linux R_φ-converged full-trio
   (3.075752 / 2.144818 / 2.406344 e25), preserved in git history (`7e37100`, `4a9794b`) and quoted here.
-  Note: those npz record `git_dirty='dirty'` (run from an uncommitted working tree), which is the likely
-  source of their ~0.25% offset from this clean-tree reference.
+  Note: those npz record `git_dirty='dirty'` and ran default multi-threaded BLAS (no `*_NUM_THREADS`
+  pin); **threading** — not dirty-tree code — is the leading lever for their ~0.25% offset from this
+  single-threaded clean-tree reference (see Build provenance).
