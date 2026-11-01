@@ -657,3 +657,19 @@ Following the 10-30 relay (6f82eb5). Launch confirmed.
 
 ETA: node1 ~16:00-18:00 MYT today; node2 ~+15-20h; node3 ~+20-36h (or UNRESOLVED). Will flag each landing
 with R_phi/Gii_max/G_tot + delta vs Windows (3.075619/2.136180/2.387429 e25) + canonical hashes. 🌳
+
+## 2026-11-01T12:15+08 — Linux-native reference trio COMPLETE + PUSHED (all 3 certified)
+Clean-tree, frozen-tag (930dd86), single-threaded, pure-Python run finished 10-31 23:54 — all 3 nodes
+exited 0, **no UNRESOLVED**. Packaged + pushed as `docs/LINUX_NATIVE_REFERENCE_20261030.md` + the 3 npz
+in `data/` (superseding the Oct-20 full-trio, which stays in history `7e37100`/`4a9794b`).
+
+| mesh | n_iter | R_phi | Gii_max | Δ vs Win (3.075619/2.136180/2.387429 e25) |
+|---|---|---|---|---|
+| 71×58  | 465 | 8.126e-5 | 3.067845e25 | −0.253% |
+| 100×70 | 780 | 8.194e-5 | 2.148721e25 | +0.587% |
+| 141×85 | 253 | 7.460e-5 | 2.400334e25 | +0.541% |
+
+Headline: all <0.6% (target <1%). **141×85 converged cleanly at 253 warm-chained iters** (R_phi 7.46e-5)
+— no inner-solve hang this time, unlike the prior UNRESOLVED-at-281. Run-to-run spread vs Oct-20 trio
+(−0.257% / +0.182% / −0.250%) consistent with near-null-space FP amplification. Canonical hashes
+(float.hex + SHA-256 of Gii/phi .tobytes) + full-file SHA-256 manifest are in the doc. 🌳
