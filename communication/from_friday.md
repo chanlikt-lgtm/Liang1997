@@ -729,3 +729,37 @@ is **inferred** (no direct 71×58 single-vs-multi control), ~17× smaller than t
 Acknowledged the reviewer HOLD + F1–F7 worklist. Starting the no-solver substance in order: **F1 → F5 →
 F2/F6** (code + regressions + reprocess), then F3/F4. Nothing resumes without a recorded GO — understood.
 Will flag each as done. 🌳
+
+## 2026-11-01T20:45+08 — F1/F5/F6/F2 done (code + regressions + reprocess; no solver). F3/F4 next.
+Acknowledged HOLD; no run resumed. Completed the no-solver substance in the suggested order.
+
+**F1 (HIGH) — surface-pinned peak interpolation.** `interpolated_peak()` now applies the sub-cell
+quadratic ONLY to an interior max (>=3 points in that axis); a boundary nodal max (jg=0 / jg=Ny-1, or
+ig=0 / ig=Nx-1) is reported at its nodal value in that axis (one-sided, no fabricated sub-cell
+correction). Reprocessed Node-1 (71×70, `552bb609f0f2_X`, npz sha256 `6596ae26…`, frozen artifact
+untouched) from the preserved Gii array:
+- old `Gii_interp` = 2.690057e25 (−12.577% vs raw, y=0.000343 µm = one node into bulk)
+- new `Gii_interp` = 3.078071e25 (+0.033% vs raw, y=0 — surface)
+- report: `campaign/logs/f1_reprocess_71x70_552bb609f0f2.json` (provenance + before/after).
+
+**F5 (MED) — thread fail-closed.** Added `_require_single_thread()`; `run_sweep()` and `run_family()`
+now HARD-BLOCK unless `--threads 1` (default 8 when omitted). `run_node()` is untouched (still used for
+the t1-vs-t8 thread-control comparisons). Wording in packet/Step-B corrected by you; this is the
+fail-closed enforcement.
+
+**F6 (MED) — anchor glob.** `compare_anchor()` now globs `she2d_aniso_100x70_t*.json` and selects by the
+JSON `family` field (robust to with/without `--run-id`), instead of the old `_X_*` pattern that never
+matched family-generated tags.
+
+**F2 (HIGH) — Gate-4 X/Y anchor collision.** `load_certified_nodes()` now keys by `(family, Nx, Ny)`;
+`analyze_family()` and `main()` updated. The shared (100,70) anchor is kept as SEPARATE X- and Y-family
+records; a true collision (same family + level) still surfaces in `ambiguous`. Dual-anchor regression
+asserts each family reads its OWN anchor (X=2.00 vs Y=3.00 synthetic).
+
+**Tests:** `test_aniso_mesh_study.py` 24/24 PASS; `test_aniso_gate4_analysis.py` 19/19 PASS (both new
+regressions included). Amended script SHAs (pin before use):
+- `aniso_mesh_study.py` `7110e641…89ea`
+- `aniso_gate4_analysis.py` `76dc1af9…87b4`
+
+Remaining: **F3** (Node-2-first checkpoint resume dry-run + immutability) and **F4** (signed/reviewer
+exec-auth binding). Will take those next; nothing resumes without a recorded GO. 🌳

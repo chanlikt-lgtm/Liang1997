@@ -98,8 +98,8 @@ def test_insufficient_levels():
 
 # ---- certified-only input + family ordering ---------------------------------
 def _node(Nx, Ny, Gii, x=0.5, status="CERTIFIED", certified=True, fwhm_flags=None, G_tot=1.0,
-          width=0.002):
-    return dict(Nx=Nx, Ny=Ny, status=status, certified=certified,
+          width=0.002, family=None):
+    return dict(Nx=Nx, Ny=Ny, family=family, status=status, certified=certified,
                 Gii_interp=Gii, Gii_max=Gii * 1.1,
                 xy_Gii_max_interp=[x, 0.0], avalanche_y_fwhm=width,
                 fwhm_flags=fwhm_flags or dict(boundary_truncated=True), G_tot=G_tot)
@@ -115,7 +115,7 @@ def test_load_certified_excludes_uncertified():
         json.dump(_node(Nx, Ny, 1.0, status=st, certified=cert), open(p, "w"))
         paths.append(p)
     nodes, skipped, ambiguous = g4.load_certified_nodes(paths)
-    assert set(nodes) == {(71, 70), (200, 70)}
+    assert set(nodes) == {(None, 71, 70), (None, 200, 70)}
     assert len(skipped) == 2
     assert ambiguous == []
 
@@ -132,24 +132,39 @@ def test_load_certified_excludes_multithread_control():
     json.dump(d1, open(p1, "w"))
     json.dump(d8, open(p8, "w"))
     nodes, skipped, ambiguous = g4.load_certified_nodes([p1, p8])
-    assert set(nodes) == {(71, 70)}
-    assert nodes[(71, 70)]["Gii_interp"] == 2.690
+    assert set(nodes) == {(None, 71, 70)}
+    assert nodes[(None, 71, 70)]["Gii_interp"] == 2.690
     assert any("multi-thread" in why for _, why in skipped)
 
 
-def test_load_certified_prefers_family_tag_and_surfaces_ambiguity():
+def test_load_certified_separates_xy_anchor():
+    """F2: the shared (100,70) anchor must be kept as SEPARATE X- and Y-family records, and each
+    family's analysis must read its OWN anchor -- never substitute one for the other."""
     td = tempfile.mkdtemp()
-    p_untagged = os.path.join(td, "a_untagged.json")
-    p_family = os.path.join(td, "b_familyX.json")
-    du = _node(71, 70, 2.690, fwhm_flags=dict(boundary_truncated=True))
-    df = _node(71, 70, 2.690, fwhm_flags=dict(boundary_truncated=True))
-    du["provenance"] = dict(threads_requested=1); du["family"] = None
-    df["provenance"] = dict(threads_requested=1); df["family"] = "X"
-    json.dump(du, open(p_untagged, "w"))
-    json.dump(df, open(p_family, "w"))
-    nodes, skipped, ambiguous = g4.load_certified_nodes([p_untagged, p_family])
-    assert nodes[(71, 70)]["family"] == "X"
-    assert len(ambiguous) == 1 and "ignored family=None" in ambiguous[0][1]
+    px = os.path.join(td, "x_anchor.json")
+    py = os.path.join(td, "y_anchor.json")
+    dx = _node(100, 70, 2.00, family="X"); dx["provenance"] = dict(threads_requested=1)
+    dy = _node(100, 70, 3.00, family="Y"); dy["provenance"] = dict(threads_requested=1)
+    json.dump(dx, open(px, "w"))
+    json.dump(dy, open(py, "w"))
+    nodes, skipped, ambiguous = g4.load_certified_nodes([px, py])
+    # both anchors survive, keyed by family
+    assert nodes[("X", 100, 70)]["Gii_interp"] == 2.00
+    assert nodes[("Y", 100, 70)]["Gii_interp"] == 3.00
+    assert ambiguous == []
+    # each family's analysis reads its OWN anchor, not the other's
+    x_nodes = {("X", 71, 70): _node(71, 70, 1.80, family="X"),
+               ("X", 100, 70): nodes[("X", 100, 70)],
+               ("X", 141, 70): _node(141, 70, 2.10, family="X")}
+    y_nodes = {("Y", 100, 58): _node(100, 58, 2.80, family="Y"),
+               ("Y", 100, 70): nodes[("Y", 100, 70)],
+               ("Y", 100, 85): _node(100, 85, 3.10, family="Y")}
+    fam_x = g4.analyze_family("X", x_nodes, g4.OBSERVABLES["X"], g4.FAMILIES["X"]["levels"])
+    fam_y = g4.analyze_family("Y", y_nodes, g4.OBSERVABLES["Y"], g4.FAMILIES["Y"]["levels"])
+    x_vals = fam_x["observables"]["Gii_interp"]["values"]   # (71,70),(100,70),(141,70)
+    y_vals = fam_y["observables"]["Gii_interp"]["values"]   # (100,58),(100,70),(100,85)
+    assert x_vals[1] == 2.00   # X-family reads its own (100,70) anchor
+    assert y_vals[1] == 3.00   # Y-family reads its own (100,70) anchor
 
 
 def test_family_level_ordering_coarse_to_fine():
@@ -163,12 +178,12 @@ def test_family_level_ordering_coarse_to_fine():
 def test_analyze_gate4_y_reports_flags_and_converges():
     # synthetic Y-family: surface peak converging, one-sided width, G_tot -- all with real variation
     nodes = {
-        (100, 58): _node(100, 58, 2.60, G_tot=90.0, width=0.0024,
-                         fwhm_flags=dict(boundary_truncated=True)),
-        (100, 70): _node(100, 70, 2.66, G_tot=91.0, width=0.0021,
-                         fwhm_flags=dict(boundary_truncated=True)),
-        (100, 85): _node(100, 85, 2.68, G_tot=91.4, width=0.00195,
-                         fwhm_flags=dict(boundary_truncated=True)),
+        ("Y", 100, 58): _node(100, 58, 2.60, G_tot=90.0, width=0.0024,
+                               fwhm_flags=dict(boundary_truncated=True), family="Y"),
+        ("Y", 100, 70): _node(100, 70, 2.66, G_tot=91.0, width=0.0021,
+                               fwhm_flags=dict(boundary_truncated=True), family="Y"),
+        ("Y", 100, 85): _node(100, 85, 2.68, G_tot=91.4, width=0.00195,
+                               fwhm_flags=dict(boundary_truncated=True), family="Y"),
     }
     rep = g4.analyze_gate4(nodes, d_floor=0.0)
     fam = rep["families"]["Y"]
@@ -192,7 +207,8 @@ def test_flat_series_no_change():
 
 
 def test_analyze_gate4_missing_node_is_incomplete():
-    nodes = {(100, 58): _node(100, 58, 2.6), (100, 70): _node(100, 70, 2.66)}
+    nodes = {("Y", 100, 58): _node(100, 58, 2.6, family="Y"),
+             ("Y", 100, 70): _node(100, 70, 2.66, family="Y")}
     rep = g4.analyze_gate4(nodes, d_floor=0.0)
     fam = rep["families"]["Y"]
     assert fam["missing"] == [(100, 85)]

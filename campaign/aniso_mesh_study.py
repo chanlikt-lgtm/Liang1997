@@ -140,6 +140,17 @@ def _require_exec_auth():
     return a
 
 
+def _require_single_thread():
+    """F5: the production sweep is pre-registered SINGLE-THREADED (spec v1.6).  Fail closed if the
+    process was launched with anything other than --threads 1, so a resume command cannot silently
+    revert to the default 8-thread pool (thread count is CLI-selected; the default is 8)."""
+    if THREADS_REQUESTED != 1:
+        raise SystemExit(
+            "G3.2 HARD-BLOCK: the anisotropic sweep is pre-registered SINGLE-THREADED (spec v1.6); "
+            "THREADS_REQUESTED=%d (default when --threads is omitted is 8). Re-run with `--threads 1` "
+            "-- this is a determinism requirement, not a performance knob." % THREADS_REQUESTED)
+
+
 def _provenance():
     info = {
         "threads_requested": THREADS_REQUESTED,
@@ -271,15 +282,26 @@ def interpolated_peak(Gii, x, y):
     """Sub-cell peak via 1-D quadratic fits around the nodal max, in x and y separately.
 
     Returns (G_interp, x_interp_um, y_interp_um, nodal_j, nodal_i).  The separable vertex value
-    is G(x*,y*) ~= Gx_fit(x*) + Gy_fit(y*) - G_nodal (each 1-D correction added once)."""
+    is G(x*,y*) ~= Gx_fit(x*) + Gy_fit(y*) - G_nodal (each 1-D correction added once).
+
+    Boundary rule (reviewer F1): a nodal max ON a boundary is reported at its nodal value in that
+    axis -- one-sided only, no fabricated sub-cell correction on the missing side.  Only an INTERIOR
+    max (>=3 points available in that axis) receives the quadratic sub-cell fit.  This keeps a
+    surface-pinned peak (jg=0) at y=0 instead of shifting it one node into the bulk."""
     Gii = np.asarray(Gii, dtype=float)
     jg, ig = np.unravel_index(int(np.argmax(Gii)), Gii.shape)
     Ny, Nx = Gii.shape
-    ilo, ihi = max(0, ig - 1), min(Nx - 1, ig + 1)
-    xv, gxv = _quad_vertex(x[ilo:ihi + 1], Gii[jg, ilo:ihi + 1])
-    jlo, jhi = max(0, jg - 1), min(Ny - 1, jg + 1)
-    yv, gyv = _quad_vertex(y[jlo:jhi + 1], Gii[jlo:jhi + 1, ig])
     g0 = float(Gii[jg, ig])
+    if 0 < ig < Nx - 1:
+        ilo, ihi = ig - 1, ig + 1
+        xv, gxv = _quad_vertex(x[ilo:ihi + 1], Gii[jg, ilo:ihi + 1])
+    else:
+        xv, gxv = float(x[ig]), g0
+    if 0 < jg < Ny - 1:
+        jlo, jhi = jg - 1, jg + 1
+        yv, gyv = _quad_vertex(y[jlo:jhi + 1], Gii[jlo:jhi + 1, ig])
+    else:
+        yv, gyv = float(y[jg]), g0
     return float(gxv + gyv - g0), float(xv), float(yv), int(jg), int(ig)
 
 
@@ -627,6 +649,7 @@ def run_node(Nx, Ny, max_outer=MAX_OUTER_CAP, warm_npz=None, verbose=True, outdi
 
 def run_family(name, include_fourth=False):
     auth = _require_exec_auth()          # G0.2: HARD-BLOCK without execution authorization
+    _require_single_thread()             # F5: HARD-BLOCK unless --threads 1 (spec v1.6)
     fam = FAMILIES[name]
     levels = list(fam["levels"])
     records = []
@@ -706,6 +729,7 @@ def run_sweep(include_fourth=False, outdir=None):
     """
     outdir = outdir or os.path.join(os.path.dirname(__file__), "..", "data")
     auth = _require_exec_auth()          # G0.2: HARD-BLOCK without execution authorization
+    _require_single_thread()             # F5: HARD-BLOCK unless --threads 1 (spec v1.6)
     manifest = dict(schema="aniso_sweep_manifest", version=1,
                     authorized_by=auth.get("who"), authorized_when=auth.get("when"),
                     git_commit=_git_commit, git_dirty=_git_dirty,
@@ -747,8 +771,18 @@ def compare_anchor(outdir=None, families=("X", "Y")):
 
     def _find(fam):
         import glob
-        pat = os.path.join(outdir, "she2d_aniso_%dx%d_t*_%s_*.json" % (Nx, Ny, fam))
-        hits = sorted(glob.glob(pat))
+        # F6: the family tag is appended DIRECTLY after the config hash (no trailing segment), so the
+        # old `_%s_*` glob never matched family-generated files.  Match the actual tag and select by
+        # the JSON `family` field (robust to with/without --run-id).
+        pat = os.path.join(outdir, "she2d_aniso_%dx%d_t*.json" % (Nx, Ny))
+        hits = []
+        for p in sorted(glob.glob(pat)):
+            try:
+                d = json.load(open(p))
+            except (OSError, ValueError):
+                continue
+            if d.get("family") == fam:
+                hits.append(p)
         return hits[0] if hits else None
 
     jx, jy = _find("X"), _find("Y")

@@ -1,0 +1,44 @@
+{
+  "schema": "aniso_f1_reprocess",
+  "version": 1,
+  "node": "71x70",
+  "family": "X",
+  "artifact": "data/she2d_aniso_71x70_t1_552bb609f0f2_X.npz",
+  "npz_sha256": "6596ae26d356cf3e52af8e1195a8fc9d6d2b125a246ad0dfa6959163e714312d",
+  "fixed_commit": "16e1699",
+  "preserved_untouched": {
+    "npz": "data/she2d_aniso_71x70_t1_552bb609f0f2_X.npz",
+    "json": "data/she2d_aniso_71x70_t1_552bb609f0f2_X.json",
+    "note": "frozen artifact NOT mutated"
+  },
+  "raw_nodal": {
+    "Gii_max": 3.0770514168841145e+25,
+    "jg": 0,
+    "ig": 41,
+    "xy": [
+      0.5893835478389261,
+      0.0
+    ]
+  },
+  "old_buggy": {
+    "Gii_interp": 2.690056703473506e+25,
+    "xy_Gii_max_interp": [
+      0.5891214927220607,
+      0.0003429017303743266
+    ],
+    "delta_vs_raw_pct": -12.576803601237426
+  },
+  "new_fixed": {
+    "Gii_interp": 3.0780708193114283e+25,
+    "xy_Gii_max_interp": [
+      0.5891214927220607,
+      0.0
+    ],
+    "delta_vs_raw_pct": 0.03312919705274586
+  },
+  "correction": {
+    "rule": "boundary nodal max reported at nodal value (one-sided, no fabricated sub-cell correction)",
+    "y_now": 0.0,
+    "y_was": 0.0003429017303743266
+  }
+}

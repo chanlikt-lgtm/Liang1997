@@ -108,6 +108,29 @@ def test_interpolated_peak_degenerate():
     assert g_interp == 1.0
 
 
+def test_interpolated_peak_surface_pinned():
+    """F1 regression: a surface-pinned nodal max (jg=0) must stay at y=0, not shift one node into
+    the bulk (the old <3-point fallback returned the interior node, dropping the boundary max)."""
+    x = np.linspace(0.0, 0.8, 71); y = np.linspace(0.0, 0.7, 70)
+    X, Y = np.meshgrid(x, y)
+    # peak pinned to the y=0 surface, decaying into the bulk
+    G = np.exp(-((X - 0.46) ** 2) / (2 * 0.02 ** 2) - (Y / 0.03) ** 2)
+    g_interp, xv, yv, jg, ig = aniso.interpolated_peak(G, x, y)
+    assert jg == 0, "peak must be pinned at the surface (jg=0)"
+    assert yv == y[0], "surface-pinned peak must report y=0 (F1), not an interior node"
+    assert g_interp >= float(G[jg, ig]) - 1e-12, "interpolated peak must not fall below the nodal max"
+
+
+def test_interpolated_peak_bottom_boundary():
+    """F1: a nodal max at the bottom boundary (jg=Ny-1) is likewise reported at its nodal y."""
+    x = np.linspace(0.0, 0.8, 50); y = np.linspace(0.0, 0.7, 40)
+    X, Y = np.meshgrid(x, y)
+    G = np.exp(-((X - 0.4) ** 2) / (2 * 0.02 ** 2) - ((Y - y[-1]) / 0.03) ** 2)
+    _, _, yv, jg, _ = aniso.interpolated_peak(G, x, y)
+    assert jg == len(y) - 1
+    assert yv == y[-1]
+
+
 # ---------------------------------------------------------------------------
 # npz schema test (no solver run): a minimal mock of solve_coupled's return dict
 # ---------------------------------------------------------------------------
@@ -290,6 +313,28 @@ def test_exec_auth_recorded():
         aniso.AUTH_FILE = saved
 
 
+def test_run_sweep_threads_fail_closed():
+    """F5: run_sweep must HARD-BLOCK (SystemExit) when THREADS_REQUESTED != 1, even with a valid auth
+    file -- a resume command without --threads 1 must not silently revert to the default 8."""
+    saved_auth = aniso.AUTH_FILE
+    saved_threads = aniso.THREADS_REQUESTED
+    aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_t_%d.json" % os.getpid())
+    with open(aniso.AUTH_FILE, "w") as fh:
+        json.dump({"execution_authorized": True, "who": "Chan Lik", "when": "2026-11-01T00:00:00Z"}, fh)
+    aniso.THREADS_REQUESTED = 8   # the default when --threads is omitted
+    try:
+        try:
+            aniso.run_sweep(outdir=tempfile.mkdtemp())
+            raised = False
+        except SystemExit as e:
+            raised = True
+            assert "SINGLE-THREADED" in str(e)
+        assert raised, "run_sweep must hard-block when threads != 1 (F5)"
+    finally:
+        aniso.AUTH_FILE = saved_auth
+        aniso.THREADS_REQUESTED = saved_threads
+
+
 def _build_full_record(Nx=71, Ny=70, family="X", status="CERTIFIED", certified=True):
     """Build a realistic node record via the real _build_node_record path (no solver run)."""
     r = _mock_r(Ny, Nx)
@@ -386,10 +431,12 @@ def test_run_sweep_sequential_failure_isolation():
                     npz="/tmp/fake_%dx%d_%s.npz" % (Nx, Ny, family))
     saved_node = aniso.run_node
     saved_auth = aniso.AUTH_FILE
+    saved_threads = aniso.THREADS_REQUESTED
     aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_sweep_%d.json" % os.getpid())
     with open(aniso.AUTH_FILE, "w") as fh:
         json.dump({"execution_authorized": True, "who": "Chan Lik", "when": "2026-10-29T00:00:00Z"}, fh)
     aniso.run_node = _fake_run_node
+    aniso.THREADS_REQUESTED = 1   # F5: the production sweep must be single-threaded
     td = tempfile.mkdtemp()
     try:
         manifest, results = aniso.run_sweep(outdir=td)
@@ -414,6 +461,7 @@ def test_run_sweep_sequential_failure_isolation():
     finally:
         aniso.run_node = saved_node
         aniso.AUTH_FILE = saved_auth
+        aniso.THREADS_REQUESTED = saved_threads
         shutil.rmtree(td, ignore_errors=True)
 
 

@@ -138,14 +138,15 @@ OBSERVABLES = {"X": X_OBSERVABLES, "Y": Y_OBSERVABLES}
 # Loaders
 # ---------------------------------------------------------------------------
 def load_certified_nodes(paths, require_single_thread=True):
-    """Read node JSONs from disk; return (nodes keyed by (Nx,Ny), skipped, ambiguous).
+    """Read node JSONs from disk; return (nodes keyed by (family,Nx,Ny), skipped, ambiguous).
 
     CERTIFIED only.  When require_single_thread is True, nodes with an explicit
     threads_requested != 1 are EXCLUDED (they are multi-thread controls, not v1.6 sweep nodes).
-    When several single-thread candidates share a (Nx,Ny), the family-tagged one wins and the
-    alternates are surfaced in `ambiguous` (never silently mixed)."""
+    Keying by (family, Nx, Ny) keeps the shared (100,70) anchor as SEPARATE X- and Y-family records
+    (F2): the X anchor must never substitute for the Y anchor (or vice versa).  A true collision --
+    same family AND same level -- surfaces in `ambiguous` (never silently mixed)."""
     nodes, skipped, ambiguous = {}, [], []
-    by_level = {}
+    by_key = {}
     for p in paths:
         try:
             with open(p) as fh:
@@ -161,15 +162,15 @@ def load_certified_nodes(paths, require_single_thread=True):
         if require_single_thread and thr is not None and thr != 1:
             skipped.append((p, "multi-thread control (threads_requested=%s)" % thr))
             continue
-        lv = (int(d["Nx"]), int(d["Ny"]))
-        by_level.setdefault(lv, []).append((p, d))
-    for lv, cands in by_level.items():
-        cands.sort(key=lambda pd: (pd[1].get("family") is not None, pd[1].get("family") or "", pd[0]))
-        keep = cands[-1]
-        nodes[lv] = keep[1]
-        for p, d in cands[:-1]:
-            ambiguous.append((p, "duplicate %dx%d; kept family=%s, ignored family=%s"
-                              % (lv[0], lv[1], keep[1].get("family"), d.get("family"))))
+        key = (d.get("family"), int(d["Nx"]), int(d["Ny"]))
+        by_key.setdefault(key, []).append((p, d))
+    for key, cands in by_key.items():
+        cands.sort(key=lambda pd: pd[0])   # deterministic tie-break on path
+        keep = cands[0]
+        nodes[key] = keep[1]
+        for p, d in cands[1:]:
+            ambiguous.append((p, "duplicate family=%r %dx%d; kept %s"
+                              % (key[0], key[1], key[2], keep[0])))
     return nodes, skipped, ambiguous
 
 
@@ -178,12 +179,16 @@ def load_certified_nodes(paths, require_single_thread=True):
 # ---------------------------------------------------------------------------
 def analyze_family(family, nodes, observables, levels, d_floor=0.0):
     """Analyze one family: order coarse->fine, run each observable through the frozen criterion,
-    and attach per-level physical flags (hotspot location / boundary_truncated for Y)."""
+    and attach per-level physical flags (hotspot location / boundary_truncated for Y).
+
+    `nodes` is keyed by (family, Nx, Ny) so the shared (100,70) anchor of one family is never read
+    as the other family's anchor (F2)."""
     ordered = _sort_levels(family, levels)
     recs, missing = [], []
     for lv in ordered:
-        if lv in nodes:
-            recs.append(nodes[lv])
+        key = (family, lv[0], lv[1])
+        if key in nodes:
+            recs.append(nodes[key])
         else:
             missing.append(lv)
     fam = dict(family=family, direction=FAMILIES[family]["direction"],
@@ -254,15 +259,15 @@ def main(argv=None):
     ap.add_argument("--d-floor", type=float, default=0.0, help="observable noise floor (default 0)")
     args = ap.parse_args(argv)
 
-    # Gather node JSONs that match any pre-registered level.
-    wanted = {lv for fam in FAMILIES.values() for lv in fam["levels"]}
+    # Gather node JSONs that match any pre-registered level, keyed by (family, Nx, Ny).
+    wanted = {(name, lv[0], lv[1]) for name, fam in FAMILIES.items() for lv in fam["levels"]}
     candidates = []
     for fn in sorted(os.listdir(args.data_dir)):
         if not fn.endswith(".json"):
             continue
         candidates.append(os.path.join(args.data_dir, fn))
     nodes, skipped, ambiguous = load_certified_nodes(candidates)
-    nodes = {lv: r for lv, r in nodes.items() if lv in wanted}
+    nodes = {k: r for k, r in nodes.items() if k in wanted}
     report = analyze_gate4(nodes, d_floor=args.d_floor)
     report["skipped"] = skipped
     report["ambiguous"] = ambiguous
