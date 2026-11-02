@@ -1,8 +1,15 @@
 # Step-B re-run evidence bundle (F1–F7 remediation complete)
 
-**Date:** 2026-11-02 · **Pinned SHA (all evidence below):**
+**Date:** 2026-11-02 · **Bundle SHA (immutable, `main` tip):**
+`3bd39eb37525491f848a9963a71d5c3a82bf721e`
+**Code SHA (what the clean independent checkout was pinned to for ALL evidence below):**
 `19a65cc0e67eeaf1d16194abdfed4ca789391f2f`
 **Repo:** <https://github.com/chanlikt-lgtm/Liang1997> · **Sweep: HALTED** (no GO recorded; nothing runs).
+
+> The reviewer's single reference is the **bundle SHA** `3bd39eb` (contains code + evidence + this doc).
+> The evidence logs were generated in a clean checkout at the **code SHA** `19a65cc` (the F1–F7
+> remediation tip); `3bd39eb` = `19a65cc` + the evidence bundle (no code change between them). Each
+> evidence log records its own `git HEAD` (= 19a65cc) in `env.txt`.
 
 **Amended-script SHAs (for the reviewer's record):**
 - `campaign/aniso_mesh_study.py` → `b4c7b4125e319ae156cc6b4ed0cf1ffdd19c52be`
