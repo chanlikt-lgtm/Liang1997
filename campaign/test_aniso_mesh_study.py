@@ -575,6 +575,47 @@ def test_authorized_node_allowlist():
     assert aniso._authorized_node(auth, 100, 120) is False
 
 
+def test_node_path_requires_auth():
+    """F4/S3-HOLD: the single-node --node path is a production path and must ALSO hard-block under
+    HOLD (no signed auth), not silently launch a solver.  The S3 pre-sweep --node permission is
+    superseded by the explicit reviewer HOLD."""
+    saved = aniso.AUTH_FILE
+    aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_absent_node_%d.json" % os.getpid())
+    if os.path.exists(aniso.AUTH_FILE):
+        os.remove(aniso.AUTH_FILE)
+    try:
+        try:
+            aniso._node_path(71, 70, 1500, None)
+            raised = False
+        except SystemExit as e:
+            raised = True
+            assert "NOT authorized" in str(e) or "incomplete" in str(e)
+        assert raised, "--node must hard-block without a signed GO (F4/S3-HOLD)"
+    finally:
+        aniso.AUTH_FILE = saved
+
+
+def test_node_path_allowlist_enforced():
+    """F4: a signed auth that does NOT list the requested node must hard-block --node."""
+    saved = aniso.AUTH_FILE
+    saved_threads = aniso.THREADS_REQUESTED
+    aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_node_allow_%d.json" % os.getpid())
+    with open(aniso.AUTH_FILE, "w") as fh:
+        json.dump(_valid_auth(node_allowlist=[[71, 70], [100, 70]]), fh)  # (200,70) not listed
+    aniso.THREADS_REQUESTED = 1
+    try:
+        try:
+            aniso._node_path(200, 70, 1500, None)
+            raised = False
+        except SystemExit as e:
+            raised = True
+            assert "allowlist" in str(e)
+        assert raised, "--node outside the allowlist must hard-block (F4)"
+    finally:
+        aniso.AUTH_FILE = saved
+        aniso.THREADS_REQUESTED = saved_threads
+
+
 def test_warm_start_assert():
     """G1.1: a missing warm-start npz must raise, never silently cold-start."""
     missing = os.path.join(tempfile.gettempdir(), "does_not_exist_%d.npz" % os.getpid())

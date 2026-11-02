@@ -930,6 +930,17 @@ def _parse_node_rest(rest):
     return maxo, run_id
 
 
+def _node_path(Nx, Ny, maxo, run_id):
+    """F4/S3-HOLD: the --node single-node path is a PRODUCTION path.  Under the explicit reviewer
+    HOLD nothing runs (S3 permits --node pre-sweep in general, but the HOLD supersedes it), so it is
+    gated behind the same signed auth + single-thread + allowlist as --family/--sweep."""
+    _require_exec_auth()
+    _require_single_thread()
+    if not _authorized_node(_exec_auth(), Nx, Ny):
+        raise SystemExit("F4 HARD-BLOCK: node %dx%d not in authorization allowlist" % (Nx, Ny))
+    run_node(Nx, Ny, max_outer=maxo, run_id=run_id)
+
+
 if __name__ == "__main__":
     argv = sys.argv[1:]
     if not argv or argv[0] == "--list":
@@ -941,9 +952,12 @@ if __name__ == "__main__":
         print("HELD: full sweep not run without explicit instruction.")
         sys.exit(0)
     if argv[0] == "--node":
+        # F4: the single-node path is a PRODUCTION path too -- under the explicit reviewer HOLD,
+        # nothing runs (S3 permits --node pre-sweep in general, but the HOLD supersedes it).
+        # Gate it behind the same signed auth + single-thread + allowlist as --family/--sweep.
         Nx, Ny = int(argv[1]), int(argv[2])
         maxo, run_id = _parse_node_rest(argv[3:])
-        run_node(Nx, Ny, max_outer=maxo, run_id=run_id)
+        _node_path(Nx, Ny, maxo, run_id)
     elif argv[0] == "--resume":
         Nx, Ny = int(argv[1]), int(argv[2])
         warm, maxo, run_id, dry_run = None, MAX_OUTER_CAP, None, False
