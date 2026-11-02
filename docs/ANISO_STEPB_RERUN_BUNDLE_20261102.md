@@ -1,8 +1,12 @@
 # Step-B re-run evidence bundle (F1–F7 remediation complete)
 
 **Date:** 2026-11-02 · **Pinned SHA (all evidence below):**
-`0f917669298acf1c6cd08147636b1d81e5b843aa`
+`19a65cc0e67eeaf1d16194abdfed4ca789391f2f`
 **Repo:** <https://github.com/chanlikt-lgtm/Liang1997> · **Sweep: HALTED** (no GO recorded; nothing runs).
+
+**Amended-script SHAs (for the reviewer's record):**
+- `campaign/aniso_mesh_study.py` → `b4c7b4125e319ae156cc6b4ed0cf1ffdd19c52be`
+- `campaign/aniso_gate4_analysis.py` → `d906ee2bb772c7341cde7ba04080d88ce38ebaf6`
 
 This is the re-run evidence bundle the reviewer requires for Step-B sign-off after the F1–F7
 remediation. Every item below was produced in a **clean, independent `git clone --no-hardlinks`** checked
@@ -19,7 +23,7 @@ bundle assembly.
 
 ## Item 1 — clean independent checkout + independent pytest (log + env + exit code)
 
-- Checkout: `git clone --no-hardlinks` → `git checkout --detach 0f91766` → `git status --porcelain`
+- Checkout: `git clone --no-hardlinks` → `git checkout --detach 19a65cc` → `git status --porcelain`
   EMPTY (recorded in `env.txt`).
 - **Regression suite:** `pytest campaign/test_aniso_mesh_study.py -q` → **34 passed, exit 0**
   (`pytest_mesh_study.txt` + `pytest_mesh_study_verbose.txt`).
@@ -69,14 +73,17 @@ byte-identical across the three single-thread 71×70 runs —
 Two cases, both exit 1 with **no solver execution** (stdout empty; the hard-block fires before any
 `_solve`):
 
-| entry point | stale auth (old schema) | auth removed |
-|---|---|---|
-| `--family X` | exit 1 (F4 "incomplete") | exit 1 (G0.2 "NOT authorized") |
-| `--sweep` | exit 1 (F4 "incomplete") | exit 1 (G0.2 "NOT authorized") |
-| `--resume 100 70 --warm …` (non-dry) | — | exit 1 (G0.2) |
-| `--node 71 70` | exit 1 (F4 "incomplete") | exit 1 (G0.2) |
+| entry point | stale auth (old schema) | auth removed | bound_sha mismatch | threads≠1 |
+|---|---|---|---|---|
+| `--family X` | exit 1 (F4 "incomplete") | exit 1 (G0.2) | exit 1 (F4 bound_sha) | exit 1 (G3.2) |
+| `--sweep` | exit 1 (F4 "incomplete") | exit 1 (G0.2) | — | — |
+| `--resume 100 70 --warm …` (non-dry) | — | exit 1 (G0.2) | — | — |
+| `--node 71 70` | exit 1 (F4 "incomplete") | exit 1 (G0.2) | exit 1 (F4 bound_sha) | exit 1 (G3.2) |
 
-Archived: `auth_{family,sweep,node}_stale.{out,err,exit}`, `auth_absent_{family,sweep,resume,node}.{out,err,exit}`.
+Archived: `auth_{family,sweep,node}_stale.{out,err,exit}`,
+`auth_absent_{family,sweep,resume,node}.{out,err,exit}`,
+`auth_badsha_{family,node}.{out,err,exit}`,
+`auth_threads_{family,node}.{out,err,exit}`.
 
 ### F4/S3-HOLD gap fixed during assembly (important)
 
@@ -123,7 +130,7 @@ Produced by `campaign/stepb_certify_node1.py` → `node1_certify.json` (script c
 
 ## Disposition
 
-All five reviewer-required Step-B evidence items are assembled at `0f91766` and re-runnable from a clean
+All five reviewer-required Step-B evidence items are assembled at `19a65cc` and re-runnable from a clean
 checkout. No solver was invoked (dry-run + audit + tests + live hard-block demos only). Sweep remains
 HALTED — nothing resumes without a recorded GO.
 

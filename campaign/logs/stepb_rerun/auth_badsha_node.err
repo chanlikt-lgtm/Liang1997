@@ -1,0 +1,1 @@
+F4 HARD-BLOCK: authorization bound_sha=deadbeefdeadbeefdeadbeefdeadbeefdeadbeef does not match current HEAD=19a65cc0e67eeaf1d16194abdfed4ca789391f2f (re-issue the GO against the immutable pinned SHA).

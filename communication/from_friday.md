@@ -793,3 +793,44 @@ resume-requires-auth); `test_aniso_gate4_analysis.py` **19/19** PASS.
 Net: F1–F7 all addressed. Next = assemble the Step-B re-run evidence bundle for the reviewer (pinned
 checkout + pytest log + Node-1 JSON/NPZ audit + live negative auth tests + boundary regression). Nothing
 resumes without a recorded GO. 🌳
+
+---
+
+## 2026-11-02 — Step-B evidence bundle ASSEMBLED at pinned SHA 19a65cc (all 5 items + 1 gap fixed)
+Pinned SHA (code + evidence): `19a65cc0e67eeaf1d16194abdfed4ca789391f2f`. Evidence under
+`campaign/logs/stepb_rerun/`, index doc `docs/ANISO_STEPB_RERUN_BUNDLE_20261102.md`. All produced in a
+CLEAN independent `git clone --no-hardlinks` at 19a65cc (`git status --porcelain` EMPTY). No solver run —
+tests + audit + dry-run + live hard-block demos only. Sweep stays HALTED.
+
+The 5 §5 items:
+1. **Clean checkout + independent pytest** — `test_aniso_mesh_study.py` **34 passed exit 0**;
+   `test_aniso_gate4_analysis.py` **19 passed exit 0** (env: py3.10.12, pytest 9.1.1, numpy 2.2.6, scipy
+   1.15.3). Logs + env + exit codes archived.
+2. **Raw Node-1 audit** (`stepb_audit_node1.py` → node1_audit.json) — 7 gates w/ units+norm all PASS;
+   BLAS `blas=1` ×3 (threadpool_actual); **SHA256(Gii .tobytes)=c6a906cd…0013d**, **SHA256(phi)=be38607b…4198**,
+   Gii_max `0x1.973e8ea5f5dd7p+84` ×3 — byte-identical across the 3 single-thread runs; whole-file SHA
+   differs ONLY by embedded git_commit/config_hash provenance (transparent diff in the JSON).
+3. **LIVE negative auth** — 4 rejection classes, all exit 1 zero solver exec: stale/old-schema auth
+   (F4 incomplete), auth absent (G0.2), **bound_sha mismatch** (F4), **threads≠1** (G3.2) — on
+   --family / --sweep / --resume / **--node**.
+4. **Regressions** — boundary-peak (surface-pinned, y=0, +0.033% not −12.58%), independent 7-gate
+   recertification from raw arrays (certified=true), dual-anchor (F2), anchor glob w/ + without run-id +
+   missing-family unavailable (F6).
+5. **Node-2-first dry-run** — warm sha 6596ae26… = preserved Node-1, immutability verified (sha
+   identical before/after), stop triggers documented.
+
+**One gap found + fixed during assembly (flagging for the record):** the F4 remediation had NOT gated the
+`--node` (S3 single-node) path — it still bypassed auth and would have launched a real solver under HOLD.
+This is exactly the reviewer's "`--node` bypasses it (S3) though the explicit HOLD supersedes S3" and the
+S3↔HOLD doc "under HOLD, nothing runs — no --node". Fixed: `--node` now goes through `_node_path()` with
+the same signed auth + single-thread + allowlist as --family/--sweep. New regressions
+`test_node_path_requires_auth` + `test_node_path_allowlist_enforced`. I discovered it because a live
+`--node 71 70` during the negative-auth demo actually launched a solver (killed immediately, no npz
+written, data tree confirmed clean).
+
+Also closed a second gap: F6's "add a test" was never actually added (code changed, test missing) — added
+`test_compare_anchor_glob_selects_by_family` + `test_compare_anchor_missing_family_is_unavailable`.
+
+Amended-script SHAs: aniso_mesh_study.py `b4c7b412…`, aniso_gate4_analysis.py `d906ee2b…`.
+
+Please verify + send the reviewer reply + bundle together. Nothing resumes without a recorded GO. 🌳

@@ -1,0 +1,1 @@
+G3.2 HARD-BLOCK: the anisotropic sweep is pre-registered SINGLE-THREADED (spec v1.6); THREADS_REQUESTED=8 (default when --threads is omitted is 8). Re-run with `--threads 1` -- this is a determinism requirement, not a performance knob.

@@ -40,5 +40,5 @@ campaign/test_aniso_mesh_study.py::test_warm_start_assert PASSED         [ 94%]
 campaign/test_aniso_mesh_study.py::test_compare_anchor_glob_selects_by_family PASSED [ 97%]
 campaign/test_aniso_mesh_study.py::test_compare_anchor_missing_family_is_unavailable PASSED [100%]
 
-============================== 34 passed in 0.31s ==============================
+============================== 34 passed in 0.32s ==============================
 mesh_study_verbose exit=0
