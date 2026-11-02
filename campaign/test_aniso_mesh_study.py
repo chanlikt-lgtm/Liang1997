@@ -586,6 +586,52 @@ def test_warm_start_assert():
     assert raised, "missing warm-start npz must HARD-FAIL (no silent cold-start fallback)"
 
 
+def test_compare_anchor_glob_selects_by_family():
+    """F6: compare_anchor must select the (100,70) anchor by JSON `family` field, not by a trailing
+    `_<family>_*` glob segment -- family-generated tags carry the family DIRECTLY after the config hash
+    (with an OPTIONAL run-id suffix), so both with/without run-id must match and resolve to DISTINCT
+    X and Y anchors."""
+    import shutil
+    td = tempfile.mkdtemp()
+    Nx, Ny = 100, 70
+    def _write(tag, family, gii):
+        fn = os.path.join(td, tag)
+        with open(fn, "w") as fh:
+            json.dump(dict(Nx=Nx, Ny=Ny, family=family, Gii_max=gii, G_tot=gii * 1e-11,
+                           xy_Gii_max_interp=[0.5, 0.0], warm_source="", certified=True), fh)
+        return fn
+    # X anchor: family directly after config hash, NO run-id (the basic generated tag)
+    _write("she2d_aniso_100x70_t1_aaaaaaa11111_X.json", "X", 2.00e25)
+    # Y anchor: family after config hash + an explicit run-id suffix (with-run-id variant)
+    _write("she2d_aniso_100x70_t1_bbbbbbb22222_Y_mysuffix.json", "Y", 3.00e25)
+    try:
+        out = aniso.compare_anchor(outdir=td)
+        assert out.get("available") is not False, "anchor cross-check must resolve both X and Y"
+        assert out["Gii_max_X"] == 2.00e25, "X anchor must read its OWN value"
+        assert out["Gii_max_Y"] == 3.00e25, "Y anchor must read its OWN value (with-run-id variant)"
+        assert abs(out["dGii_max_rel"] - 2 * abs(2.0 - 3.0) / (2.0 + 3.0)) < 1e-12
+        assert out["X_certified"] is True and out["Y_certified"] is True
+    finally:
+        shutil.rmtree(td, ignore_errors=True)
+
+
+def test_compare_anchor_missing_family_is_unavailable():
+    """F6: if a family's anchor JSON is absent, the cross-check reports available=False (not a wrong
+    family substitution)."""
+    import shutil
+    td = tempfile.mkdtemp()
+    Nx, Ny = 100, 70
+    with open(os.path.join(td, "she2d_aniso_100x70_t1_aaaaaaa11111_X.json"), "w") as fh:
+        json.dump(dict(Nx=Nx, Ny=Ny, family="X", Gii_max=2.0e25, G_tot=2.0e14,
+                       xy_Gii_max_interp=[0.5, 0.0], warm_source="", certified=True), fh)
+    try:
+        out = aniso.compare_anchor(outdir=td)
+        assert out["available"] is False
+        assert out["x_json"] is not None and out["y_json"] is None
+    finally:
+        shutil.rmtree(td, ignore_errors=True)
+
+
 if __name__ == "__main__":
     import traceback
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
