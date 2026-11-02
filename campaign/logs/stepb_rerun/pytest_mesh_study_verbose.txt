@@ -1,0 +1,44 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.1.1, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /tmp/liang_stepb_checkout
+plugins: langsmith-0.7.23, anyio-4.12.1
+collecting ... collected 34 items
+
+campaign/test_aniso_mesh_study.py::test_mesh_law_unchanged_vs_driver PASSED [  2%]
+campaign/test_aniso_mesh_study.py::test_dy_at_unchanged_vs_driver PASSED [  5%]
+campaign/test_aniso_mesh_study.py::test_refuses_nothing PASSED           [  8%]
+campaign/test_aniso_mesh_study.py::test_interpolated_peak_subcell PASSED [ 11%]
+campaign/test_aniso_mesh_study.py::test_interpolated_peak_degenerate PASSED [ 14%]
+campaign/test_aniso_mesh_study.py::test_interpolated_peak_surface_pinned PASSED [ 17%]
+campaign/test_aniso_mesh_study.py::test_interpolated_peak_bottom_boundary PASSED [ 20%]
+campaign/test_aniso_mesh_study.py::test_npz_schema_written PASSED        [ 23%]
+campaign/test_aniso_mesh_study.py::test_certify_runs PASSED              [ 26%]
+campaign/test_aniso_mesh_study.py::test_certify_not_rphi_alone PASSED    [ 29%]
+campaign/test_aniso_mesh_study.py::test_fwhm_2cross_gaussian PASSED      [ 32%]
+campaign/test_aniso_mesh_study.py::test_fwhm_2cross_flags PASSED         [ 35%]
+campaign/test_aniso_mesh_study.py::test_resource_gate PASSED             [ 38%]
+campaign/test_aniso_mesh_study.py::test_parse_node_rest_threads PASSED   [ 41%]
+campaign/test_aniso_mesh_study.py::test_config_hash_stable PASSED        [ 44%]
+campaign/test_aniso_mesh_study.py::test_thread_env_enforced PASSED       [ 47%]
+campaign/test_aniso_mesh_study.py::test_exec_auth_hard_block PASSED      [ 50%]
+campaign/test_aniso_mesh_study.py::test_exec_auth_recorded PASSED        [ 52%]
+campaign/test_aniso_mesh_study.py::test_exec_auth_rejects_bare_boolean PASSED [ 55%]
+campaign/test_aniso_mesh_study.py::test_exec_auth_rejects_wrong_bound_sha PASSED [ 58%]
+campaign/test_aniso_mesh_study.py::test_run_sweep_threads_fail_closed PASSED [ 61%]
+campaign/test_aniso_mesh_study.py::test_metadata_persisted_on_disk PASSED [ 64%]
+campaign/test_aniso_mesh_study.py::test_gate4_excludes_uncertified PASSED [ 67%]
+campaign/test_aniso_mesh_study.py::test_node_state_vocabulary PASSED     [ 70%]
+campaign/test_aniso_mesh_study.py::test_run_sweep_stop_on_failed PASSED  [ 73%]
+campaign/test_aniso_mesh_study.py::test_run_sweep_isolation_when_stop_disabled PASSED [ 76%]
+campaign/test_aniso_mesh_study.py::test_resume_dry_run_records_warm_sha PASSED [ 79%]
+campaign/test_aniso_mesh_study.py::test_resume_requires_auth PASSED      [ 82%]
+campaign/test_aniso_mesh_study.py::test_authorized_node_allowlist PASSED [ 85%]
+campaign/test_aniso_mesh_study.py::test_node_path_requires_auth PASSED   [ 88%]
+campaign/test_aniso_mesh_study.py::test_node_path_allowlist_enforced PASSED [ 91%]
+campaign/test_aniso_mesh_study.py::test_warm_start_assert PASSED         [ 94%]
+campaign/test_aniso_mesh_study.py::test_compare_anchor_glob_selects_by_family PASSED [ 97%]
+campaign/test_aniso_mesh_study.py::test_compare_anchor_missing_family_is_unavailable PASSED [100%]
+
+============================== 34 passed in 0.31s ==============================
+mesh_study_verbose exit=0

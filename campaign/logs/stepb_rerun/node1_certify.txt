@@ -1,0 +1,92 @@
+{
+  "schema": "stepb_node1_independent_certification",
+  "version": 1,
+  "source_npz": "she2d_aniso_71x70_t1_552bb609f0f2_X.npz",
+  "source_sha256": "6596ae26d356cf3e52af8e1195a8fc9d6d2b125a246ad0dfa6959163e714312d",
+  "peak": {
+    "Gii_nodal": 3.0770514168841145e+25,
+    "Gii_interp": 3.0780708193114283e+25,
+    "nodal_jg": 0,
+    "nodal_ig": 41,
+    "nodal_xy": [
+      0.5893835478389261,
+      0.0
+    ],
+    "interp_xy": [
+      0.5891214927220607,
+      0.0
+    ],
+    "boundary_max": true,
+    "y_is_surface": true,
+    "delta_interp_vs_nodal_pct": 0.03312919705274586
+  },
+  "seven_gates": [
+    {
+      "name": "R_phi",
+      "value": 8.092337900311719e-05,
+      "gate": 0.0001,
+      "op": "<",
+      "unit": "V",
+      "norm": "absolute",
+      "passed": true
+    },
+    {
+      "name": "continuity_residual",
+      "value": 3.4513821253506166e-09,
+      "gate": 1e-06,
+      "op": "<",
+      "unit": "1",
+      "norm": "scaled by max(|bs|,1)",
+      "passed": true
+    },
+    {
+      "name": "number_balance",
+      "value": 2.0797993955832524e-05,
+      "gate": 0.01,
+      "op": "<",
+      "unit": "1",
+      "norm": "|balance|/scale",
+      "passed": true
+    },
+    {
+      "name": "drift_raw_Gii",
+      "value": 0.00010997463242625958,
+      "gate": 0.005,
+      "op": "<",
+      "unit": "1",
+      "norm": "40-iter continuation spread",
+      "passed": true
+    },
+    {
+      "name": "drift_interp_Gii",
+      "value": 9.961997039504975e-05,
+      "gate": 0.005,
+      "op": "<",
+      "unit": "1",
+      "norm": "40-iter endpoint delta",
+      "passed": true
+    },
+    {
+      "name": "drift_G_tot",
+      "value": 0.00011359729980848199,
+      "gate": 0.005,
+      "op": "<",
+      "unit": "1",
+      "norm": "40-iter continuation spread",
+      "passed": true
+    },
+    {
+      "name": "hotspot_drift",
+      "value": 5.7427947934349435e-05,
+      "gate": 0.5,
+      "op": "<",
+      "unit": "cell",
+      "norm": "|cont hotspot - main hotspot| / h_rep",
+      "passed": true
+    }
+  ],
+  "all_gates_pass": true,
+  "rphi_alone_insufficient": "R_phi<1e-4 alone would be PASS; certification requires all 7 gates",
+  "certified": true,
+  "n_iter": 531
+}

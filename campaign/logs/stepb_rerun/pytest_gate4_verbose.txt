@@ -1,0 +1,29 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.1.1, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /tmp/liang_stepb_checkout
+plugins: langsmith-0.7.23, anyio-4.12.1
+collecting ... collected 19 items
+
+campaign/test_aniso_gate4_analysis.py::test_rel_diff_symmetric PASSED    [  5%]
+campaign/test_aniso_gate4_analysis.py::test_rel_diff_both_zero_is_none PASSED [ 10%]
+campaign/test_aniso_gate4_analysis.py::test_converging_monotone_r_lt_1 PASSED [ 15%]
+campaign/test_aniso_gate4_analysis.py::test_diverging_r_ge_1 PASSED      [ 21%]
+campaign/test_aniso_gate4_analysis.py::test_non_monotone_is_unresolved PASSED [ 26%]
+campaign/test_aniso_gate4_analysis.py::test_decreasing_converging_series PASSED [ 31%]
+campaign/test_aniso_gate4_analysis.py::test_zero_denominator_edge_case PASSED [ 36%]
+campaign/test_aniso_gate4_analysis.py::test_below_noise_floor_indeterminate PASSED [ 42%]
+campaign/test_aniso_gate4_analysis.py::test_noise_floor_zero_allows_tiny_d12 PASSED [ 47%]
+campaign/test_aniso_gate4_analysis.py::test_trench_class_narrative_flag PASSED [ 52%]
+campaign/test_aniso_gate4_analysis.py::test_four_level_second_r PASSED   [ 57%]
+campaign/test_aniso_gate4_analysis.py::test_insufficient_levels PASSED   [ 63%]
+campaign/test_aniso_gate4_analysis.py::test_load_certified_excludes_uncertified PASSED [ 68%]
+campaign/test_aniso_gate4_analysis.py::test_load_certified_excludes_multithread_control PASSED [ 73%]
+campaign/test_aniso_gate4_analysis.py::test_load_certified_separates_xy_anchor PASSED [ 78%]
+campaign/test_aniso_gate4_analysis.py::test_family_level_ordering_coarse_to_fine PASSED [ 84%]
+campaign/test_aniso_gate4_analysis.py::test_analyze_gate4_y_reports_flags_and_converges PASSED [ 89%]
+campaign/test_aniso_gate4_analysis.py::test_flat_series_no_change PASSED [ 94%]
+campaign/test_aniso_gate4_analysis.py::test_analyze_gate4_missing_node_is_incomplete PASSED [100%]
+
+============================== 19 passed in 0.02s ==============================
+gate4 exit=0

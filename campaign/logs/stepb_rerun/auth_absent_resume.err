@@ -1,0 +1,1 @@
+G0.2 HARD-BLOCK: full-sweep execution is NOT authorized. The anisotropic sweep is HELD until a signed/reviewer-issued GO is recorded. To authorize, write /tmp/liang_stepb_checkout/campaign/aniso_exec_auth.json with the F4 schema (who, when, bound_sha, threads_required, node_allowlist, output_namespace, stop_on_unresolved, stop_on_failed).
