@@ -1,0 +1,46 @@
+{
+  "schema": "aniso_node_certified_derivative",
+  "version": 1,
+  "family": "X",
+  "Nx": 71,
+  "Ny": 70,
+  "status": "CERTIFIED",
+  "certified": true,
+  "supersedes": {
+    "original_npz": "she2d_aniso_71x70_t1_552bb609f0f2_X.npz",
+    "original_json": "she2d_aniso_71x70_t1_552bb609f0f2_X.json",
+    "npz_sha256": "6596ae26d356cf3e52af8e1195a8fc9d6d2b125a246ad0dfa6959163e714312d",
+    "stale_Gii_interp": 2.690056703473506e+25,
+    "fix_commit": "545bd8c"
+  },
+  "Gii_interp": 3.0780708193114283e+25,
+  "Gii_max": 3.0770514168841145e+25,
+  "xy_Gii_max_interp": [
+    0.5891214927220607,
+    0.0
+  ],
+  "avalanche_y_fwhm": 0.0021418404021870223,
+  "G_tot": 91820491422435.28,
+  "fwhm_flags": {
+    "boundary_truncated": true,
+    "unresolved": false,
+    "multi_peak": false,
+    "left_x": 0.0,
+    "right_x": 0.0021418404021870223,
+    "peak_idx": 0
+  },
+  "drift_interp_Gii": 9.926583191974887e-05,
+  "hotspot_drift_um": 6.558128806677388e-08,
+  "hotspot_drift_cells": 5.7427947934349435e-05,
+  "provenance": {
+    "threads_requested": 1
+  },
+  "determinism_crosscheck": {
+    "drift_raw_recomputed": 0.00010997463242625958,
+    "drift_raw_npz": 0.00010997463242625958,
+    "drift_raw_match": true,
+    "drift_Gtot_recomputed": 0.00011359729980848199,
+    "drift_Gtot_npz": 0.00011359729980848199,
+    "drift_Gtot_match": true
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "schema": "aniso_gate4_analysis",
+  "version": 1,
+  "note": "discretization-only; no continuum/physical claim; r<1 = consistent-with-convergence, r>=1 = conservative UNRESOLVED gate (not proof)",
+  "d_floor": 0.0,
+  "families": {
+    "X": {
+      "family": "X",
+      "direction": "x-only (refine drain-x)",
+      "fixed": "Ny=70",
+      "levels": [
+        [
+          71,
+          70
+        ],
+        [
+          100,
+          70
+        ],
+        [
+          141,
+          70
+        ]
+      ],
+      "missing": [
+        [
+          100,
+          70
+        ],
+        [
+          141,
+          70
+        ]
+      ],
+      "observables": {
+        "Gii_interp": {
+          "name": "Gii_interp",
+          "description": "peak value (interpolated)",
+          "status": "INCOMPLETE",
+          "reason": "missing nodes: [(100, 70), (141, 70)]"
+        },
+        "Gii_max": {
+          "name": "Gii_max",
+          "description": "peak value (raw)",
+          "status": "INCOMPLETE",
+          "reason": "missing nodes: [(100, 70), (141, 70)]"
+        },
+        "hotspot_x": {
+          "name": "hotspot_x",
+          "description": "hotspot x-location (um)",
+          "status": "INCOMPLETE",
+          "reason": "missing nodes: [(100, 70), (141, 70)]"
+        }
+      },
+      "flags": [
+        {
+          "level": "71x70",
+          "hotspot_x": 0.5891214927220607
+        }
+      ]
+    },
+    "Y": {
+      "family": "Y",
+      "direction": "y-only (refine depth-y)",
+      "fixed": "Nx=100",
+      "levels": [
+        [
+          100,
+          58
+        ],
+        [
+          100,
+          70
+        ],
+        [
+          100,
+          85
+        ]
+      ],
+      "missing": [
+        [
+          100,
+          58
+        ],
+        [
+          100,
+          70
+        ],
+        [
+          100,
+          85
+        ]
+      ],
+      "observables": {
+        "Gii_interp": {
+          "name": "Gii_interp",
+          "description": "surface peak value (interpolated)",
+          "status": "INCOMPLETE",
+          "reason": "missing nodes: [(100, 58), (100, 70), (100, 85)]"
+        },
+        "Gii_max": {
+          "name": "Gii_max",
+          "description": "surface peak value (raw)",
+          "status": "INCOMPLETE",
+          "reason": "missing nodes: [(100, 58), (100, 70), (100, 85)]"
+        },
+        "onesided_width": {
+          "name": "onesided_width",
+          "description": "one-sided half-width (um, peak->bulk)",
+          "status": "INCOMPLETE",
+          "reason": "missing nodes: [(100, 58), (100, 70), (100, 85)]"
+        },
+        "G_tot": {
+          "name": "G_tot",
+          "description": "vertical integral G_tot",
+          "status": "INCOMPLETE",
+          "reason": "missing nodes: [(100, 58), (100, 70), (100, 85)]"
+        }
+      },
+      "flags": []
+    }
+  },
+  "skipped": [
+    [
+      "/home/chanlik/.openclaw/workspace/Liang1997/campaign/../data/71x58_recheck_verdict.json",
+      "status=None certified=None"
+    ],
+    [
+      "/home/chanlik/.openclaw/workspace/Liang1997/campaign/../data/she2d_aniso_71x70_t8_47e3c9ec574b.json",
+      "multi-thread control (threads_requested=8)"
+    ],
+    [
+      "/home/chanlik/.openclaw/workspace/Liang1997/campaign/../data/she2d_richardson_100x70.progress.json",
+      "status=None certified=None"
+    ],
+    [
+      "/home/chanlik/.openclaw/workspace/Liang1997/campaign/../data/she2d_richardson_141x85.progress.json",
+      "status=None certified=None"
+    ],
+    [
+      "/home/chanlik/.openclaw/workspace/Liang1997/campaign/../data/she2d_richardson_71x58.progress.json",
+      "status=None certified=None"
+    ],
+    [
+      "/home/chanlik/.openclaw/workspace/Liang1997/campaign/../data/she2d_richardson_71x58.recheck_manifest.json",
+      "status=None certified=None"
+    ]
+  ],
+  "ambiguous": [
+    [
+      "/home/chanlik/.openclaw/workspace/Liang1997/campaign/../data/she2d_aniso_71x70_t1_47e3c9ec574b.json",
+      "duplicate family=None 71x70; kept /home/chanlik/.openclaw/workspace/Liang1997/campaign/../data/she2d_aniso_71x70_t1_1e010e13e26f_repeat.json"
+    ]
+  ],
+  "derivatives_applied": [
+    [
+      "X",
+      71,
+      70
+    ]
+  ]
+}

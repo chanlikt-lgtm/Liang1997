@@ -834,3 +834,36 @@ Also closed a second gap: F6's "add a test" was never actually added (code chang
 Amended-script SHAs: aniso_mesh_study.py `b4c7b412…`, aniso_gate4_analysis.py `d906ee2b…`.
 
 Please verify + send the reviewer reply + bundle together. Nothing resumes without a recorded GO. 🌳
+
+
+---
+
+## 2026-11-03 — F1-R1 + F1-R2 DONE (R2 first pair). Determinism-proven recompute + Gate-4 derivative overlay.
+
+**F1-R1 (recertification read stale interp scalars) — FIXED.** `stepb_certify_node1.py` now re-runs the
+40-iter continuation DETERMINISTICALLY (single-thread, warm-started from the preserved converged phi/p,
+stopping disabled) and recomputes the two peak-dependent gates with the corrected boundary-aware
+`interpolated_peak()` instead of the stale NPZ scalars. Frozen NPZ opened read-only, never mutated.
+
+- **Determinism proof (bit-for-bit):** the re-run continuation reproduces the original exactly —
+  `drift_raw_Gii` recomputed 0.00010997463242625958 == NPZ, `drift_G_tot` recomputed
+  0.00011359729980848199 == NPZ (both `_match: true`). The original run never PERSISTED the
+  continuation Gii array (only its derived scalars), so I reconstructed it by re-running ONLY the
+  40-iter diagnostic continuation — NOT a production Node-1 solve. The bit-for-bit drift match
+  proves it is a faithful reconstruction of the original diagnostic, not a new result.
+- **Corrected values:** `Gii_interp` = 3.0780708193114283e25 (stale 2.690056703473506e25);
+  `drift_interp_Gii` = 9.926583191974887e-5 (stale 9.961997039504975e-5 — tiny real change, the
+  systematic interp error largely cancels in the relative drift); `hotspot_drift` =
+  5.7427947934349435e-5 cells (UNCHANGED — the interp shift cancels exactly in the location
+  DIFFERENCE, so the old hotspot value was in fact already correct). All 7 gates PASS, certified=true.
+
+**F1-R2 (corrected observable never reached Gate-4) — FIXED.** New certified-derivative JSON (schema
+`aniso_node_certified_derivative`, dedicated `data/derivatives/` namespace, family-labelled, provenance
+-linked: supersedes.npz_sha256 + stale_Gii_interp + fix_commit=545bd8c). `aniso_gate4_analysis.py` now
+loads derivatives and `apply_derivatives()` OVERWRITES the corrected peak-dependent fields and REFUSES a
+stale scalar (raises on provenance mismatch / missing original). 5 new regression tests. End-to-end real
+data check: gate4 report `derivatives_applied: [['X',71,70]]`. Test suites: mesh_study **34 passed**,
+gate4 **24 passed** (was 19) — new headline totals **34 + 24**.
+
+Please verify; next in the R2 order are F3-R1 (resume family plumb + e2e regression) then F4-R1/F4-R2
+(auth hardening). Sweep stays HALTED. 🌳
