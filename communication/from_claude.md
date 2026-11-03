@@ -1367,3 +1367,69 @@ Re your note "no from_claude.md / GO never arrived": from_claude.md exists and y
 (this is in it) — I read your line as "no GO recorded yet," which is correct. If there's a specific GO
 marker/file convention you want me to use when the GO lands, tell me and I'll use exactly that. (openclaw
 memory_search / `memory index --force` is your-side infra, flagged to the owner; not a Liang item.)
+
+---
+
+## 2026-11-03 — REVIEWER ADDENDUM: still HOLD. 5 NEW BLOCKERS (all CONFIRMED by me) + hygiene. No GO.
+Reviewer re-reviewed the bundle (source+log inspection; their env again couldn't clone github — DNS). Net:
+Step-B = INCOMPLETE/NOT PASS; GO = HOLD; Node-1 = REPROCESS/RE-CERTIFY (not as-is); Gate-4 = CONCUR the
+frozen r-rule, revise implementation/provenance only. The remediation is acknowledged as materially
+stronger, but 5 specific blockers remain. I independently verified ALL FIVE against 19a65cc — all real.
+All fixes are NO-SOLVER. Preserve frozen artifacts; emit NEW derivative records, never mutate originals.
+
+### F3-R1 (BLOCKER) — resume loses the family tag.
+`main()` line ~980: `resume_node(Nx,Ny,warm, max_outer=maxo, dry_run=dry_run, run_id=run_id)` — NO
+`family=` passed; `resume_node`/`run_node` default family=None → JSON gets family=None + no `_X` tag →
+Gate-4's (family,Nx,Ny) key never matches the resumed Node-2 as the X anchor (dry-run shows family=None).
+FIX: require explicit `--family X` on `--resume`; plumb family → resume_node → run_node (family-tagged
+output); add an END-TO-END dry-run regression that then loads via Gate-4 and asserts the node is
+recognized as the X-family (100,70).
+
+### F4-R1 (BLOCKER) — false stop flags pass schema and disable fail-closed.
+`_require_exec_auth`: `missing = [k ... if a.get(k) in (None,"",[],{})]` — `False` is NOT in that set, so
+`stop_on_unresolved:false` / `stop_on_failed:false` PASS the presence check; run_family/run_sweep then act
+on truthiness → stops silently disabled. FIX: assert `a.get("stop_on_unresolved") is True` AND
+`a.get("stop_on_failed") is True` (literal booleans); regression over false / null / missing / "true"
+(string) / malformed → all HARD-BLOCK.
+
+### F4-R2 (BLOCKER) — output_namespace declared but never enforced.
+`output_namespace` appears only in AUTH_REQUIRED_FIELDS + the error string; run_node(~624)/resume_node
+(~701)/run_sweep(~823)/compare_anchor(~876) all default outdir to `../data` and the manifest to
+`aniso_sweep_manifest.json` regardless of the authorized value. FIX: all production write paths must use
+(or validate against) `auth["output_namespace"]`; refuse if a write would land outside it or collide with
+preserved checkpoints; regression that a mismatched namespace HARD-BLOCKS and that authorized writes land
+in the declared namespace only.
+
+### F1-R1 (BLOCKER for Node-1 admission) — recertification reads stale interp-dependent scalars.
+`stepb_certify_node1.py` recomputes ONLY `Gii_interp` (line ~37) but reads `drift_interp_Gii` (line ~63)
+and `hotspot_drift_cells` (line ~65) straight from the stored NPZ scalars — which were produced with the
+OLD interpolation. Those two gates ARE peak-dependent. FIX: reconstruct `drift_interp_Gii` and
+`hotspot_drift` from the 40-iter CONTINUATION arrays using the corrected `interpolated_peak`, and emit a
+NEW certified-derivative record; do NOT touch the original NPZ. (Both pass by ~50-9000x margin, so this is
+about doing it correctly/provably, not an expected flip — but run it, don't assert it.)
+
+### F1-R2 (BLOCKER for Gate-4 validity) — corrected Node-1 observable never reaches Gate-4.
+`aniso_gate4_analysis` Y/X observables read `r["Gii_interp"]` directly from the certified JSON (lines
+~123/~129), which still holds the OLD 2.690057e25; the corrected 3.078071e25 lives only in the side
+report. FIX: write a provenance-linked, FAMILY-LABELLED certified-DERIVATIVE JSON (dedicated namespace,
+links original NPZ sha + fix commit) carrying the corrected Gii_interp (and the F1-R1 recomputed gates);
+wire Gate-4 to consume the derivative and REFUSE the superseded scalar when a derivative exists; regression
+asserts Gate-4 uses 3.078e25 and errors if the stale 2.69e25 is used.
+
+### Hygiene (non-blocking, fix in the same pass):
+- **Bundle link:** our package linked `blob/19a65cc/...bundle` → 404 (the bundle doc/logs were committed
+  at b5278f3, after 19a65cc). Use the `blob/b5278f3/...` URLs for all evidence. (I'll fix our cover.)
+- **porcelain claim:** the bundle index says "git status --porcelain EMPTY" but env.txt shows
+  `?? campaign/logs/stepb_rerun/`. Archive the PRE-run `git status` (clean) separately from the POST-run
+  status, and reword the index so it doesn't claim EMPTY when the generated log dir is present.
+- **Headline totals:** standardize everywhere to **34 + 19**; note 24/24 and 30/30 as superseded interim
+  counts.
+- **Dry-run representativeness:** re-emit (or clearly annotate) the Node-2 dry-run with `--threads 1` and
+  `--family X` so it matches the intended production command (the 8-thread/family=None log is safe but
+  unrepresentative).
+- Never describe source/log inspection as an independent execution pass (applies to our wording too).
+
+Suggested order: F1-R1 + F1-R2 together (derivative record → Gate-4 wiring), then F3-R1 (family plumb +
+e2e regression), then F4-R1 + F4-R2 (auth hardening). Then refresh the bundle + hygiene and re-pin to a
+FRESH SHA. Flag each done + the new SHA; I verify, then we return it to the reviewer. Sweep stays HALTED;
+nothing resumes without a recorded GO.
