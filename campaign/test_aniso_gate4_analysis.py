@@ -215,6 +215,74 @@ def test_analyze_gate4_missing_node_is_incomplete():
     assert fam["observables"]["Gii_interp"]["status"] == "INCOMPLETE"
 
 
+# ---- F1-R2: certified-derivative overlay -----------------------------------
+def _deriv(Nx, Ny, Gii_corr, family="X", stale=2.690056703473506e+25, npz_sha="abc123"):
+    return dict(schema="aniso_node_certified_derivative", version=1, family=family,
+                Nx=Nx, Ny=Ny, status="CERTIFIED", certified=True,
+                supersedes=dict(original_npz="x.npz", npz_sha256=npz_sha,
+                                stale_Gii_interp=stale),
+                Gii_interp=Gii_corr, xy_Gii_max_interp=[0.5891214927220607, 0.0],
+                drift_interp_Gii=1.2e-4, hotspot_drift_um=5.0e-8, hotspot_drift_cells=4.4e-5,
+                provenance=dict(threads_requested=1))
+
+
+def test_load_derivatives_only_schema_namespace():
+    td = tempfile.mkdtemp()
+    p_deriv = os.path.join(td, "d.json")
+    p_node = os.path.join(td, "n.json")
+    json.dump(_deriv(71, 70, 3.078e25), open(p_deriv, "w"))
+    json.dump(_node(71, 70, 2.690e25), open(p_node, "w"))  # normal node, no derivative schema
+    derivs, skipped = g4.load_derivatives([p_deriv, p_node])
+    assert set(derivs) == {("X", 71, 70)}
+    assert any("not a derivative" in why for _, why in skipped)
+
+
+def test_apply_derivatives_overwrites_corrected():
+    nodes = {("X", 71, 70): _node(71, 70, 2.690056703473506e+25, family="X")}
+    derivs = {("X", 71, 70): _deriv(71, 70, 3.0780708193114283e+25)}
+    nodes, applied = g4.apply_derivatives(nodes, derivs)
+    assert nodes[("X", 71, 70)]["Gii_interp"] == 3.0780708193114283e+25
+    assert nodes[("X", 71, 70)]["derivative"]["applied"] is True
+    assert applied == [("X", 71, 70)]
+
+
+def test_apply_derivatives_refuses_stale_mismatch():
+    # derivative declares stale=2.690e25 but the node holds a DIFFERENT value -> must refuse
+    nodes = {("X", 71, 70): _node(71, 70, 2.999e25, family="X")}
+    derivs = {("X", 71, 70): _deriv(71, 70, 3.078e25, stale=2.690056703473506e+25)}
+    try:
+        g4.apply_derivatives(nodes, derivs)
+    except ValueError as e:
+        assert "provenance mismatch" in str(e)
+    else:
+        raise AssertionError("expected ValueError for stale mismatch")
+
+
+def test_apply_derivatives_refuses_missing_original():
+    nodes = {}
+    derivs = {("X", 71, 70): _deriv(71, 70, 3.078e25)}
+    try:
+        g4.apply_derivatives(nodes, derivs)
+    except ValueError as e:
+        assert "missing original" in str(e)
+    else:
+        raise AssertionError("expected ValueError for missing original")
+
+
+def test_gate4_uses_corrected_value_end_to_end():
+    nodes = {
+        ("X", 71, 70): _node(71, 70, 2.690056703473506e+25, family="X"),
+        ("X", 100, 70): _node(100, 70, 2.66e25, family="X"),
+        ("X", 141, 70): _node(141, 70, 2.68e25, family="X"),
+    }
+    derivs = {("X", 71, 70): _deriv(71, 70, 3.0780708193114283e+25)}
+    nodes, _ = g4.apply_derivatives(nodes, derivs)
+    rep = g4.analyze_gate4(nodes, d_floor=0.0)
+    vals = rep["families"]["X"]["observables"]["Gii_interp"]["values"]
+    assert vals[0] == 3.0780708193114283e+25   # corrected, NOT the stale 2.690e25
+    assert 2.690056703473506e+25 not in vals
+
+
 if __name__ == "__main__":
     import traceback
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]

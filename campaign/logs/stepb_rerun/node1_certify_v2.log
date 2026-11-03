@@ -1,0 +1,154 @@
+{
+  "schema": "stepb_node1_independent_certification",
+  "version": 2,
+  "source_npz": "she2d_aniso_71x70_t1_552bb609f0f2_X.npz",
+  "source_sha256": "6596ae26d356cf3e52af8e1195a8fc9d6d2b125a246ad0dfa6959163e714312d",
+  "peak": {
+    "Gii_nodal": 3.0770514168841145e+25,
+    "Gii_interp": 3.0780708193114283e+25,
+    "nodal_jg": 0,
+    "nodal_ig": 41,
+    "nodal_xy": [
+      0.5893835478389261,
+      0.0
+    ],
+    "interp_xy": [
+      0.5891214927220607,
+      0.0
+    ],
+    "boundary_max": true,
+    "y_is_surface": true,
+    "delta_interp_vs_nodal_pct": 0.03312919705274586
+  },
+  "seven_gates": [
+    {
+      "name": "R_phi",
+      "value": 8.092337900311719e-05,
+      "gate": 0.0001,
+      "op": "<",
+      "unit": "V",
+      "norm": "absolute",
+      "passed": true
+    },
+    {
+      "name": "continuity_residual",
+      "value": 3.4513821253506166e-09,
+      "gate": 1e-06,
+      "op": "<",
+      "unit": "1",
+      "norm": "scaled by max(|bs|,1)",
+      "passed": true
+    },
+    {
+      "name": "number_balance",
+      "value": 2.0797993955832524e-05,
+      "gate": 0.01,
+      "op": "<",
+      "unit": "1",
+      "norm": "|balance|/scale",
+      "passed": true
+    },
+    {
+      "name": "drift_raw_Gii",
+      "value": 0.00010997463242625958,
+      "gate": 0.005,
+      "op": "<",
+      "unit": "1",
+      "norm": "40-iter continuation spread",
+      "passed": true
+    },
+    {
+      "name": "drift_interp_Gii",
+      "value": 9.926583191974887e-05,
+      "gate": 0.005,
+      "op": "<",
+      "unit": "1",
+      "norm": "40-iter continuation endpoint delta (CORRECTED interp)",
+      "passed": true
+    },
+    {
+      "name": "drift_G_tot",
+      "value": 0.00011359729980848199,
+      "gate": 0.005,
+      "op": "<",
+      "unit": "1",
+      "norm": "40-iter continuation spread",
+      "passed": true
+    },
+    {
+      "name": "hotspot_drift",
+      "value": 5.7427947934349435e-05,
+      "gate": 0.5,
+      "op": "<",
+      "unit": "cell",
+      "norm": "|cont hotspot - main hotspot| / h_rep (CORRECTED interp)",
+      "passed": true
+    }
+  ],
+  "determinism_crosscheck": {
+    "drift_raw_recomputed": 0.00010997463242625958,
+    "drift_raw_npz": 0.00010997463242625958,
+    "drift_raw_match": true,
+    "drift_Gtot_recomputed": 0.00011359729980848199,
+    "drift_Gtot_npz": 0.00011359729980848199,
+    "drift_Gtot_match": true
+  },
+  "stale_scalars_superseded": {
+    "Gii_interp_npz": 2.690056703473506e+25,
+    "drift_interp_Gii_npz": 9.961997039504975e-05,
+    "hotspot_drift_cells_npz": 5.7427947934349435e-05,
+    "hotspot_drift_um_npz": 6.558128806677388e-08
+  },
+  "all_gates_pass": true,
+  "rphi_alone_insufficient": "R_phi<1e-4 alone would be PASS; certification requires all 7 gates",
+  "certified": true,
+  "n_iter": 531
+}
+
+=== DERIVATIVE (Gate-4) written to data/derivatives/she2d_aniso_71x70_t1_552bb609f0f2_X.derivative.json ===
+{
+  "schema": "aniso_node_certified_derivative",
+  "version": 1,
+  "family": "X",
+  "Nx": 71,
+  "Ny": 70,
+  "status": "CERTIFIED",
+  "certified": true,
+  "supersedes": {
+    "original_npz": "she2d_aniso_71x70_t1_552bb609f0f2_X.npz",
+    "original_json": "she2d_aniso_71x70_t1_552bb609f0f2_X.json",
+    "npz_sha256": "6596ae26d356cf3e52af8e1195a8fc9d6d2b125a246ad0dfa6959163e714312d",
+    "stale_Gii_interp": 2.690056703473506e+25,
+    "fix_commit": "779ebbd"
+  },
+  "Gii_interp": 3.0780708193114283e+25,
+  "Gii_max": 3.0770514168841145e+25,
+  "xy_Gii_max_interp": [
+    0.5891214927220607,
+    0.0
+  ],
+  "avalanche_y_fwhm": 0.0021418404021870223,
+  "G_tot": 91820491422435.28,
+  "fwhm_flags": {
+    "boundary_truncated": true,
+    "unresolved": false,
+    "multi_peak": false,
+    "left_x": 0.0,
+    "right_x": 0.0021418404021870223,
+    "peak_idx": 0
+  },
+  "drift_interp_Gii": 9.926583191974887e-05,
+  "hotspot_drift_um": 6.558128806677388e-08,
+  "hotspot_drift_cells": 5.7427947934349435e-05,
+  "provenance": {
+    "threads_requested": 1
+  },
+  "determinism_crosscheck": {
+    "drift_raw_recomputed": 0.00010997463242625958,
+    "drift_raw_npz": 0.00010997463242625958,
+    "drift_raw_match": true,
+    "drift_Gtot_recomputed": 0.00011359729980848199,
+    "drift_Gtot_npz": 0.00011359729980848199,
+    "drift_Gtot_match": true
+  }
+}

@@ -39,6 +39,15 @@ FAMILIES = {
 # Refined axis per family: X refines Nx (axis 0), Y refines Ny (axis 1).
 _REFINE_AXIS = {"X": 0, "Y": 1}
 
+# Dedicated namespace for F1-R2 certified-derivative records (corrected interp-dependent scalars).
+DERIVATIVE_SCHEMA = "aniso_node_certified_derivative"
+
+# Peak-dependent fields that a derivative supersedes (everything else is NOT interp-dependent
+# and stays from the original node: Gii_max is nodal, avalanche_y_fwhm/G_tot/fwhm_flags are
+# integrals/columns of the raw Gii array, unchanged by the interpolated-peak fix).
+_DERIVATIVE_FIELDS = ("Gii_interp", "xy_Gii_max_interp", "drift_interp_Gii",
+                      "hotspot_drift_um", "hotspot_drift_cells")
+
 
 def _sort_levels(family, levels):
     ax = _REFINE_AXIS[family]
@@ -175,6 +184,69 @@ def load_certified_nodes(paths, require_single_thread=True):
 
 
 # ---------------------------------------------------------------------------
+# Certified-derivative overlay (F1-R2)
+# ---------------------------------------------------------------------------
+def load_derivatives(paths):
+    """Read certified-derivative JSONs; return (derivatives keyed by (family, Nx, Ny), skipped).
+
+    Only records with schema == DERIVATIVE_SCHEMA are accepted (dedicated namespace); a normal
+    certified-node JSON is never mistaken for a derivative."""
+    derivs, skipped = {}, []
+    for p in paths:
+        try:
+            with open(p) as fh:
+                d = json.load(fh)
+        except (OSError, ValueError) as e:
+            skipped.append((p, "unreadable: %s" % e))
+            continue
+        if d.get("schema") != DERIVATIVE_SCHEMA:
+            skipped.append((p, "not a derivative (schema=%r)" % d.get("schema")))
+            continue
+        key = (d.get("family"), int(d["Nx"]), int(d["Ny"]))
+        if key in derivs:
+            skipped.append((p, "duplicate derivative for %r" % (key,)))
+            continue
+        d["_path"] = p
+        derivs[key] = d
+    return derivs, skipped
+
+
+def apply_derivatives(nodes, derivatives):
+    """Overlay certified-derivative records onto certified nodes (F1-R2).
+
+    For each (family, Nx, Ny) key with a derivative:
+      - the original node MUST be present (else the derivative references a missing original);
+      - the original's Gii_interp MUST exactly equal the derivative's declared stale value
+        (else the derivative was built against a different original -> REFUSE, raise);
+      - the derivative's corrected peak-dependent fields overwrite the original's.
+
+    Mutates `nodes` in place and returns an audit list of applied keys.  This is the mechanism
+    that guarantees Gate-4 reads the CORRECTED observable and never the stale scalar when a
+    derivative exists."""
+    applied = []
+    for key, d in derivatives.items():
+        if key not in nodes:
+            raise ValueError("derivative %r references a missing original node" % (key,))
+        node = nodes[key]
+        stale = (d.get("supersedes") or {}).get("stale_Gii_interp")
+        if stale is not None and "Gii_interp" in node:
+            if float(node["Gii_interp"]) != float(stale):
+                raise ValueError(
+                    "derivative for %r declares stale_Gii_interp=%.17g but the node holds "
+                    "%.17g (provenance mismatch; refusing to apply)" %
+                    (key, float(stale), float(node["Gii_interp"])))
+        for f in _DERIVATIVE_FIELDS:
+            if f in d:
+                node[f] = d[f]
+        node["derivative"] = dict(
+            applied=True, source=os.path.basename(d.get("_path", "")),
+            supersedes_npz_sha256=(d.get("supersedes") or {}).get("npz_sha256"),
+            stale_Gii_interp_superseded=stale)
+        applied.append(key)
+    return nodes, applied
+
+
+# ---------------------------------------------------------------------------
 # Family / gate analysis
 # ---------------------------------------------------------------------------
 def analyze_family(family, nodes, observables, levels, d_floor=0.0):
@@ -257,6 +329,9 @@ def main(argv=None):
     ap.add_argument("--data-dir", default=os.path.join(os.path.dirname(__file__), "..", "data"))
     ap.add_argument("--out", default=None, help="write report JSON here (default: data-dir/aniso_gate4_analysis.json)")
     ap.add_argument("--d-floor", type=float, default=0.0, help="observable noise floor (default 0)")
+    ap.add_argument("--derivatives-dir",
+                    default=os.path.join(os.path.dirname(__file__), "..", "data", "derivatives"),
+                    help="dir of certified-derivative JSONs (default: data/derivatives)")
     args = ap.parse_args(argv)
 
     # Gather node JSONs that match any pre-registered level, keyed by (family, Nx, Ny).
@@ -267,10 +342,19 @@ def main(argv=None):
             continue
         candidates.append(os.path.join(args.data_dir, fn))
     nodes, skipped, ambiguous = load_certified_nodes(candidates)
+
+    # F1-R2: overlay certified-derivative records (corrected interp-dependent scalars).
+    deriv_paths = []
+    if os.path.isdir(args.derivatives_dir):
+        deriv_paths = [os.path.join(args.derivatives_dir, fn)
+                       for fn in sorted(os.listdir(args.derivatives_dir)) if fn.endswith(".json")]
+    derivatives, deriv_skipped = load_derivatives(deriv_paths)
+    nodes, applied = apply_derivatives(nodes, derivatives)
     nodes = {k: r for k, r in nodes.items() if k in wanted}
     report = analyze_gate4(nodes, d_floor=args.d_floor)
-    report["skipped"] = skipped
+    report["skipped"] = skipped + deriv_skipped
     report["ambiguous"] = ambiguous
+    report["derivatives_applied"] = [list(k) for k in applied]
 
     print(render(report))
     if ambiguous:
