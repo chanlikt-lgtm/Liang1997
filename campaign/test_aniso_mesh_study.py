@@ -361,6 +361,107 @@ def test_exec_auth_rejects_wrong_bound_sha():
         aniso.AUTH_FILE = saved
 
 
+def test_exec_auth_rejects_non_true_stop_flags():
+    """F4-R1: stop_on_unresolved and stop_on_failed must be the LITERAL boolean True.  False, None,
+    missing, the string "true", truthy integers and malformed values all silently disabled
+    fail-closed stopping before this fix -> every one of them must HARD-BLOCK."""
+    saved = aniso.AUTH_FILE
+    aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_stops_%d.json" % os.getpid())
+    cases = [
+        ("stop_on_unresolved", False), ("stop_on_failed", False),
+        ("stop_on_unresolved", None), ("stop_on_failed", None),
+        ("stop_on_unresolved", "true"), ("stop_on_failed", "true"),
+        ("stop_on_unresolved", 1), ("stop_on_failed", 0),
+        ("stop_on_unresolved", "yes"), ("stop_on_failed", []),
+    ]
+    try:
+        for key, val in cases:
+            with open(aniso.AUTH_FILE, "w") as fh:
+                json.dump(_valid_auth(**{key: val}), fh)
+            try:
+                aniso._require_exec_auth()
+                raised = False
+            except SystemExit as e:
+                raised = True
+                assert key in str(e), "error must name the offending field %r: %s" % (key, e)
+            assert raised, "%s=%r must HARD-BLOCK (F4-R1)" % (key, val)
+        # a MISSING stop key is caught by the required-field check
+        auth = _valid_auth()
+        del auth["stop_on_failed"]
+        with open(aniso.AUTH_FILE, "w") as fh:
+            json.dump(auth, fh)
+        try:
+            aniso._require_exec_auth()
+            raised = False
+        except SystemExit as e:
+            raised = True
+            assert "stop_on_failed" in str(e)
+        assert raised, "a missing stop_on_failed must HARD-BLOCK (F4-R1)"
+        # control: the all-True authorization is still accepted
+        with open(aniso.AUTH_FILE, "w") as fh:
+            json.dump(_valid_auth(), fh)
+        a = aniso._require_exec_auth()
+        assert a["stop_on_unresolved"] is True and a["stop_on_failed"] is True
+    finally:
+        aniso.AUTH_FILE = saved
+
+
+def test_output_namespace_mismatch_hard_blocks():
+    """F4-R2: a write path whose outdir contradicts the authorized output_namespace is REFUSED, and
+    the default write dir is the authorized namespace -- never a hardcoded ../data."""
+    auth = _valid_auth(output_namespace="data")
+    try:
+        aniso._resolve_output_dir(auth, tempfile.mkdtemp())
+        raised = False
+    except SystemExit as e:
+        raised = True
+        assert "output_namespace" in str(e)
+    assert raised, "a mismatched output namespace must HARD-BLOCK (F4-R2)"
+    got = aniso._resolve_output_dir(auth, None)
+    want = os.path.abspath(os.path.join(os.path.dirname(aniso.__file__), "..", "data"))
+    assert os.path.abspath(got) == want, "the default write dir must be the authorized namespace"
+    assert aniso._resolve_output_dir(auth, want) == want
+    # no authorization at all -> legacy pre-auth default (unit-test / analysis paths only)
+    assert aniso._resolve_output_dir(None, None) == os.path.join(
+        os.path.dirname(aniso.__file__), "..", "data")
+
+
+def test_run_sweep_writes_into_authorized_namespace():
+    """F4-R2: run_sweep resolves its own outdir from the authorization and every node write (and the
+    sweep manifest) lands inside the declared namespace."""
+    import shutil
+    td = tempfile.mkdtemp()
+    nsdir = os.path.abspath(td)
+    seen = []
+    def _fake_run_node(Nx, Ny, max_outer=1500, warm_npz=None, verbose=True, outdir=None, run_id=None,
+                       family=None):
+        seen.append(os.path.abspath(outdir) if outdir else None)
+        assert outdir is not None and os.path.abspath(outdir) == nsdir, \
+            "run_node must receive the authorized namespace dir (F4-R2), got %r" % (outdir,)
+        return dict(Nx=Nx, Ny=Ny, family=family, status="CERTIFIED", certified=True,
+                    npz=os.path.join(outdir, "fake_%dx%d_%s.npz" % (Nx, Ny, family)))
+    saved_node = aniso.run_node
+    saved_auth = aniso.AUTH_FILE
+    saved_threads = aniso.THREADS_REQUESTED
+    aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_ns_%d.json" % os.getpid())
+    with open(aniso.AUTH_FILE, "w") as fh:
+        json.dump(_valid_auth(output_namespace=td), fh)
+    aniso.run_node = _fake_run_node
+    aniso.THREADS_REQUESTED = 1
+    try:
+        manifest, results = aniso.run_sweep()   # no outdir -> must resolve to the namespace
+        assert os.path.dirname(os.path.abspath(manifest["_path"])) == nsdir
+        assert os.path.exists(manifest["_path"])
+        assert manifest["families"]["X"]["status"] == "COMPLETE"
+        assert manifest["families"]["Y"]["status"] == "COMPLETE"
+        assert seen, "run_node was never called"
+    finally:
+        aniso.run_node = saved_node
+        aniso.AUTH_FILE = saved_auth
+        aniso.THREADS_REQUESTED = saved_threads
+        shutil.rmtree(td, ignore_errors=True)
+
+
 def test_run_sweep_threads_fail_closed():
     """F5: run_sweep must HARD-BLOCK (SystemExit) when THREADS_REQUESTED != 1, even with a valid auth
     file -- a resume command without --threads 1 must not silently revert to the default 8."""
@@ -480,11 +581,11 @@ def test_run_sweep_stop_on_failed():
     saved_auth = aniso.AUTH_FILE
     saved_threads = aniso.THREADS_REQUESTED
     aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_sweep_%d.json" % os.getpid())
+    td = tempfile.mkdtemp()
     with open(aniso.AUTH_FILE, "w") as fh:
-        json.dump(_valid_auth(), fh)
+        json.dump(_valid_auth(output_namespace=td), fh)   # F4-R2: writes must land in the namespace
     aniso.run_node = _fake_run_node
     aniso.THREADS_REQUESTED = 1
-    td = tempfile.mkdtemp()
     try:
         manifest, results = aniso.run_sweep(outdir=td)
         assert results["X"]["status"] == "FAILED"
@@ -505,28 +606,32 @@ def test_run_sweep_stop_on_failed():
         shutil.rmtree(td, ignore_errors=True)
 
 
-def test_run_sweep_isolation_when_stop_disabled():
-    """F4: with stop_on_failed=false, X failing does NOT stop Y (explicit opt-in to continue)."""
+def test_run_sweep_rejects_false_stop_flag():
+    """F4-R1: stop_on_failed=false is NO LONGER a legal opt-out.  Fail-closed stopping is mandatory,
+    so the authorization is rejected up-front instead of silently disabling the stop (the old
+    behaviour let a falsey flag pass the presence check and skip the stop entirely)."""
     import shutil
     def _fake_run_node(Nx, Ny, max_outer=1500, warm_npz=None, verbose=True, outdir=None, run_id=None,
                        family=None):
-        if family == "X" and (Nx, Ny) == (100, 70):
-            raise SystemExit("synthetic X-family mid-chain failure")
-        return dict(Nx=Nx, Ny=Ny, family=family, status="CERTIFIED", certified=True,
-                    npz="/tmp/fake_%dx%d_%s.npz" % (Nx, Ny, family))
+        raise AssertionError("no node may run under a false stop flag (F4-R1)")
     saved_node = aniso.run_node
     saved_auth = aniso.AUTH_FILE
     saved_threads = aniso.THREADS_REQUESTED
-    aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_iso_%d.json" % os.getpid())
+    td = tempfile.mkdtemp()
+    aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(),
+                                   "aniso_exec_auth_false_stop_%d.json" % os.getpid())
     with open(aniso.AUTH_FILE, "w") as fh:
-        json.dump(_valid_auth(stop_on_failed=False), fh)
+        json.dump(_valid_auth(stop_on_failed=False, output_namespace=td), fh)
     aniso.run_node = _fake_run_node
     aniso.THREADS_REQUESTED = 1
-    td = tempfile.mkdtemp()
     try:
-        manifest, results = aniso.run_sweep(outdir=td)
-        assert results["X"]["status"] == "FAILED"
-        assert results["Y"]["status"] == "COMPLETE"   # isolation preserved under explicit opt-in
+        try:
+            aniso.run_sweep(outdir=td)
+            raised = False
+        except SystemExit as e:
+            raised = True
+            assert "stop_on_failed" in str(e) and "literal boolean True" in str(e)
+        assert raised, "stop_on_failed=false must HARD-BLOCK (F4-R1)"
     finally:
         aniso.run_node = saved_node
         aniso.AUTH_FILE = saved_auth

@@ -155,6 +155,12 @@ def _require_exec_auth():
             "execution_authorized:true is no longer sufficient (must be bound to a git SHA + reviewer "
             "identity/date + threads_required + node_allowlist + output_namespace + stop conditions)."
             % ", ".join(missing))
+    for k in ("stop_on_unresolved", "stop_on_failed"):
+        if a.get(k) is not True:
+            raise SystemExit(
+                "F4 HARD-BLOCK: authorization requires %s to be the literal boolean True (got %r). "
+                "A falsey/missing/string value silently disables fail-closed stopping."
+                % (k, a.get(k)))
     if int(a.get("threads_required", 0)) != 1:
         raise SystemExit(
             "F4 HARD-BLOCK: authorization requires single-thread (threads_required must be 1).")
@@ -173,6 +179,27 @@ def _authorized_node(auth, Nx, Ny):
     if allow is None:
         return True
     return [int(Nx), int(Ny)] in [[int(n[0]), int(n[1])] for n in allow]
+
+
+def _resolve_output_dir(auth=None, outdir=None):
+    """F4-R2: resolve the production output directory from the signed authorization's
+    output_namespace, and refuse any write that would land outside it.
+
+    - auth with output_namespace -> resolve it relative to the repo root (legacy default is ../data).
+    - an EXPLICIT outdir that is not the namespace dir -> HARD-BLOCK (mismatched namespace).
+    - no auth -> fall back to the legacy default ../data (unit-test / pre-auth paths)."""
+    ns = (auth or {}).get("output_namespace")
+    if ns:
+        nsdir = ns if os.path.isabs(ns) else os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", ns))
+        if outdir is None:
+            return nsdir
+        if os.path.abspath(outdir) != nsdir:
+            raise SystemExit(
+                "F4 HARD-BLOCK: output dir %s is outside the authorized output_namespace %r."
+                % (outdir, ns))
+        return outdir
+    return outdir or os.path.join(os.path.dirname(__file__), "..", "data")
 
 
 def _require_single_thread():
@@ -621,7 +648,9 @@ def _write_node_json(rec, json_path):
 
 def run_node(Nx, Ny, max_outer=MAX_OUTER_CAP, warm_npz=None, verbose=True, outdir=None, run_id=None,
              family=None):
-    outdir = outdir or os.path.join(os.path.dirname(__file__), "..", "data")
+    # F4-R2: the production write path derives its directory from the AUTHORIZED namespace; an
+    # explicit outdir that contradicts that namespace is refused rather than silently used.
+    outdir = _resolve_output_dir(_exec_auth(), outdir)
     os.makedirs(outdir, exist_ok=True)
     cfg = _config_hash()
     prov = _provenance()
@@ -721,9 +750,10 @@ def resume_node(Nx, Ny, warm_npz, max_outer=MAX_OUTER_CAP, dry_run=False, outdir
               "Node-1 outputs untouched.")
         return dict(Nx=Nx, Ny=Ny, family=family, warm_source=os.path.basename(wp),
                     warm_source_sha256=warm_sha, dry_run=True, threads=THREADS_REQUESTED, target=wp)
-    _require_exec_auth()          # F4: resume is a production path -> requires a signed GO
+    auth = _require_exec_auth()   # F4: resume is a production path -> requires a signed GO
     _require_single_thread()      # F5/F4: resume must be single-threaded
-    if not _authorized_node(_exec_auth(), Nx, Ny):
+    outdir = _resolve_output_dir(auth, outdir)   # F4-R2: writes land in the authorized namespace
+    if not _authorized_node(auth, Nx, Ny):
         raise SystemExit("F4 HARD-BLOCK: node %dx%d not in authorization allowlist" % (Nx, Ny))
     rec = run_node(Nx, Ny, max_outer=max_outer, warm_npz=wp, verbose=True, outdir=outdir,
                    run_id=run_id, family=family)
@@ -732,9 +762,10 @@ def resume_node(Nx, Ny, warm_npz, max_outer=MAX_OUTER_CAP, dry_run=False, outdir
     return rec
 
 
-def run_family(name, include_fourth=False):
+def run_family(name, include_fourth=False, outdir=None):
     auth = _require_exec_auth()          # G0.2: HARD-BLOCK without execution authorization
     _require_single_thread()             # F5: HARD-BLOCK unless --threads 1 (spec v1.6)
+    outdir = _resolve_output_dir(auth, outdir)   # F4-R2: writes land in the authorized namespace
     fam = FAMILIES[name]
     levels = list(fam["levels"])
     records = []
@@ -749,7 +780,7 @@ def run_family(name, include_fourth=False):
             stopped = True
             break
         try:
-            rec = run_node(Nx, Ny, warm_npz=warm, verbose=True, family=name)
+            rec = run_node(Nx, Ny, warm_npz=warm, verbose=True, family=name, outdir=outdir)
         except SystemExit as e:
             records.append(dict(Nx=Nx, Ny=Ny, family=name, direction=fam["direction"], level=i,
                                 status="FAILED", certified=False, error=str(e)))
@@ -779,7 +810,7 @@ def run_family(name, include_fourth=False):
         approved, decision = resource_gate(peak_rss, (Nx3, Ny3), (Nx4, Ny4))
         decision["authorized_by"] = auth.get("who"); decision["authorized_when"] = auth.get("when")
         if third_certified and approved:
-            rec = run_node(Nx4, Ny4, warm_npz=warm, verbose=True, family=name)
+            rec = run_node(Nx4, Ny4, warm_npz=warm, verbose=True, family=name, outdir=outdir)
             rec["family"] = name; rec["direction"] = fam["direction"]; rec["level"] = len(levels)
             rec["resource_gate"] = decision
             records.append(rec)
@@ -821,9 +852,9 @@ def run_sweep(include_fourth=False, outdir=None):
 
     Returns (sweep_manifest, results).
     """
-    outdir = outdir or os.path.join(os.path.dirname(__file__), "..", "data")
     auth = _require_exec_auth()          # G0.2: HARD-BLOCK without execution authorization
     _require_single_thread()             # F5: HARD-BLOCK unless --threads 1 (spec v1.6)
+    outdir = _resolve_output_dir(auth, outdir)   # F4-R2: writes land in the authorized namespace
     manifest = dict(schema="aniso_sweep_manifest", version=1,
                     authorized_by=auth.get("who"), authorized_when=auth.get("when"),
                     git_commit=_git_commit, git_dirty=_git_dirty,
@@ -845,7 +876,7 @@ def run_sweep(include_fourth=False, outdir=None):
             continue
         records = []
         try:
-            records = run_family(name, include_fourth=include_fourth)
+            records = run_family(name, include_fourth=include_fourth, outdir=outdir)
         except SystemExit as e:
             fam_rec["error"] = str(e)
         except Exception as e:
@@ -874,7 +905,9 @@ def run_sweep(include_fourth=False, outdir=None):
 
 def compare_anchor(outdir=None, families=("X", "Y")):
     """G1.6: tabulate the (100,70) anchor's independent X- and Y-family artifacts and their deltas."""
-    outdir = outdir or os.path.join(os.path.dirname(__file__), "..", "data")
+    if outdir is None:
+        # F4-R2: the default lookup dir is the AUTHORIZED namespace, not a hardcoded ../data
+        outdir = _resolve_output_dir(_exec_auth(), None)
     Nx, Ny = ANCHOR
 
     def _find(fam):
@@ -965,11 +998,12 @@ def _node_path(Nx, Ny, maxo, run_id):
     """F4/S3-HOLD: the --node single-node path is a PRODUCTION path.  Under the explicit reviewer
     HOLD nothing runs (S3 permits --node pre-sweep in general, but the HOLD supersedes it), so it is
     gated behind the same signed auth + single-thread + allowlist as --family/--sweep."""
-    _require_exec_auth()
+    auth = _require_exec_auth()
     _require_single_thread()
-    if not _authorized_node(_exec_auth(), Nx, Ny):
+    outdir = _resolve_output_dir(auth, None)   # F4-R2: writes land in the authorized namespace
+    if not _authorized_node(auth, Nx, Ny):
         raise SystemExit("F4 HARD-BLOCK: node %dx%d not in authorization allowlist" % (Nx, Ny))
-    run_node(Nx, Ny, max_outer=maxo, run_id=run_id)
+    run_node(Nx, Ny, max_outer=maxo, run_id=run_id, outdir=outdir)
 
 
 if __name__ == "__main__":
