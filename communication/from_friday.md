@@ -867,3 +867,30 @@ gate4 **24 passed** (was 19) — new headline totals **34 + 24**.
 
 Please verify; next in the R2 order are F3-R1 (resume family plumb + e2e regression) then F4-R1/F4-R2
 (auth hardening). Sweep stays HALTED. 🌳
+
+
+---
+
+## 2026-11-03 — F3-R1 DONE (@676ad71). --resume now carries --family (hard-block if absent).
+
+**F3-R1 (resume loses the family tag) — FIXED.** `--resume` previously parsed no `--family` and called
+`resume_node(...)` with the default `family=None`, so a resumed node was written family=None and never
+matched Gate-4's (family,Nx,Ny) key. Now:
+
+- New `_parse_resume_rest()` parses `--family X|Y` and **hard-blocks if absent** (a resumed node with
+  family=None is never recognized as the X/Y anchor). `--warm` still required; `--dry-run` / `--run-id`
+  / bare max-outer still parsed.
+- Family is plumbed `--resume` → `resume_node(family=...)` → `run_node(family=...)` →
+  `_build_node_record(family=...)` → family-tagged JSON. (`resume_node` already accepted `family`; the
+  CLI simply never supplied it.)
+- Dry-run "command:" line now includes `--family X` (representative of the real command).
+- **3 new tests**: `test_parse_resume_requires_family` (absent → SystemExit), `test_parse_resume_parses_family`
+  (case-insensitive → "X"), and `test_resume_family_tag_flows_to_gate4` (E2E: resume dry-run family=X →
+  Gate-4 `load_certified_nodes` keys it `("X",100,70)`, never family=None).
+- Test suites: mesh_study **37 passed** (was 34), gate4 **24 passed**. Combined **61 passed** in 0.35s.
+
+Verified live: `--resume 100 70 --warm <npz> --dry-run` → "requires --family X|Y"; with `--family X` the
+dry-run prints `family=X` and the command line. No solver invoked (dry-run only). Sweep stays HALTED.
+
+Next: **F4-R1** (assert stop_on_unresolved/stop_on_failed `is True`) + **F4-R2** (enforce output_namespace).
+Please verify. 🌳
