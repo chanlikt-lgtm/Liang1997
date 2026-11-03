@@ -894,3 +894,55 @@ dry-run prints `family=X` and the command line. No solver invoked (dry-run only)
 
 Next: **F4-R1** (assert stop_on_unresolved/stop_on_failed `is True`) + **F4-R2** (enforce output_namespace).
 Please verify. 🌳
+
+
+---
+
+## 2026-11-03 — F4-R1 + F4-R2 DONE (@e73a135). No solver invoked; sweep still HALTED.
+
+**F4-R1 (false stop flags passed the schema and disabled fail-closed) — FIXED.**
+`_require_exec_auth` now asserts, after the required-field check:
+
+    for k in ("stop_on_unresolved", "stop_on_failed"):
+        if a.get(k) is not True: raise SystemExit(... "literal boolean True" ...)
+
+Root cause confirmed exactly as you described: `a.get(k) in (None,"",[],{})` never matches `False`,
+so `stop_on_unresolved:false` / `stop_on_failed:false` sailed through the presence check while
+`run_family`/`run_sweep` then consulted truthiness — stops silently off. Note the semantic
+consequence, stated explicitly: **`stop_on_failed:false` is no longer a legal opt-out**; fail-closed
+stopping is mandatory. The old `test_run_sweep_isolation_when_stop_disabled` encoded that opt-out and
+has been replaced by `test_run_sweep_rejects_false_stop_flag` (false → HARD-BLOCK, no node runs).
+
+**F4-R2 (output_namespace declared but never enforced) — FIXED.**
+New `_resolve_output_dir(auth, outdir)`: resolves `auth["output_namespace"]` (repo-relative or
+absolute) as the write dir; an explicit `outdir` that contradicts it HARD-BLOCKs
+(`"output dir ... is outside the authorized output_namespace ..."`); no auth falls back to the legacy
+`../data` (pre-auth/unit paths only). Wired into **every** path you listed:
+
+- `run_node` — resolves at entry (defence in depth, covers direct callers);
+- `resume_node` — captures the auth object it already required, resolves before writing;
+- `run_family` — resolves after auth + single-thread, passes `outdir` to both `run_node` calls;
+- `run_sweep` — resolves before the manifest, passes `outdir` to `run_family`; manifest therefore
+  lands in the namespace;
+- `--node` (`_node_path`) — resolves + forwards;
+- `compare_anchor` — its *default* lookup dir is now the authorized namespace, not hardcoded `../data`
+  (explicit `outdir` still honoured, it is read-only).
+Checkpoint protection is unchanged: the G1.3 no-overwrite guard still refuses an existing
+npz/json, so a namespace write cannot clobber a preserved control artifact.
+
+**Tests (no solver):** 6 new regressions —
+`test_exec_auth_rejects_non_true_stop_flags` (False / None / missing / `"true"` / `1` / `0` / `"yes"` /
+`[]`, each must name the offending field; all-True control still accepted),
+`test_output_namespace_mismatch_hard_blocks` (mismatched dir refused; default == authorized namespace;
+no-auth legacy fallback),
+`test_run_sweep_writes_into_authorized_namespace` (run_sweep resolves from auth, every `run_node`
+receives the namespace dir, manifest written inside it).
+Suites: mesh_study **40 passed** (was 37), gate4 **24 passed**. Combined **64 passed** in 0.39 s.
+Live CLI checks: `--resume ... --dry-run` still works with no auth (dry-run only); `--node` with the
+legacy auth file HARD-BLOCKs on the incomplete schema (expected — the deploy auth must be re-issued
+in the F4 schema before any run).
+
+**R2 worklist status: F1-R1 ✅ F1-R2 ✅ F3-R1 ✅ F4-R1 ✅ F4-R2 ✅.** Remaining: refresh the Step-B
+bundle + the non-blocking hygiene items (bundle link 404, porcelain claim, headline totals, dry-run
+representativeness) and re-pin a fresh clean-checkout SHA. Sweep stays HALTED; no production run.
+Please verify. 🌳
