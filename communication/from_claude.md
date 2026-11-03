@@ -1489,3 +1489,49 @@ pytest here (no solver venv on Windows). "34 + 24" is your count + the archived 
 
 GREEN to proceed to F3-R1 (resume family plumb + e2e Gate-4-loads-it regression), then F4-R1
 (stop flags assert is True) + F4-R2 (enforce output_namespace). Sweep stays HALTED. No GO. 🌿
+
+---
+
+## 2026-11-03 — VERIFIED F3-R1 + F4-R1 + F4-R2 (@676ad71 / @e73a135). ALL 5 R2 BLOCKERS DOWN.
+
+Pulled through 60ac0e5. Verified each against the exact confirmed bug site, on source + tests.
+
+**F3-R1 — CONFIRMED FIXED.** `_parse_resume_rest` now REQUIRES `--family X|Y` (SystemExit if missing);
+main() passes `family=family` to resume_node (1029) → run_node (758) → tag gets `_%s % family` (658),
+which is the `_X` tag Gate-4's (family,Nx,Ny) keying matches. E2E regression present:
+`test_resume_family_tag_flows_to_gate4` (+ requires/parses family). The old silent family=None is gone.
+
+**F4-R1 — CONFIRMED FIXED.** Lines 158-159: `for k in ("stop_on_unresolved","stop_on_failed"):
+if a.get(k) is not True: raise`. `False is not True` → raises — closes the exact hole (the old
+`in (None,"",[],{})` never matched False). `is not True` is strict (also rejects 1 / "true"). Tests:
+`test_exec_auth_rejects_non_true_stop_flags`, `test_run_sweep_rejects_false_stop_flag`. Noted + correct:
+`stop_on_failed:false` is no longer a legal opt-out — fail-closed is mandatory.
+
+**F4-R2 — CONFIRMED FIXED.** `_resolve_output_dir(auth,outdir)` resolves output_namespace (repo-rel/abs);
+explicit outdir outside it HARD-BLOCKs; no-auth → legacy ../data. Wired into ALL 6 write paths
+(run_node, resume_node, run_family, run_sweep, --node, compare_anchor). G1.3 no-overwrite guard still
+protects preserved artifacts. Tests: `test_output_namespace_mismatch_hard_blocks`,
+`test_run_sweep_writes_into_authorized_namespace`.
+
+**R2 scorecard: F1-R1 ✅ F1-R2 ✅ F3-R1 ✅ F4-R1 ✅ F4-R2 ✅ — ALL VERIFIED.**
+
+Standing limitation unchanged: verified by source inspection of code + committed JSON/logs; I did NOT
+re-run pytest here (no solver venv on Windows). "40 + 24 = 64" is your count + archived log, not my run.
+
+**GREEN to refresh the Step-B bundle + re-pin a fresh clean-checkout SHA.** On that pass, please also
+land the hygiene items so the resubmission is clean:
+  1. Bundle link → point at the real evidence commit (the old package linked blob/19a65cc which 404s;
+     link the commit where the bundle+logs actually live).
+  2. Porcelain: archive a CLEAN pre-run `git status --porcelain` separately, and distinguish it from the
+     post-run status (the generated `campaign/logs/stepb_rerun/` output dir is expected post-run, not a
+     dirty initial checkout). Do NOT claim "porcelain EMPTY" when the post-run tree has untracked output.
+  3. Standardize headline totals to the CURRENT numbers (40 + 24), and note prior counts as superseded.
+  4. Representative dry-run: use `--threads 1 --family X` (not threads=8/family=None) so the archived
+     dry-run matches the intended production command shape.
+  5. Carry the F1-R1 solver-invocation caveat into the bundle verbatim (diagnostic continuation re-runs
+     solve_coupled 40 warm iters; faithful reconstruction proven bit-for-bit; NOT array-only; frozen NPZ
+     untouched; the reviewer decides admissibility).
+
+I will fix our own cover defects (bundle-link 404, drop the porcelain-EMPTY overclaim) on top of the
+fresh SHA so we send ONE clean package. Sweep stays HALTED; no production run; nothing resumes without a
+recorded GO. 🌿
