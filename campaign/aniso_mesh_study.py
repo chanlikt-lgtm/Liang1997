@@ -711,8 +711,9 @@ def resume_node(Nx, Ny, warm_npz, max_outer=MAX_OUTER_CAP, dry_run=False, outdir
               % (THREADS_REQUESTED, family, run_id))
         print("  real run requires: signed F4 GO (bound_sha + threads_required=1 + node_allowlist) "
               "+ --threads 1")
-        print("  command: python campaign/aniso_mesh_study.py --resume %d %d --warm %s%s"
-              % (Nx, Ny, wp, (" --run-id %s" % run_id) if run_id else ""))
+        print("  command: python campaign/aniso_mesh_study.py --resume %d %d --warm %s%s%s"
+              % (Nx, Ny, wp, (" --family %s" % family) if family else "",
+                 (" --run-id %s" % run_id) if run_id else ""))
         print("  immediate-stop triggers: R_phi>=1e-4 at 1500 cap -> UNRESOLVED; phi leaves "
               "COMMON_PHI_SPAN -> ABORT; inner-solve hang -> manual kill (UNRESOLVED); "
               "auth/threads/allowlist hard-block.")
@@ -930,6 +931,36 @@ def _parse_node_rest(rest):
     return maxo, run_id
 
 
+def _parse_resume_rest(rest):
+    """Parse the trailing args of `--resume Nx Ny ...` -> (warm, max_outer, run_id, dry_run, family).
+
+    F3-R1: `--family X|Y` is REQUIRED on --resume.  A resumed node without a family tag is keyed as
+    family=None and is never recognized by Gate-4 as the X/Y anchor -- so the tag must be explicit."""
+    warm, maxo, run_id, dry_run, family = None, MAX_OUTER_CAP, None, False, None
+    i = 0
+    while i < len(rest):
+        tok = rest[i]
+        if tok == "--warm" and i + 1 < len(rest):
+            warm = rest[i + 1]; i += 2; continue
+        if tok == "--run-id" and i + 1 < len(rest):
+            run_id = rest[i + 1]; i += 2; continue
+        if tok == "--family" and i + 1 < len(rest):
+            family = rest[i + 1].upper(); i += 2; continue
+        if tok == "--threads" and i + 1 < len(rest):
+            i += 2; continue
+        if tok == "--dry-run":
+            dry_run = True
+        elif tok.isdigit():
+            maxo = int(tok)
+        i += 1
+    if not warm:
+        raise SystemExit("--resume requires --warm <npz>")
+    if not family or family not in FAMILIES:
+        raise SystemExit("--resume requires --family X|Y (the resumed node must be family-tagged "
+                         "for Gate-4 to recognize it as the anchor)")
+    return warm, maxo, run_id, dry_run, family
+
+
 def _node_path(Nx, Ny, maxo, run_id):
     """F4/S3-HOLD: the --node single-node path is a PRODUCTION path.  Under the explicit reviewer
     HOLD nothing runs (S3 permits --node pre-sweep in general, but the HOLD supersedes it), so it is
@@ -960,29 +991,13 @@ if __name__ == "__main__":
         _node_path(Nx, Ny, maxo, run_id)
     elif argv[0] == "--resume":
         Nx, Ny = int(argv[1]), int(argv[2])
-        warm, maxo, run_id, dry_run = None, MAX_OUTER_CAP, None, False
-        i = 3
-        while i < len(argv):
-            tok = argv[i]
-            if tok == "--warm" and i + 1 < len(argv):
-                warm = argv[i + 1]; i += 2; continue
-            if tok == "--run-id" and i + 1 < len(argv):
-                run_id = argv[i + 1]; i += 2; continue
-            if tok == "--threads" and i + 1 < len(argv):
-                i += 2; continue
-            if tok == "--dry-run":
-                dry_run = True
-            elif tok.isdigit():
-                maxo = int(tok)
-            i += 1
-        if not warm:
-            sys.exit("--resume requires --warm <npz>")
-        resume_node(Nx, Ny, warm, max_outer=maxo, dry_run=dry_run, run_id=run_id)
+        warm, maxo, run_id, dry_run, family = _parse_resume_rest(argv[3:])
+        resume_node(Nx, Ny, warm, max_outer=maxo, dry_run=dry_run, run_id=run_id, family=family)
     elif argv[0] == "--family":
         name = argv[1].upper()
         run_family(name, include_fourth=("--include-4th" in argv))
     elif argv[0] == "--sweep":
         run_sweep(include_fourth=("--include-4th" in argv))
     else:
-        sys.exit("usage: --list | --node Nx Ny [maxouter] | --resume Nx Ny --warm <npz> [--dry-run] | "
+        sys.exit("usage: --list | --node Nx Ny [maxouter] | --resume Nx Ny --warm <npz> --family X|Y [--dry-run] | "
                  "--family X|Y [--include-4th] | --sweep")

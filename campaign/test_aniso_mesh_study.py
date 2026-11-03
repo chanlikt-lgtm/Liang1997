@@ -546,6 +546,47 @@ def test_resume_dry_run_records_warm_sha():
     assert aniso._file_sha256(warm) == before   # immutability: warm source untouched
 
 
+def test_parse_resume_requires_family():
+    """F3-R1: --resume must carry an explicit --family X|Y -- a resumed node with family=None is
+    never recognized by Gate-4 as the X/Y anchor."""
+    try:
+        aniso._parse_resume_rest(["--warm", "w.npz"])
+        raised = False
+    except SystemExit as e:
+        raised = True
+        assert "--family" in str(e)
+    assert raised, "--resume without --family must hard-block"
+
+
+def test_parse_resume_parses_family():
+    warm, maxo, run_id, dry_run, family = aniso._parse_resume_rest(
+        ["--warm", "w.npz", "--family", "x", "--dry-run"])
+    assert warm == "w.npz"
+    assert family == "X"
+    assert dry_run is True
+
+
+def test_resume_family_tag_flows_to_gate4():
+    """F3-R1 E2E: a family-tagged resume record is recognized by Gate-4 as the X anchor (100,70),
+    keyed (family, Nx, Ny) -- never dropped to family=None."""
+    import aniso_gate4_analysis as g4
+    td = tempfile.mkdtemp()
+    warm = os.path.join(td, "preserved.npz")
+    np.savez(warm, x=np.linspace(0, 0.8, 71), y=np.linspace(0, 0.7, 70))
+    rec = aniso.resume_node(100, 70, warm, dry_run=True, family="X")
+    assert rec["family"] == "X"
+    # the node record a real resume would write (family plumbed resume_node -> run_node)
+    node = dict(Nx=100, Ny=70, family=rec["family"], status="CERTIFIED", certified=True,
+                Gii_interp=3.0, Gii_max=3.1, xy_Gii_max_interp=[0.5, 0.0],
+                avalanche_y_fwhm=0.002, fwhm_flags=dict(boundary_truncated=True), G_tot=1.0,
+                provenance=dict(threads_requested=1))
+    p = os.path.join(td, "resumed_node.json")
+    json.dump(node, open(p, "w"))
+    nodes, skipped, ambiguous = g4.load_certified_nodes([p])
+    assert ("X", 100, 70) in nodes
+    assert all(k[0] is not None for k in nodes)   # never keyed as family=None
+
+
 def test_resume_requires_auth():
     """F3/F4: a non-dry-run resume must hard-block without a signed GO."""
     saved = aniso.AUTH_FILE
