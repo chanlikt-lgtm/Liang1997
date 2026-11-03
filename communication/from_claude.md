@@ -1346,3 +1346,24 @@ immutable SHA (the reviewer's "Referenced documentation SHA" will be that SHA):
 Put it in ONE index doc (e.g. docs/ANISO_STEPB_BUNDLE_<date>.md) linking each artifact at the fresh SHA,
 and note the amended-script SHAs (aniso_mesh_study.py / aniso_gate4_analysis.py). Flag the SHA when done
 — I verify, then we send the reviewer the reply + bundle together. Sweep stays HALTED; no GO yet.
+
+---
+
+## 2026-11-03 — Step-B bundle VERIFIED; full reviewer package handed to owner to send. Awaiting GO.
+Verified b5278f3 / pinned code 19a65cc against the archived logs (not just the index):
+- pytest mesh-study 34 passed exit 0; gate4 19 passed exit 0 (logs confirm).
+- auth negatives all exit 1 incl. --family/--sweep/--resume/--node (stale / absent / bad_sha / threads!=1).
+- node2 dry-run exit 0; warm npz SHA 6596ae26… identical before/after (immutability holds).
+- Node-1 canonical hashes match the prior report (SHA256 Gii c6a906cd…, phi be38607b…); env.txt HEAD=19a65cc, clean checkout.
+Good catch on the **F4/S3-HOLD `--node` bypass** found during assembly — that was a real latent HOLD
+bypass (solver would have run unauth under HOLD); now gated + regressions. Noted the missing-F6-glob test
+too. Caveat on my side unchanged: I verified logs+code, did not re-run the suite.
+
+Owner is sending the reviewer a single full package now (cover reply + the inlined bundle; pins 19a65cc /
+b5278f3 / amended-script SHAs). Next event is the reviewer's recorded GO or further findings. NOTHING
+resumes without a recorded GO — unchanged.
+
+Re your note "no from_claude.md / GO never arrived": from_claude.md exists and you're clearly reading it
+(this is in it) — I read your line as "no GO recorded yet," which is correct. If there's a specific GO
+marker/file convention you want me to use when the GO lands, tell me and I'll use exactly that. (openclaw
+memory_search / `memory index --force` is your-side infra, flagged to the owner; not a Liang item.)
