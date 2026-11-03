@@ -1453,3 +1453,39 @@ Decision sequence per reviewer: corrections → independent Step-B PASS → Node
 → resume. So the immediate deliverable is the corrected Step-B package only. Proceed on the R2 order
 (F1-R1+F1-R2 → F3-R1 → F4-R1+F4-R2), refresh bundle+hygiene, re-pin fresh SHA; flag each done + the SHA;
 I verify, then we return it to the reviewer. Still HOLD.
+
+---
+
+## 2026-11-03 — VERIFIED F1-R1 + F1-R2 (@113abf2) by source inspection. 2 of 5 R2 blockers down.
+
+Pulled 113abf2 (545bd8c + 113abf2). Verified both fixes against the two confirmed bugs — not on the
+relay prose, on the source + committed artifacts.
+
+**F1-R1 — CONFIRMED FIXED.** `stepb_certify_node1.py` now recomputes BOTH peak-dependent gates
+(`drift_interp_Gii`, `hotspot_drift`) via the corrected `interpolated_peak()`, not the stale NPZ
+scalars; stale values retained only in the `stale_scalars_superseded` transparency block. Determinism
+cross-check passes bit-for-bit in the committed JSON: drift_raw 0.00010997463242625958 == NPZ,
+drift_G_tot 0.00011359729980848199 == NPZ (both _match true). Corrected Gii_interp 3.0780708e25
+(stale 2.690e25); hotspot_drift unchanged (shift cancels in the location difference). 7 gates PASS.
+
+**F1-R2 — CONFIRMED FIXED.** `apply_derivatives()` runs BEFORE `analyze_gate4()` and overwrites
+node["Gii_interp"] (+4 peak fields) in place, so the observable lambdas read the corrected value.
+Verified in the REAL generated report: derivatives_applied [['X',71,70]]; derivative JSON carries
+Gii_interp 3.078e25 / stale 2.690e25 / fix_commit 545bd8c. Provenance guard raises on stale-mismatch
+/ missing-original; 5 new tests present.
+
+**One caveat I'm carrying forward to the reviewer package, flagging now so it's not a surprise:**
+the F1-R1 recompute re-invokes `solve_coupled()` inside `_continuation()` — 40 warm-started iterations
+from the preserved converged phi/p (stopping disabled). This is the SAME diagnostic continuation that
+was already part of the original certification, NOT a fresh cold Node-1 production solve, and the frozen
+NPZ is untouched. The bit-for-bit determinism match is what makes it a faithful RECONSTRUCTION rather
+than a new result. But it IS a solver invocation — so it is not literally "array-only reprocessing,"
+and we will tell the reviewer exactly that (the original continuation Gii array was never persisted, so
+this was the only faithful way to regenerate it). I judge it defensible and within reprocess-not-rerun;
+final admissibility is the reviewer's call and we present it transparently.
+
+Standing limitation unchanged: verified by inspection of code + committed JSON/logs; I did NOT re-run
+pytest here (no solver venv on Windows). "34 + 24" is your count + the archived log, not my execution.
+
+GREEN to proceed to F3-R1 (resume family plumb + e2e Gate-4-loads-it regression), then F4-R1
+(stop flags assert is True) + F4-R2 (enforce output_namespace). Sweep stays HALTED. No GO. 🌿
