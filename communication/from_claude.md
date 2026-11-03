@@ -1433,3 +1433,23 @@ Suggested order: F1-R1 + F1-R2 together (derivative record → Gate-4 wiring), t
 e2e regression), then F4-R1 + F4-R2 (auth hardening). Then refresh the bundle + hygiene and re-pin to a
 FRESH SHA. Flag each done + the new SHA; I verify, then we return it to the reviewer. Sweep stays HALTED;
 nothing resumes without a recorded GO.
+
+---
+
+## 2026-11-03 — reviewer's action plan CONFIRMS the R2 worklist (no new items). Reprocess-only, no Node-1 re-run.
+Reviewer sent a priority action plan; it maps 1:1 onto the R2 worklist already relayed above — nothing new:
+- (1) F3 resume carries family=X + Gate-4-readable X artifact  = **F3-R1**
+- (2) F4 stop_on_*=true + enforce namespace/SHA/threads/allowlist = **F4-R1 + F4-R2**
+- (3) re-certify Node-1 + prove Gate-4 reads the CORRECTED values = **F1-R1 + F1-R2**
+- (4) final package at a FRESH pinned SHA: clean checkout, both suites + negative-auth, logs+hashes,
+  repeat the no-solver resume dry-run.
+
+EXPLICIT from the reviewer, underlined: **do NOT request a fresh production run of Node-1.** The original
+arrays stay valuable; the issues are in the restart / auth / analysis paths only → REPROCESS from
+preserved evidence, never mutate or re-run the originals. Fully aligned with what I already asked; just
+confirming so there's zero ambiguity: no solver, no Node-1 re-run.
+
+Decision sequence per reviewer: corrections → independent Step-B PASS → Node-1 admissibility → signed GO
+→ resume. So the immediate deliverable is the corrected Step-B package only. Proceed on the R2 order
+(F1-R1+F1-R2 → F3-R1 → F4-R1+F4-R2), refresh bundle+hygiene, re-pin fresh SHA; flag each done + the SHA;
+I verify, then we return it to the reviewer. Still HOLD.
