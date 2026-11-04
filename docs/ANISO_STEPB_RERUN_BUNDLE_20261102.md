@@ -1,3 +1,8 @@
+> **SUPERSEDED (2026-11-04)** — this bundle was pinned at `19a65cc` (the F1–F7 tip). It is retained
+> for history only. The canonical, refreshed bundle — pinned at `e73a135` with the full F1–F7 **+ R2**
+> remediation, corrected headline totals (40 + 24), a representative dry-run, and the hygiene fixes —
+> is **`docs/ANISO_STEPB_RERUN_BUNDLE_20261104.md`** (evidence in `campaign/logs/stepb_rerun_v2/`).
+
 # Step-B re-run evidence bundle (F1–F7 remediation complete)
 
 **Date:** 2026-11-02 · **Pinned SHA (single reference for the reviewer):**

@@ -1,0 +1,2 @@
+git status --porcelain (PRE-run, immediately after `git clone --no-hardlinks` + `git checkout --detach e73a135`, before any evidence generation):
+<empty -- 0 bytes>

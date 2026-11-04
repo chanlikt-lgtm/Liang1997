@@ -1,0 +1,294 @@
+{
+  "schema": "stepb_node1_audit",
+  "version": 1,
+  "nodes": [
+    {
+      "label": "t1 control",
+      "npz": "she2d_aniso_71x70_t1_47e3c9ec574b.npz",
+      "file_sha256": "c8a2b56cfa651fa1f13f3056a7d8126b6da5823954e4df9f16483b15aa57c7b4",
+      "arrays": {
+        "Gii": {
+          "shape": [
+            70,
+            71
+          ],
+          "dtype": "float64",
+          "sha256": "c6a906cd82ce2bee91a1d0b4720d5a8ec5ae5656d00f4210e6190a781170013d"
+        },
+        "phi": {
+          "shape": [
+            70,
+            71
+          ],
+          "dtype": "float64",
+          "sha256": "be38607b69b5f32b1cb2a8a9380eac0aa2db05fc5078e5f305296ac9be624198"
+        }
+      },
+      "scalars": {
+        "Gii_max_hex": "0x1.973e8ea5f5dd7p+84",
+        "Gii_interp_hex": "0x1.6406aa937cb07p+84",
+        "G_tot_hex": "0x1.4e0a7f18eb8d2p+46",
+        "R_phi_hex": "0x1.536ad10b10000p-14",
+        "n_iter": 531
+      },
+      "provenance": {
+        "npz_git_commit": "52c981f",
+        "npz_git_dirty": "dirty",
+        "npz_warm_source": "",
+        "npz_config_hash": "47e3c9ec574b",
+        "npz_H_hash": "b4319bb03303",
+        "json_git_commit": "52c981f",
+        "json_git_dirty": "dirty",
+        "json_warm_source": "",
+        "json_config_hash": "47e3c9ec574b",
+        "threads_requested": 1,
+        "threads_env": {
+          "OPENBLAS_NUM_THREADS": "1",
+          "OMP_NUM_THREADS": "1",
+          "MKL_NUM_THREADS": "1"
+        },
+        "threadpool_actual": [
+          {
+            "library": "blas",
+            "internal_api": "openblas",
+            "num_threads": 1,
+            "prefix": "libscipy_openblas",
+            "version": "0.3.29",
+            "threading_layer": "pthreads"
+          },
+          {
+            "library": "blas",
+            "internal_api": "openblas",
+            "num_threads": 1,
+            "prefix": "libscipy_openblas",
+            "version": "0.3.28",
+            "threading_layer": "pthreads"
+          }
+        ],
+        "numpy_version": "2.2.6",
+        "python": "3.10.12"
+      }
+    },
+    {
+      "label": "production node1",
+      "npz": "she2d_aniso_71x70_t1_552bb609f0f2_X.npz",
+      "file_sha256": "6596ae26d356cf3e52af8e1195a8fc9d6d2b125a246ad0dfa6959163e714312d",
+      "arrays": {
+        "Gii": {
+          "shape": [
+            70,
+            71
+          ],
+          "dtype": "float64",
+          "sha256": "c6a906cd82ce2bee91a1d0b4720d5a8ec5ae5656d00f4210e6190a781170013d"
+        },
+        "phi": {
+          "shape": [
+            70,
+            71
+          ],
+          "dtype": "float64",
+          "sha256": "be38607b69b5f32b1cb2a8a9380eac0aa2db05fc5078e5f305296ac9be624198"
+        }
+      },
+      "scalars": {
+        "Gii_max_hex": "0x1.973e8ea5f5dd7p+84",
+        "Gii_interp_hex": "0x1.6406aa937cb07p+84",
+        "G_tot_hex": "0x1.4e0a7f18eb8d2p+46",
+        "R_phi_hex": "0x1.536ad10b10000p-14",
+        "n_iter": 531
+      },
+      "provenance": {
+        "npz_git_commit": "2775697",
+        "npz_git_dirty": "clean",
+        "npz_warm_source": "",
+        "npz_config_hash": "552bb609f0f2",
+        "npz_H_hash": "b4319bb03303",
+        "json_git_commit": "2775697",
+        "json_git_dirty": "clean",
+        "json_warm_source": "",
+        "json_config_hash": "552bb609f0f2",
+        "threads_requested": 1,
+        "threads_env": {
+          "OPENBLAS_NUM_THREADS": "1",
+          "OMP_NUM_THREADS": "1",
+          "MKL_NUM_THREADS": "1"
+        },
+        "threadpool_actual": [
+          {
+            "library": "blas",
+            "internal_api": "openblas",
+            "num_threads": 1,
+            "prefix": "libscipy_openblas",
+            "version": "0.3.29",
+            "threading_layer": "pthreads"
+          },
+          {
+            "library": "blas",
+            "internal_api": "openblas",
+            "num_threads": 1,
+            "prefix": "libscipy_openblas",
+            "version": "0.3.28",
+            "threading_layer": "pthreads"
+          }
+        ],
+        "numpy_version": "2.2.6",
+        "python": "3.10.12"
+      }
+    },
+    {
+      "label": "repeat",
+      "npz": "she2d_aniso_71x70_t1_1e010e13e26f_repeat.npz",
+      "file_sha256": "6cf32be40ebbe2cf5c454d0b3d55d49297f84e40df5f07fc1fe9621bda927156",
+      "arrays": {
+        "Gii": {
+          "shape": [
+            70,
+            71
+          ],
+          "dtype": "float64",
+          "sha256": "c6a906cd82ce2bee91a1d0b4720d5a8ec5ae5656d00f4210e6190a781170013d"
+        },
+        "phi": {
+          "shape": [
+            70,
+            71
+          ],
+          "dtype": "float64",
+          "sha256": "be38607b69b5f32b1cb2a8a9380eac0aa2db05fc5078e5f305296ac9be624198"
+        }
+      },
+      "scalars": {
+        "Gii_max_hex": "0x1.973e8ea5f5dd7p+84",
+        "Gii_interp_hex": "0x1.6406aa937cb07p+84",
+        "G_tot_hex": "0x1.4e0a7f18eb8d2p+46",
+        "R_phi_hex": "0x1.536ad10b10000p-14",
+        "n_iter": 531
+      },
+      "provenance": {
+        "npz_git_commit": "52ed83a",
+        "npz_git_dirty": "dirty",
+        "npz_warm_source": "",
+        "npz_config_hash": "1e010e13e26f",
+        "npz_H_hash": "b4319bb03303",
+        "json_git_commit": "52ed83a",
+        "json_git_dirty": "dirty",
+        "json_warm_source": "",
+        "json_config_hash": "1e010e13e26f",
+        "threads_requested": 1,
+        "threads_env": {
+          "OPENBLAS_NUM_THREADS": "1",
+          "OMP_NUM_THREADS": "1",
+          "MKL_NUM_THREADS": "1"
+        },
+        "threadpool_actual": [
+          {
+            "library": "blas",
+            "internal_api": "openblas",
+            "num_threads": 1,
+            "prefix": "libscipy_openblas",
+            "version": "0.3.29",
+            "threading_layer": "pthreads"
+          },
+          {
+            "library": "blas",
+            "internal_api": "openblas",
+            "num_threads": 1,
+            "prefix": "libscipy_openblas",
+            "version": "0.3.28",
+            "threading_layer": "pthreads"
+          }
+        ],
+        "numpy_version": "2.2.6",
+        "python": "3.10.12"
+      }
+    }
+  ],
+  "seven_gates": {
+    "source_json": "she2d_aniso_71x70_t1_552bb609f0f2_X.json",
+    "H_hash": "b4319bb03303",
+    "config_hash": "552bb609f0f2",
+    "git_commit": "2775697",
+    "git_dirty": "clean",
+    "criteria": [
+      {
+        "name": "R_phi",
+        "value": 8.092337900311719e-05,
+        "gate": 0.0001,
+        "op": "<",
+        "unit": "V",
+        "norm": "absolute",
+        "passed": true
+      },
+      {
+        "name": "continuity_residual",
+        "value": 3.4513821253506166e-09,
+        "gate": 1e-06,
+        "op": "<",
+        "unit": "1",
+        "norm": "scaled by max(|bs|,1)",
+        "passed": true
+      },
+      {
+        "name": "number_balance",
+        "value": 2.0797993955832524e-05,
+        "gate": 0.01,
+        "op": "<",
+        "unit": "1",
+        "norm": "|balance|/scale (absolute)",
+        "passed": true
+      },
+      {
+        "name": "drift_raw_Gii",
+        "value": 0.00010997463242625958,
+        "gate": 0.005,
+        "op": "<",
+        "unit": "1",
+        "norm": "40-iter continuation spread",
+        "passed": true
+      },
+      {
+        "name": "drift_interp_Gii",
+        "value": 9.961997039504975e-05,
+        "gate": 0.005,
+        "op": "<",
+        "unit": "1",
+        "norm": "40-iter continuation endpoint delta",
+        "passed": true
+      },
+      {
+        "name": "drift_G_tot",
+        "value": 0.00011359729980848199,
+        "gate": 0.005,
+        "op": "<",
+        "unit": "1",
+        "norm": "40-iter continuation spread",
+        "passed": true
+      },
+      {
+        "name": "hotspot_drift",
+        "value": 5.7427947934349435e-05,
+        "gate": 0.5,
+        "op": "<",
+        "unit": "cell",
+        "norm": "|cont hotspot - main hotspot| / h_rep",
+        "passed": true
+      }
+    ]
+  },
+  "n_iter": 531,
+  "h_rep": 0.0011419751258001625,
+  "identity": {
+    "Gii_sha256_all_equal": true,
+    "phi_sha256_all_equal": true,
+    "Gii_max_hex_all_equal": true,
+    "Gii_sha256": "c6a906cd82ce2bee91a1d0b4720d5a8ec5ae5656d00f4210e6190a781170013d",
+    "phi_sha256": "be38607b69b5f32b1cb2a8a9380eac0aa2db05fc5078e5f305296ac9be624198",
+    "file_sha256s": [
+      "c8a2b56cfa651fa1f13f3056a7d8126b6da5823954e4df9f16483b15aa57c7b4",
+      "6596ae26d356cf3e52af8e1195a8fc9d6d2b125a246ad0dfa6959163e714312d",
+      "6cf32be40ebbe2cf5c454d0b3d55d49297f84e40df5f07fc1fe9621bda927156"
+    ],
+    "note_file_hash_differs": "whole-file SHA differs because each npz embeds its own git_commit/warm_source provenance; physics arrays identical."
+  }
+}

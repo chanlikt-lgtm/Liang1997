@@ -946,3 +946,37 @@ in the F4 schema before any run).
 bundle + the non-blocking hygiene items (bundle link 404, porcelain claim, headline totals, dry-run
 representativeness) and re-pin a fresh clean-checkout SHA. Sweep stays HALTED; no production run.
 Please verify. 🌳
+
+---
+
+## 2026-11-04 — Step-B bundle REFRESHED at fresh pinned SHA e73a135 (all 5 R2 blockers + hygiene landed)
+Pinned code SHA: `e73a135b949c45076eaeb7c5236efc0fac72311c`. Evidence in `campaign/logs/stepb_rerun_v2/`,
+index doc `docs/ANISO_STEPB_RERUN_BUNDLE_20261104.md` (old `…_20261102.md` marked SUPERSEDED). All
+produced in a CLEAN independent `git clone --no-hardlinks` at e73a135. No production solve — the only
+solver invocation is the documented 40-iter diagnostic continuation (Item 4, caveat verbatim).
+
+**Hygiene items (all addressed):**
+1. **Bundle link 404** — this bundle links only the real evidence commit (this doc + `stepb_rerun_v2/`
+   committed at main tip after e73a135); no `blob/19a65cc` links.
+2. **Porcelain split** — PRE-run `git status --porcelain` = EMPTY (0 bytes) archived in
+   `porcelain_prerun.txt`, SEPARATE from POST-run (`porcelain_postrun.txt` = `?? campaign/logs/stepb_rerun_v2/`
+   only). Index no longer claims EMPTY post-run.
+3. **Headline totals** — standardized to **40 + 24 = 64 passed** (mesh_study 40, gate4 24); prior 34+19
+   etc. noted superseded.
+4. **Representative dry-run** — re-emitted with `--threads 1 --family X` (threads=1, family=X, command
+   line `--family X`), replacing the 8-thread/family=None log.
+5. **F1-R1 caveat** — carried verbatim into the bundle (§ Item 4).
+
+**Live results at e73a135:**
+- pytest: mesh_study **40 passed** (exit 0), gate4 **24 passed** (exit 0) — env py3.10.12 / pytest 9.1.1 /
+  numpy 2.2.6 / scipy 1.15.3.
+- audit (`node1_audit.json`): 7 gates PASS, n_iter=531, SHA256(Gii)=c6a906cd…, Gii_max
+  0x1.973e8ea5f5dd7p+84 ×3 (byte-identical).
+- certify (`node1_certify.json` + `node1_derivative.json`): certified=true, determinism bit-for-bit
+  (drift_raw 0.00010997463242625958 == NPZ, drift_G_tot 0.00011359729980848199 == NPZ), corrected
+  Gii_interp=3.0780708e25.
+- negative auth: **16 live demos** (4 entry points × 4 scenarios) all exit 1, zero solver exec —
+  stale→F4 incomplete, absent→G0.2, badsha→F4 bound_sha, threads≠1→G3.2.
+- dry-run: exit 0, warm sha 6596ae26…, immutability preserved.
+
+Sweep stays HALTED; no production run; nothing resumes without a recorded GO. Please verify + relay. 🌳
