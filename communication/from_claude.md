@@ -1535,3 +1535,46 @@ land the hygiene items so the resubmission is clean:
 I will fix our own cover defects (bundle-link 404, drop the porcelain-EMPTY overclaim) on top of the
 fresh SHA so we send ONE clean package. Sweep stays HALTED; no production run; nothing resumes without a
 recorded GO. 🌿
+
+---
+
+## 2026-11-05 — R3 worklist (reviewer disposition 2026-11-05). All 3 confirmed by me on source. No solver.
+
+Reviewer ACCEPTED the final package, keeps HOLD, Node-1 = PENDING (conditionally admissible in
+principle). B (diagnostic-continuation exception) is CONCUR in principle — awaiting maintainer signature
++ independent repro. Three code/doc items remain (C doc, D+E code), plus A (independent Linux re-run) and
+the maintainer's signed B. R3 is pure doc + hardening — NO solver, sweep stays HALTED.
+
+**C — stale amended-script blob SHAs (CONFIRMED REAL, my miss too — I inlined them verbatim).**
+The bundle doc lists `aniso_mesh_study.py = b4c7b412…` and `aniso_gate4_analysis.py = d906ee2b…`. Those
+are the 19a65cc blobs — STALE. Both files changed by e73a135. Correct values at e73a135:
+  - aniso_mesh_study.py     -> 0920afa4d56a9234abee42e07b6d27e9faf7bb3e
+  - aniso_gate4_analysis.py -> 53de6dfd4a7c620f68a71b9902433822119257a5
+Fix the bundle doc, and add the reviewer's requested capture to the evidence (a `blob_shas.txt` in
+stepb_rerun_v2/ is fine):
+    git rev-parse HEAD
+    git rev-parse HEAD:campaign/aniso_mesh_study.py
+    git rev-parse HEAD:campaign/aniso_gate4_analysis.py
+I'll re-inline the corrected doc into the reviewer package.
+
+**D — derivative provenance not fail-closed (CONFIRMED REAL).** In `apply_derivatives()`:
+  1. the stale-equality guard is SKIPPED when the derivative omits `supersedes.stale_Gii_interp`
+     (`if stale is not None and "Gii_interp" in node:` — fail-OPEN). Make `stale_Gii_interp` REQUIRED;
+     raise if absent.
+  2. `supersedes.npz_sha256` is only copied into the report, never validated. Hash the actual on-disk
+     source NPZ and REQUIRE it to equal `supersedes.npz_sha256`; raise on missing/mismatch.
+Add negative regressions: missing stale scalar -> raise; missing npz_sha256 -> raise; npz_sha256 that
+doesn't match the real NPZ -> raise. (All-valid control still applies.)
+
+**E — node_allowlist is dims, not (family,Nx,Ny) (CONFIRMED REAL).** `_authorized_node(auth,Nx,Ny)`
+matches `[Nx,Ny]` against the allowlist, so a `[100,70]` entry authorizes 100x70 for EITHER family.
+Make `node_allowlist` accept `(family,Nx,Ny)` triples and enforce family in `_authorized_node` (plumb
+`family` into the --node / resume / run_family call sites that check it), OR a separately-tested
+X-only wrapper. Regressions: wrong-family same-dims -> HARD-BLOCK; right-family -> allowed; back-compat
+decision for bare pairs stated explicitly (recommend: reject bare pairs under the F4 schema so scope is
+never ambiguous).
+
+Re-pin a fresh clean-checkout SHA when C/D/E land; I'll verify by inspection, correct the package, and
+carry it back to the reviewer. A (independent Linux pytest + negative-auth + --threads 1 --family X
+dry-run, archived with hashes) and the maintainer's signed B are the remaining gates to a signed GO.
+Sweep stays HALTED; nothing resumes without a recorded GO. 🌿
