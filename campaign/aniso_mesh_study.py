@@ -173,12 +173,23 @@ def _require_exec_auth():
     return a
 
 
-def _authorized_node(auth, Nx, Ny):
-    """F4: node allowlist enforcement -- the authorization must explicitly list each node it permits."""
+def _authorized_node(auth, family, Nx, Ny):
+    """F4: node allowlist enforcement, keyed on (family, Nx, Ny) triples.
+
+    Each allowlist entry MUST be a [family, Nx, Ny] triple (family is 'X' or 'Y').  Bare [Nx, Ny]
+    pairs are REJECTED (fail-closed): a dims pair cannot disambiguate the shared (100,70) anchor
+    across families, so it authorizes nothing.  A node is authorized only when the allowlist lists
+    its EXACT (family, Nx, Ny)."""
     allow = auth.get("node_allowlist")
     if allow is None:
         return True
-    return [int(Nx), int(Ny)] in [[int(n[0]), int(n[1])] for n in allow]
+    fam = (family or "").upper()
+    for n in allow:
+        if not isinstance(n, (list, tuple)) or len(n) != 3:
+            continue            # bare pair / malformed -> never authorizes (fail-closed)
+        if str(n[0]).upper() == fam and int(n[1]) == int(Nx) and int(n[2]) == int(Ny):
+            return True
+    return False
 
 
 def _resolve_output_dir(auth=None, outdir=None):
@@ -753,8 +764,8 @@ def resume_node(Nx, Ny, warm_npz, max_outer=MAX_OUTER_CAP, dry_run=False, outdir
     auth = _require_exec_auth()   # F4: resume is a production path -> requires a signed GO
     _require_single_thread()      # F5/F4: resume must be single-threaded
     outdir = _resolve_output_dir(auth, outdir)   # F4-R2: writes land in the authorized namespace
-    if not _authorized_node(auth, Nx, Ny):
-        raise SystemExit("F4 HARD-BLOCK: node %dx%d not in authorization allowlist" % (Nx, Ny))
+    if not _authorized_node(auth, family, Nx, Ny):
+        raise SystemExit("F4 HARD-BLOCK: node %s %dx%d not in authorization allowlist" % (family, Nx, Ny))
     rec = run_node(Nx, Ny, max_outer=max_outer, warm_npz=wp, verbose=True, outdir=outdir,
                    run_id=run_id, family=family)
     rec["warm_source_sha"] = warm_sha
@@ -773,10 +784,10 @@ def run_family(name, include_fourth=False, outdir=None):
     peak_rss = None
     stopped = False
     for i, (Nx, Ny) in enumerate(levels):
-        if not _authorized_node(auth, Nx, Ny):        # F4: node allowlist enforcement
+        if not _authorized_node(auth, name, Nx, Ny):        # F4: node allowlist enforcement
             records.append(dict(Nx=Nx, Ny=Ny, family=name, direction=fam["direction"], level=i,
                                 status="FAILED", certified=False,
-                                error="F4: node %dx%d not in authorization allowlist" % (Nx, Ny)))
+                                error="F4: node %s %dx%d not in authorization allowlist" % (name, Nx, Ny)))
             stopped = True
             break
         try:
@@ -807,6 +818,11 @@ def run_family(name, include_fourth=False, outdir=None):
         third_certified = bool(third["certified"]) if third else False
         Nx4, Ny4 = fam["fourth"]
         Nx3, Ny3 = levels[-1]
+        if not _authorized_node(auth, name, Nx4, Ny4):        # F4: 4th level also allowlist-gated
+            records.append(dict(Nx=Nx4, Ny=Ny4, family=name, direction=fam["direction"],
+                                level=len(levels), status="FAILED", certified=False,
+                                error="F4: node %s %dx%d not in authorization allowlist" % (name, Nx4, Ny4)))
+            return records
         approved, decision = resource_gate(peak_rss, (Nx3, Ny3), (Nx4, Ny4))
         decision["authorized_by"] = auth.get("who"); decision["authorized_when"] = auth.get("when")
         if third_certified and approved:
@@ -948,20 +964,22 @@ def compare_anchor(outdir=None, families=("X", "Y")):
 
 
 def _parse_node_rest(rest):
-    """Parse the trailing args of `--node Nx Ny ...` -> (max_outer, run_id). Skips the --threads
-    value token (already consumed at import by _threads_from_argv)."""
-    maxo, run_id = MAX_OUTER_CAP, None
+    """Parse the trailing args of `--node Nx Ny ...` -> (max_outer, run_id, family). Skips the
+    --threads value token (already consumed at import by _threads_from_argv)."""
+    maxo, run_id, family = MAX_OUTER_CAP, None, None
     i = 0
     while i < len(rest):
         tok = rest[i]
         if tok == "--threads" and i + 1 < len(rest):
             i += 2; continue
+        if tok == "--family" and i + 1 < len(rest):
+            family = rest[i + 1].upper(); i += 2; continue
         if tok.isdigit():
             maxo = int(tok)
         elif tok == "--run-id" and i + 1 < len(rest):
             run_id = rest[i + 1]; i += 1
         i += 1
-    return maxo, run_id
+    return maxo, run_id, family
 
 
 def _parse_resume_rest(rest):
@@ -994,16 +1012,21 @@ def _parse_resume_rest(rest):
     return warm, maxo, run_id, dry_run, family
 
 
-def _node_path(Nx, Ny, maxo, run_id):
+def _node_path(Nx, Ny, maxo, run_id, family=None):
     """F4/S3-HOLD: the --node single-node path is a PRODUCTION path.  Under the explicit reviewer
     HOLD nothing runs (S3 permits --node pre-sweep in general, but the HOLD supersedes it), so it is
-    gated behind the same signed auth + single-thread + allowlist as --family/--sweep."""
+    gated behind the same signed auth + single-thread + allowlist as --family/--sweep.  `family` is
+    REQUIRED: the node must be family-tagged for Gate-4 to recognize it (F3-R1), and the allowlist is
+    keyed on (family, Nx, Ny)."""
     auth = _require_exec_auth()
     _require_single_thread()
     outdir = _resolve_output_dir(auth, None)   # F4-R2: writes land in the authorized namespace
-    if not _authorized_node(auth, Nx, Ny):
-        raise SystemExit("F4 HARD-BLOCK: node %dx%d not in authorization allowlist" % (Nx, Ny))
-    run_node(Nx, Ny, max_outer=maxo, run_id=run_id, outdir=outdir)
+    if not family or family not in FAMILIES:
+        raise SystemExit("--node requires --family X|Y (the node must be family-tagged for "
+                         "Gate-4 to recognize it as the anchor)")
+    if not _authorized_node(auth, family, Nx, Ny):
+        raise SystemExit("F4 HARD-BLOCK: node %s %dx%d not in authorization allowlist" % (family, Nx, Ny))
+    run_node(Nx, Ny, max_outer=maxo, run_id=run_id, family=family, outdir=outdir)
 
 
 if __name__ == "__main__":
@@ -1021,8 +1044,8 @@ if __name__ == "__main__":
         # nothing runs (S3 permits --node pre-sweep in general, but the HOLD supersedes it).
         # Gate it behind the same signed auth + single-thread + allowlist as --family/--sweep.
         Nx, Ny = int(argv[1]), int(argv[2])
-        maxo, run_id = _parse_node_rest(argv[3:])
-        _node_path(Nx, Ny, maxo, run_id)
+        maxo, run_id, family = _parse_node_rest(argv[3:])
+        _node_path(Nx, Ny, maxo, run_id, family)
     elif argv[0] == "--resume":
         Nx, Ny = int(argv[1]), int(argv[2])
         warm, maxo, run_id, dry_run, family = _parse_resume_rest(argv[3:])
@@ -1033,5 +1056,5 @@ if __name__ == "__main__":
     elif argv[0] == "--sweep":
         run_sweep(include_fourth=("--include-4th" in argv))
     else:
-        sys.exit("usage: --list | --node Nx Ny [maxouter] | --resume Nx Ny --warm <npz> --family X|Y [--dry-run] | "
+        sys.exit("usage: --list | --node Nx Ny [maxouter] --family X|Y | --resume Nx Ny --warm <npz> --family X|Y [--dry-run] | "
                  "--family X|Y [--include-4th] | --sweep")

@@ -98,11 +98,15 @@ def test_insufficient_levels():
 
 # ---- certified-only input + family ordering ---------------------------------
 def _node(Nx, Ny, Gii, x=0.5, status="CERTIFIED", certified=True, fwhm_flags=None, G_tot=1.0,
-          width=0.002, family=None):
-    return dict(Nx=Nx, Ny=Ny, family=family, status=status, certified=certified,
-                Gii_interp=Gii, Gii_max=Gii * 1.1,
-                xy_Gii_max_interp=[x, 0.0], avalanche_y_fwhm=width,
-                fwhm_flags=fwhm_flags or dict(boundary_truncated=True), G_tot=G_tot)
+          width=0.002, family=None, npz=None):
+    d = dict(Nx=Nx, Ny=Ny, family=family, status=status, certified=certified,
+             Gii_interp=Gii, Gii_max=Gii * 1.1,
+             xy_Gii_max_interp=[x, 0.0], avalanche_y_fwhm=width,
+             fwhm_flags=fwhm_flags or dict(boundary_truncated=True), G_tot=G_tot)
+    if npz:
+        d["npz"] = npz
+        d["npz_rel"] = os.path.basename(npz)
+    return d
 
 
 def test_load_certified_excludes_uncertified():
@@ -216,10 +220,21 @@ def test_analyze_gate4_missing_node_is_incomplete():
 
 
 # ---- F1-R2: certified-derivative overlay -----------------------------------
-def _deriv(Nx, Ny, Gii_corr, family="X", stale=2.690056703473506e+25, npz_sha="abc123"):
+def _make_src_npz(td, name="x.npz", payload=b"source-npz-bytes"):
+    """Write a real on-disk source NPZ (arbitrary bytes; the provenance check only hashes it)
+    and return (path, sha256)."""
+    import hashlib
+    p = os.path.join(td, name)
+    with open(p, "wb") as fh:
+        fh.write(payload)
+    return p, hashlib.sha256(payload).hexdigest()
+
+
+def _deriv(Nx, Ny, Gii_corr, family="X", stale=2.690056703473506e+25, npz_sha="abc123",
+           original_npz="x.npz"):
     return dict(schema="aniso_node_certified_derivative", version=1, family=family,
                 Nx=Nx, Ny=Ny, status="CERTIFIED", certified=True,
-                supersedes=dict(original_npz="x.npz", npz_sha256=npz_sha,
+                supersedes=dict(original_npz=original_npz, npz_sha256=npz_sha,
                                 stale_Gii_interp=stale),
                 Gii_interp=Gii_corr, xy_Gii_max_interp=[0.5891214927220607, 0.0],
                 drift_interp_Gii=1.2e-4, hotspot_drift_um=5.0e-8, hotspot_drift_cells=4.4e-5,
@@ -238,9 +253,11 @@ def test_load_derivatives_only_schema_namespace():
 
 
 def test_apply_derivatives_overwrites_corrected():
-    nodes = {("X", 71, 70): _node(71, 70, 2.690056703473506e+25, family="X")}
-    derivs = {("X", 71, 70): _deriv(71, 70, 3.0780708193114283e+25)}
-    nodes, applied = g4.apply_derivatives(nodes, derivs)
+    td = tempfile.mkdtemp()
+    npz_path, npz_sha = _make_src_npz(td)
+    nodes = {("X", 71, 70): _node(71, 70, 2.690056703473506e+25, family="X", npz=npz_path)}
+    derivs = {("X", 71, 70): _deriv(71, 70, 3.0780708193114283e+25, npz_sha=npz_sha)}
+    nodes, applied = g4.apply_derivatives(nodes, derivs, npz_dir=td)
     assert nodes[("X", 71, 70)]["Gii_interp"] == 3.0780708193114283e+25
     assert nodes[("X", 71, 70)]["derivative"]["applied"] is True
     assert applied == [("X", 71, 70)]
@@ -248,14 +265,73 @@ def test_apply_derivatives_overwrites_corrected():
 
 def test_apply_derivatives_refuses_stale_mismatch():
     # derivative declares stale=2.690e25 but the node holds a DIFFERENT value -> must refuse
-    nodes = {("X", 71, 70): _node(71, 70, 2.999e25, family="X")}
-    derivs = {("X", 71, 70): _deriv(71, 70, 3.078e25, stale=2.690056703473506e+25)}
+    td = tempfile.mkdtemp()
+    npz_path, npz_sha = _make_src_npz(td)
+    nodes = {("X", 71, 70): _node(71, 70, 2.999e25, family="X", npz=npz_path)}
+    derivs = {("X", 71, 70): _deriv(71, 70, 3.078e25, stale=2.690056703473506e+25,
+                                     npz_sha=npz_sha)}
     try:
-        g4.apply_derivatives(nodes, derivs)
+        g4.apply_derivatives(nodes, derivs, npz_dir=td)
     except ValueError as e:
         assert "provenance mismatch" in str(e)
     else:
         raise AssertionError("expected ValueError for stale mismatch")
+
+
+def test_apply_derivatives_requires_stale_Gii_interp():
+    """D-1: a derivative that omits supersedes.stale_Gii_interp MUST be refused (fail-closed)."""
+    td = tempfile.mkdtemp()
+    npz_path, npz_sha = _make_src_npz(td)
+    nodes = {("X", 71, 70): _node(71, 70, 2.690056703473506e+25, family="X", npz=npz_path)}
+    derivs = {("X", 71, 70): _deriv(71, 70, 3.078e25, npz_sha=npz_sha)}
+    del derivs[("X", 71, 70)]["supersedes"]["stale_Gii_interp"]
+    try:
+        g4.apply_derivatives(nodes, derivs, npz_dir=td)
+    except ValueError as e:
+        assert "stale_Gii_interp" in str(e)
+    else:
+        raise AssertionError("expected ValueError for missing stale_Gii_interp")
+
+
+def test_apply_derivatives_requires_npz_sha256():
+    """D-2: a derivative that omits supersedes.npz_sha256 MUST be refused (fail-closed)."""
+    td = tempfile.mkdtemp()
+    npz_path, _ = _make_src_npz(td)
+    nodes = {("X", 71, 70): _node(71, 70, 2.690056703473506e+25, family="X", npz=npz_path)}
+    derivs = {("X", 71, 70): _deriv(71, 70, 3.078e25)}
+    del derivs[("X", 71, 70)]["supersedes"]["npz_sha256"]
+    try:
+        g4.apply_derivatives(nodes, derivs, npz_dir=td)
+    except ValueError as e:
+        assert "npz_sha256" in str(e)
+    else:
+        raise AssertionError("expected ValueError for missing npz_sha256")
+
+
+def test_apply_derivatives_refuses_npz_sha_mismatch():
+    """D-2: npz_sha256 that does not match the real on-disk NPZ MUST be refused (fail-closed)."""
+    td = tempfile.mkdtemp()
+    npz_path, _ = _make_src_npz(td)
+    nodes = {("X", 71, 70): _node(71, 70, 2.690056703473506e+25, family="X", npz=npz_path)}
+    derivs = {("X", 71, 70): _deriv(71, 70, 3.078e25, npz_sha="not-the-real-hash")}
+    try:
+        g4.apply_derivatives(nodes, derivs, npz_dir=td)
+    except ValueError as e:
+        assert "npz_sha256" in str(e) or "does not match" in str(e)
+    else:
+        raise AssertionError("expected ValueError for npz_sha256 mismatch")
+
+
+def test_apply_derivatives_refuses_missing_source_npz():
+    """D-2: a derivative whose source NPZ is absent on disk MUST be refused (fail-closed)."""
+    nodes = {("X", 71, 70): _node(71, 70, 2.690056703473506e+25, family="X")}  # no npz
+    derivs = {("X", 71, 70): _deriv(71, 70, 3.078e25, npz_sha="abc123")}
+    try:
+        g4.apply_derivatives(nodes, derivs, npz_dir=tempfile.mkdtemp())
+    except ValueError as e:
+        assert "not found on disk" in str(e)
+    else:
+        raise AssertionError("expected ValueError for missing source npz")
 
 
 def test_apply_derivatives_refuses_missing_original():
@@ -270,13 +346,15 @@ def test_apply_derivatives_refuses_missing_original():
 
 
 def test_gate4_uses_corrected_value_end_to_end():
+    td = tempfile.mkdtemp()
+    npz_path, npz_sha = _make_src_npz(td)
     nodes = {
-        ("X", 71, 70): _node(71, 70, 2.690056703473506e+25, family="X"),
+        ("X", 71, 70): _node(71, 70, 2.690056703473506e+25, family="X", npz=npz_path),
         ("X", 100, 70): _node(100, 70, 2.66e25, family="X"),
         ("X", 141, 70): _node(141, 70, 2.68e25, family="X"),
     }
-    derivs = {("X", 71, 70): _deriv(71, 70, 3.0780708193114283e+25)}
-    nodes, _ = g4.apply_derivatives(nodes, derivs)
+    derivs = {("X", 71, 70): _deriv(71, 70, 3.0780708193114283e+25, npz_sha=npz_sha)}
+    nodes, _ = g4.apply_derivatives(nodes, derivs, npz_dir=td)
     rep = g4.analyze_gate4(nodes, d_floor=0.0)
     vals = rep["families"]["X"]["observables"]["Gii_interp"]["values"]
     assert vals[0] == 3.0780708193114283e+25   # corrected, NOT the stale 2.690e25

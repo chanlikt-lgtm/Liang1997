@@ -26,7 +26,7 @@ Usage:
 Unit tests (synthetic sequences, known r / converging / diverging / all edge cases):
   python3 -m pytest campaign/test_aniso_gate4_analysis.py -q
 """
-import os, sys, json, argparse
+import os, sys, json, argparse, hashlib
 
 # ---- Frozen family geometry (mirrors the pre-registered spec; do NOT alter after seeing results) ----
 FAMILIES = {
@@ -211,13 +211,37 @@ def load_derivatives(paths):
     return derivs, skipped
 
 
-def apply_derivatives(nodes, derivatives):
+def _file_sha256(path):
+    with open(path, "rb") as fh:
+        return hashlib.sha256(fh.read()).hexdigest()
+
+
+def _resolve_source_npz(node, supersedes, npz_dir):
+    """Locate the on-disk source NPZ that a derivative supersedes (D: provenance validation).
+
+    Resolution order: (1) the node's own absolute `npz` field if it exists; (2) the node's `npz_rel`
+    resolved against npz_dir; (3) `supersedes.original_npz` resolved against npz_dir.  Returns the
+    path, or None when not resolvable/absent."""
+    cand = node.get("npz")
+    if cand and os.path.exists(cand):
+        return cand
+    for rel in (node.get("npz_rel"), supersedes.get("original_npz")):
+        if rel and npz_dir:
+            p = os.path.join(npz_dir, rel)
+            if os.path.exists(p):
+                return p
+    return None
+
+
+def apply_derivatives(nodes, derivatives, npz_dir=None):
     """Overlay certified-derivative records onto certified nodes (F1-R2).
 
     For each (family, Nx, Ny) key with a derivative:
       - the original node MUST be present (else the derivative references a missing original);
-      - the original's Gii_interp MUST exactly equal the derivative's declared stale value
-        (else the derivative was built against a different original -> REFUSE, raise);
+      - `supersedes.stale_Gii_interp` is REQUIRED and the original's Gii_interp MUST exactly equal
+        it (provenance fail-closed: a derivative that omits the stale scalar is refused);
+      - `supersedes.npz_sha256` is REQUIRED and is validated against the actual on-disk source NPZ
+        (hash the file and require equality; raise on missing/mismatch);
       - the derivative's corrected peak-dependent fields overwrite the original's.
 
     Mutates `nodes` in place and returns an audit list of applied keys.  This is the mechanism
@@ -228,19 +252,47 @@ def apply_derivatives(nodes, derivatives):
         if key not in nodes:
             raise ValueError("derivative %r references a missing original node" % (key,))
         node = nodes[key]
-        stale = (d.get("supersedes") or {}).get("stale_Gii_interp")
-        if stale is not None and "Gii_interp" in node:
-            if float(node["Gii_interp"]) != float(stale):
-                raise ValueError(
-                    "derivative for %r declares stale_Gii_interp=%.17g but the node holds "
-                    "%.17g (provenance mismatch; refusing to apply)" %
-                    (key, float(stale), float(node["Gii_interp"])))
+        supersedes = d.get("supersedes") or {}
+
+        # D-1: stale_Gii_interp is REQUIRED (provenance fail-closed).
+        stale = supersedes.get("stale_Gii_interp")
+        if stale is None:
+            raise ValueError(
+                "derivative %r is missing supersedes.stale_Gii_interp (provenance fail-closed; "
+                "refusing to apply)" % (key,))
+        if "Gii_interp" not in node:
+            raise ValueError(
+                "derivative %r supersedes Gii_interp but the original node has no Gii_interp "
+                "(provenance fail-closed; refusing to apply)" % (key,))
+        if float(node["Gii_interp"]) != float(stale):
+            raise ValueError(
+                "derivative for %r declares stale_Gii_interp=%.17g but the node holds "
+                "%.17g (provenance mismatch; refusing to apply)" %
+                (key, float(stale), float(node["Gii_interp"])))
+
+        # D-2: npz_sha256 is REQUIRED and must match the on-disk source NPZ.
+        npz_sha = supersedes.get("npz_sha256")
+        if not npz_sha:
+            raise ValueError(
+                "derivative %r is missing supersedes.npz_sha256 (provenance fail-closed; "
+                "refusing to apply)" % (key,))
+        src = _resolve_source_npz(node, supersedes, npz_dir)
+        if not src:
+            raise ValueError(
+                "derivative %r source NPZ not found on disk (cannot validate npz_sha256; "
+                "provenance fail-closed)" % (key,))
+        actual = _file_sha256(src)
+        if actual != npz_sha:
+            raise ValueError(
+                "derivative %r npz_sha256=%s does not match the on-disk source NPZ %s "
+                "(sha256=%s; provenance fail-closed)" % (key, npz_sha, src, actual))
+
         for f in _DERIVATIVE_FIELDS:
             if f in d:
                 node[f] = d[f]
         node["derivative"] = dict(
             applied=True, source=os.path.basename(d.get("_path", "")),
-            supersedes_npz_sha256=(d.get("supersedes") or {}).get("npz_sha256"),
+            supersedes_npz_sha256=npz_sha,
             stale_Gii_interp_superseded=stale)
         applied.append(key)
     return nodes, applied
@@ -349,7 +401,7 @@ def main(argv=None):
         deriv_paths = [os.path.join(args.derivatives_dir, fn)
                        for fn in sorted(os.listdir(args.derivatives_dir)) if fn.endswith(".json")]
     derivatives, deriv_skipped = load_derivatives(deriv_paths)
-    nodes, applied = apply_derivatives(nodes, derivatives)
+    nodes, applied = apply_derivatives(nodes, derivatives, npz_dir=args.data_dir)
     nodes = {k: r for k, r in nodes.items() if k in wanted}
     report = analyze_gate4(nodes, d_floor=args.d_floor)
     report["skipped"] = skipped + deriv_skipped

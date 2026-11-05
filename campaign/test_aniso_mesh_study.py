@@ -23,7 +23,8 @@ def _valid_auth(**overrides):
     """A COMPLETE F4-signed exec authorization (bound to the current HEAD)."""
     a = dict(execution_authorized=True, who="Chan Lik", when="2026-11-01T00:00:00Z",
              bound_sha=aniso._git("rev-parse", "HEAD"), threads_required=1,
-             node_allowlist=[[71, 70], [100, 70], [141, 70], [100, 58], [100, 85]],
+             node_allowlist=[["X", 71, 70], ["X", 100, 70], ["X", 141, 70],
+                             ["Y", 100, 58], ["Y", 100, 70], ["Y", 100, 85]],
              output_namespace="data", stop_on_unresolved=True, stop_on_failed=True)
     a.update(overrides)
     return a
@@ -274,10 +275,10 @@ def test_resource_gate():
 
 def test_parse_node_rest_threads():
     """Regression: `--threads N` after `--node` must NOT corrupt the max_outer parse (G3 launch path)."""
-    assert aniso._parse_node_rest(["1500"]) == (1500, None)
-    assert aniso._parse_node_rest(["1500", "--threads", "8"]) == (1500, None)
-    assert aniso._parse_node_rest(["1500", "--threads", "1"]) == (1500, None)
-    assert aniso._parse_node_rest(["300", "--run-id", "rep2", "--threads", "1"]) == (300, "rep2")
+    assert aniso._parse_node_rest(["1500", "--family", "X"]) == (1500, None, "X")
+    assert aniso._parse_node_rest(["1500", "--threads", "8", "--family", "Y"]) == (1500, None, "Y")
+    assert aniso._parse_node_rest(["1500", "--threads", "1", "--family", "X"]) == (1500, None, "X")
+    assert aniso._parse_node_rest(["300", "--run-id", "rep2", "--threads", "1", "--family", "X"]) == (300, "rep2", "X")
 
 
 def test_config_hash_stable():
@@ -713,12 +714,35 @@ def test_resume_requires_auth():
 
 
 def test_authorized_node_allowlist():
-    """F4: _authorized_node enforces the allowlist (in / out)."""
+    """F4: _authorized_node enforces the (family, Nx, Ny) allowlist (in / out)."""
     auth = _valid_auth()
-    assert aniso._authorized_node(auth, 71, 70) is True
-    assert aniso._authorized_node(auth, 100, 70) is True
-    assert aniso._authorized_node(auth, 200, 70) is False
-    assert aniso._authorized_node(auth, 100, 120) is False
+    assert aniso._authorized_node(auth, "X", 71, 70) is True
+    assert aniso._authorized_node(auth, "X", 100, 70) is True
+    assert aniso._authorized_node(auth, "Y", 100, 70) is True
+    assert aniso._authorized_node(auth, "X", 200, 70) is False
+    assert aniso._authorized_node(auth, "X", 100, 120) is False
+
+
+def test_authorized_node_wrong_family_same_dims_hard_block():
+    """E: a (100,70) entry under family Y must NOT authorize 100x70 under family X (and vice versa)."""
+    auth_x_only = _valid_auth(node_allowlist=[["X", 100, 70]])
+    assert aniso._authorized_node(auth_x_only, "X", 100, 70) is True
+    assert aniso._authorized_node(auth_x_only, "Y", 100, 70) is False   # wrong-family same-dims
+    auth_y_only = _valid_auth(node_allowlist=[["Y", 100, 70]])
+    assert aniso._authorized_node(auth_y_only, "Y", 100, 70) is True
+    assert aniso._authorized_node(auth_y_only, "X", 100, 70) is False
+
+
+def test_authorized_node_rejects_bare_pairs():
+    """E: bare [Nx, Ny] pairs are REJECTED under the F4 schema (fail-closed): they cannot
+    disambiguate the shared (100,70) anchor across families, so they authorize nothing."""
+    auth = _valid_auth(node_allowlist=[[100, 70]])   # legacy bare pair
+    assert aniso._authorized_node(auth, "X", 100, 70) is False
+    assert aniso._authorized_node(auth, "Y", 100, 70) is False
+    # mixed allowlist: bare pairs ignored, triples still enforced
+    auth_mixed = _valid_auth(node_allowlist=[[100, 70], ["X", 71, 70]])
+    assert aniso._authorized_node(auth_mixed, "X", 71, 70) is True
+    assert aniso._authorized_node(auth_mixed, "X", 100, 70) is False
 
 
 def test_node_path_requires_auth():
@@ -731,7 +755,7 @@ def test_node_path_requires_auth():
         os.remove(aniso.AUTH_FILE)
     try:
         try:
-            aniso._node_path(71, 70, 1500, None)
+            aniso._node_path(71, 70, 1500, None, "X")
             raised = False
         except SystemExit as e:
             raised = True
@@ -747,11 +771,11 @@ def test_node_path_allowlist_enforced():
     saved_threads = aniso.THREADS_REQUESTED
     aniso.AUTH_FILE = os.path.join(tempfile.gettempdir(), "aniso_exec_auth_node_allow_%d.json" % os.getpid())
     with open(aniso.AUTH_FILE, "w") as fh:
-        json.dump(_valid_auth(node_allowlist=[[71, 70], [100, 70]]), fh)  # (200,70) not listed
+        json.dump(_valid_auth(node_allowlist=[["X", 71, 70], ["X", 100, 70]]), fh)  # (200,70) not listed
     aniso.THREADS_REQUESTED = 1
     try:
         try:
-            aniso._node_path(200, 70, 1500, None)
+            aniso._node_path(200, 70, 1500, None, "X")
             raised = False
         except SystemExit as e:
             raised = True
