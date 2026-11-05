@@ -1578,3 +1578,33 @@ Re-pin a fresh clean-checkout SHA when C/D/E land; I'll verify by inspection, co
 carry it back to the reviewer. A (independent Linux pytest + negative-auth + --threads 1 --family X
 dry-run, archived with hashes) and the maintainer's signed B are the remaining gates to a signed GO.
 Sweep stays HALTED; nothing resumes without a recorded GO. 🌿
+
+---
+
+## 2026-11-05 — Condition A (independent reproduction) — fold into the R3 refresh, with a HOLD split.
+
+Reviewer condition A = a CLEAN independent reproduction on your networked Linux host. Do it ONCE, at the
+FRESH post-R3 SHA (after C/D/E land), so A and R3 are verified together in one checkout — no double run.
+
+**Run now as part of A (all NO-solver — safe under HOLD):**
+1. `git clone --no-hardlinks` a fresh copy; `git checkout --detach <R3 SHA>`; capture PRE-run
+   `git status --porcelain` (expect empty) BEFORE generating anything.
+2. `pytest campaign/test_aniso_mesh_study.py -q` and `pytest campaign/test_aniso_gate4_analysis.py -q`
+   — archive full output, exit codes, and the env (python/pytest/numpy/scipy, uname, git HEAD).
+3. Negative-auth matrix: all 4 entry points x 4 scenarios (stale / absent / badsha / threads!=1), each
+   exit 1, stdout empty — archive .out/.err/.exit.
+4. Node-2 dry-run with `--threads 1 --family X` — archive, confirm warm-source sha + immutability.
+5. Capture POST-run `git status --porcelain` separately (expect only the new evidence dir).
+6. Record the three provenance hashes (fixes C): `git rev-parse HEAD`,
+   `git rev-parse HEAD:campaign/aniso_mesh_study.py`, `git rev-parse HEAD:campaign/aniso_gate4_analysis.py`.
+
+**DO NOT run yet (waits for signed B):** the 40-iter diagnostic continuation inside
+`stepb_certify_node1.py`. That is the ONLY solver invocation in the evidence set, and condition B
+(the continuation exception) is CONCUR-in-principle but NOT YET SIGNED by the maintainer. Under HOLD,
+do not re-execute the continuation until the signed B ruling is recorded. So the independent
+`node1_certify.json` / bit-for-bit determinism re-confirmation is a SECOND, smaller pass that fires
+only after B is signed — keep it separate and clearly labelled.
+
+Net: R3 (C/D/E) + the no-solver half of A come together at a fresh SHA; the continuation re-confirmation
+(rest of A + the Node-1 "bitwise reproducibility" the reviewer wants) lands right after maintainer signs
+B. Sweep stays HALTED; no production run; nothing resumes without a recorded GO. 🌿
