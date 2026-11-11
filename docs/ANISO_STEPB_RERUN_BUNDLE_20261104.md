@@ -16,8 +16,13 @@ doc are committed at the current `main` tip, after `e73a135`; there is **no code
 `e73a135` and that tip. The reviewer clones the tip (or `e73a135`) and re-runs the same commands.
 
 **Amended-script SHAs (for the reviewer's record):**
-- `campaign/aniso_mesh_study.py` → `b4c7b4125e319ae156cc6b4ed0cf1ffdd19c52be`
-- `campaign/aniso_gate4_analysis.py` → `d906ee2bb772c7341cde7ba04080d88ce38ebaf6`
+- `campaign/aniso_mesh_study.py` → `3648f203c57222fa0c8330d25df7f82b8a19c213`
+- `campaign/aniso_gate4_analysis.py` → `830b8b77649153305080eb8374c7675f28a7d583`
+
+> **R3 item C (2026-11-11) — stale-SHA fix.** The earlier `b4c7b412…` / `d906ee2b…` entries were the
+> stale `19a65cc` blobs. The interim `e73a135` values were `0920afa4…` / `53de6dfd…`; those are now
+> superseded by R3 items D+E (code tip `c514bcf`), which changed both files. The SHAs above are the
+> current blobs, captured verbatim in `campaign/logs/stepb_rerun_v2/blob_shas.txt`.
 
 **R2 worklist (all fixed + reviewer-verified):** F1-R1 (recertification reads stale interp scalars),
 F1-R2 (corrected observable never reached Gate-4), F3-R1 (resume loses the family tag), F4-R1 (false

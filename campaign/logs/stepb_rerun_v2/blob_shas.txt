@@ -1,0 +1,17 @@
+# R3 item C — reviewer provenance capture (amended-script blob SHAs)
+# Generated 2026-11-11 at the post-D/E code tip.
+#
+# Commands (verbatim, as requested by the reviewer):
+#   git rev-parse HEAD
+#   git rev-parse HEAD:campaign/aniso_mesh_study.py
+#   git rev-parse HEAD:campaign/aniso_gate4_analysis.py
+
+git rev-parse HEAD:                            c514bcfbb7bcc20c650d4487638946c0611d46db
+git rev-parse HEAD:campaign/aniso_mesh_study.py:      3648f203c57222fa0c8330d25df7f82b8a19c213
+git rev-parse HEAD:campaign/aniso_gate4_analysis.py:  830b8b77649153305080eb8374c7675f28a7d583
+
+# Historical reference (superseded — do NOT use these in the bundle):
+#   19a65cc (STALE, was listed in the bundle):  mesh b4c7b4125e319ae156cc6b4ed0cf1ffdd19c52be
+#                                               gate4 d906ee2bb772c7341cde7ba04080d88ce38ebaf6
+#   e73a135 (interim, pre-D/E):                 mesh 0920afa4d56a9234abee42e07b6d27e9faf7bb3e
+#                                               gate4 53de6dfd4a7c620f68a71b9902433822119257a5
