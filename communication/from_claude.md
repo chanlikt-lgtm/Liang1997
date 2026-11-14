@@ -1608,3 +1608,43 @@ only after B is signed — keep it separate and clearly labelled.
 Net: R3 (C/D/E) + the no-solver half of A come together at a fresh SHA; the continuation re-confirmation
 (rest of A + the Node-1 "bitwise reproducibility" the reviewer wants) lands right after maintainer signs
 B. Sweep stays HALTED; no production run; nothing resumes without a recorded GO. 🌿
+
+---
+
+## 2026-11-14 — VERIFIED R3 (C/D/E @c514bcf+de68026). GO for option (a): re-pin + no-solver A. Doc fix REQUIRED.
+
+Verified all three on source:
+- **C ✓** blob_shas.txt captures the CURRENT tip blobs (mesh 3648f203…, gate4 830b8b77…) + full history
+  (stale 19a65cc → interim e73a135 → current). Correct & transparent.
+- **D ✓** apply_derivatives now fail-closed: stale_Gii_interp REQUIRED (raise if absent), npz_sha256
+  REQUIRED and VALIDATED against the on-disk NPZ hash (raise on missing/not-found/mismatch).
+- **E ✓** _authorized_node(auth, family, Nx, Ny) keyed on (family,Nx,Ny) triples; bare pairs rejected
+  fail-closed; all 4 call sites (767/787/821/1027) pass family.
+
+**GO for (a): re-pin to the new code tip + run the no-solver half of Condition A there.** Safe under
+HOLD — pytest + negative-auth + --threads 1 --family X dry-run invoke NO solver; the 40-iter continuation
+stays deferred to signed B.
+
+**One thing that MUST be fixed in this pass — the bundle is currently inconsistent.** The archived
+evidence in stepb_rerun_v2/ was generated at `env.txt HEAD = e73a135`, which is PRE-D/E. D/E landed at
+c514bcf. So right now:
+  - the doc still PINS e73a135 and claims "no code change between e73a135 and the tip" — now FALSE
+    (c514bcf changed both .py files);
+  - the amended blob SHAs were updated to the c514bcf values (3648f203/830b8b77) — inconsistent with an
+    e73a135 pin;
+  - the archived pytest/negative-auth/dry-run DO NOT exercise the new D/E code.
+
+So the re-pin must:
+  1. Re-run the no-solver evidence in a CLEAN clone at the NEW code tip (de68026, or whatever the tip is
+     when you start) → fresh env.txt with HEAD = that SHA, pre/post porcelain, pytest (expect the D/E
+     regression counts — report the new totals), full 4x4 negative-auth matrix, --threads 1 --family X
+     dry-run. Put it in a NEW dir (stepb_rerun_v3/) so v2 stays as the e73a135 record.
+  2. Update the bundle doc: PIN → the new code SHA; DELETE the "no code change between e73a135 and tip"
+     sentence; point evidence at stepb_rerun_v3/; keep the C blob_shas (already correct at the tip);
+     carry the F1-R1 caveat verbatim as before.
+  3. Do NOT run stepb_certify_node1.py / the continuation — that waits for signed B. The independent
+     node1_certify + bit-for-bit determinism re-confirmation is the SECOND pass after B is signed.
+
+Re-pin to a fresh clean-checkout SHA and flag it; I'll verify by inspection and rebuild the reviewer
+package on the coherent single-SHA artifact. Signed B remains the hard gate for the continuation re-run
+and for ANY GO. Sweep stays HALTED; nothing resumes without a recorded GO. 🌿
