@@ -1,0 +1,1 @@
+F4 HARD-BLOCK: exec authorization is incomplete. Missing required field(s): bound_sha, threads_required, node_allowlist, output_namespace, stop_on_unresolved, stop_on_failed. A bare execution_authorized:true is no longer sufficient (must be bound to a git SHA + reviewer identity/date + threads_required + node_allowlist + output_namespace + stop conditions).

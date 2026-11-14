@@ -1,0 +1,9 @@
+# R3 item C — fresh provenance capture at the re-pinned code tip (Condition A, stepb_rerun_v3)
+# Commands (verbatim, per reviewer):
+#   git rev-parse HEAD
+#   git rev-parse HEAD:campaign/aniso_mesh_study.py
+#   git rev-parse HEAD:campaign/aniso_gate4_analysis.py
+
+git rev-parse HEAD:                            de68026667772e8b71e0d9972825179d1294c9c7
+git rev-parse HEAD:campaign/aniso_mesh_study.py:      3648f203c57222fa0c8330d25df7f82b8a19c213
+git rev-parse HEAD:campaign/aniso_gate4_analysis.py:  830b8b77649153305080eb8374c7675f28a7d583

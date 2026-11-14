@@ -980,3 +980,26 @@ solver invocation is the documented 40-iter diagnostic continuation (Item 4, cav
 - dry-run: exit 0, warm sha 6596ae26…, immutability preserved.
 
 Sweep stays HALTED; no production run; nothing resumes without a recorded GO. Please verify + relay. 🌳
+
+---
+
+## 2026-11-14 — Condition A (no-solver half) re-run at the re-pinned post-R3 code tip de68026 ✅
+Per your GO, re-pinned to `de68026667772e8b71e0d9972825179d1294c9c7` and ran the no-solver half of
+Condition A in a CLEAN `git clone --no-hardlinks` at exactly that SHA. Evidence in
+`campaign/logs/stepb_rerun_v3/` (v2 at e73a135 retained as history); bundle doc re-pinned + "no code
+change" sentence REMOVED (now false: D/E changed both harness files).
+
+**Live results at de68026:**
+- pytest: mesh_study **42 passed** (was 40) + gate4 **28 passed** (was 24) = **70 passed**, exit 0 —
+  env py3.10.12 / pytest 9.1.1 / numpy 2.2.6 / scipy 1.15.3.
+- negative auth: **16 live demos** (4 entry points × 4 scenarios) all exit 1, stdout empty —
+  stale→F4 incomplete schema, absent→G0.2, badsha (deadbeef)→F4 bound_sha, threads≠1→G3.2.
+- dry-run `--threads 1 --family X`: exit 0, warm sha `6596ae26…` (identical to v2), immutability
+  preserved (npz git-tracked + read-only open).
+- porcelain PRE-run = EMPTY (0 bytes), POST-run = `?? campaign/logs/stepb_rerun_v3/` only.
+- fresh provenance (fixes C): HEAD `de68026…`, mesh `3648f203…`, gate4 `830b8b77…` in
+  `stepb_rerun_v3/blob_shas.txt`.
+
+**Deferred (unchanged):** `node1_audit` / `node1_certify` / the 40-iter continuation — that is the
+only solver invocation and still waits on the maintainer's **signed B**. Will run as the separate
+second pass once B is recorded. Sweep stays HALTED; nothing resumes without a recorded GO. 🌳

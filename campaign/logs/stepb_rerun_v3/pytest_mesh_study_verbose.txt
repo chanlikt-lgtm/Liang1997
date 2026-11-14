@@ -1,0 +1,10 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/liang_stepb_checkout_v3
+plugins: langsmith-0.7.23, anyio-4.12.1
+collected 42 items
+
+campaign/test_aniso_mesh_study.py ...................................... [ 90%]
+....                                                                     [100%]
+
+============================== 42 passed in 0.35s ==============================
